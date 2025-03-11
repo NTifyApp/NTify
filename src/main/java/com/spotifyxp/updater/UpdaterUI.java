@@ -6,6 +6,9 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.GitHubAPI;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.swingextension.JFrame;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.apache.commons.io.IOUtils;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
@@ -18,8 +21,13 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Base64;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 
 public class UpdaterUI extends JFrame {
     private JPanel contents;
@@ -33,6 +41,11 @@ public class UpdaterUI extends JFrame {
     private boolean updateDone = false;
     private boolean disableUpdateFunc = false;
 
+    /**
+     * This token only has read access to the actions within the SpotifyXP repository
+     */
+    private String base64Token = "Z2l0aHViX3BhdF8xMUFQNUk3R1kwREp5RlZhcGVNdGk1X3F4bzhkU0Z6YnRWdXMydkJpV1JEVll4TlhrQWNCVG1xNzF6dGJEMmtZbXJDQTNDNU9HTEpTSmVpUW5I";
+
     public UpdaterUI() throws IOException {
         $$$setupUI$$$();
         setLocation(ContentPanel.frame.getLocation());
@@ -45,7 +58,6 @@ public class UpdaterUI extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (disableUpdateFunc) {
-                    System.out.println("She closing mate");
                     e.getWindow().dispose();
                     return;
                 }
@@ -111,18 +123,16 @@ public class UpdaterUI extends JFrame {
             int dotState = 0;
             progresslabel.setText(PublicValues.language.translate("updater.availableui.updating"));
             progress.setMaximum(100000);
-            URL url = new URL(updateInfo.url);
-            HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
-            long completeFileSize = httpConnection.getContentLength();
-            BufferedInputStream in = new BufferedInputStream(httpConnection.getInputStream());
-            FileOutputStream fos = new FileOutputStream(new File(PublicValues.appLocation, "SpotifyXP.jar"));
-            BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
+            Request request = new Request.Builder().url(updateInfo.url).header("Authorization", "Bearer " + new String(Base64.getDecoder().decode(base64Token))).build();
+            Response response = PublicValues.defaultHttpClient.newCall(request).execute();
+            InputStream in = response.body().byteStream();
             byte[] data = new byte[1024];
             long downloadedFileSize = 0;
+            FileOutputStream stream = new FileOutputStream(new File(PublicValues.appLocation, "SpotifyXP.jar.zip"));
             int x;
             while ((x = in.read(data, 0, 1024)) >= 0) {
                 downloadedFileSize += x;
-                final int currentProgress = (int) ((((double) downloadedFileSize) / ((double) completeFileSize)) * 100000d);
+                final int currentProgress = (int) ((((double) downloadedFileSize) / (Double.parseDouble(response.header(CONTENT_LENGTH, "1")))) * 100000d);
                 progress.setValue(currentProgress);
                 switch (dotState) {
                     case 0:
@@ -138,10 +148,23 @@ public class UpdaterUI extends JFrame {
                         dotState = 0;
                         break;
                 }
-                bout.write(data, 0, x);
+                stream.write(data, 0, x);
             }
-            bout.close();
+            stream.close();
             in.close();
+            ZipInputStream zipStream = new ZipInputStream(new FileInputStream(new File(PublicValues.appLocation, "SpotifyXP.jar.zip")));
+            zipStream.getNextEntry();
+            try (FileOutputStream fos =  new FileOutputStream(new File(PublicValues.appLocation, "SpotifyXP.jar"));
+                 BufferedInputStream bis = new BufferedInputStream(zipStream)) {
+
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = bis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, len);
+                }
+            }
+            zipStream.close();
+            new File(PublicValues.appLocation, "SpotifyXP.jar.zip").delete();
         } catch (SocketTimeoutException socketTimeoutException) {
             download();
         } catch (Exception exception) {

@@ -49,7 +49,7 @@ public class Updater {
         ProcessBuilder builder = new ProcessBuilder(
                 "java",
                 "-jar",
-                new File(System.getProperty("java.io.tmpdir"), "SpotifyXP.jar").getAbsolutePath(),
+                new File(PublicValues.tempPath, "SpotifyXP.jar").getAbsolutePath(),
                 "--run-updater=" + Base64.getEncoder().encodeToString(serializedUpdateInfo)
         );
         builder.start();

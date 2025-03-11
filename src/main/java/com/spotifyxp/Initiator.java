@@ -53,8 +53,8 @@ public class Initiator {
         new SplashPanel().show(); //Initializing the splash panel
         System.setProperty("http.agent", ApplicationUtils.getUserAgent()); //Setting the user agent string that SpotifyXP uses
         checkDebug(); //Checking if debug is enabled
-        checkSetup();
         detectOS(); //Detecting the operating system
+        checkSetup();
         initLanguageSupport(); //Initializing the language support
         initConfig(); //Initializing the configuration
         setLanguage(); //Set the language to the one specified in the config
