@@ -43,20 +43,12 @@ jobs:
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo "title=$(git log -1 --pretty=format:%s)" >> $GITHUB_ENV
       - name: Creating release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.sha }}
           release_name: ${{ env.title }}
+          files: /home/grunner/actions-runner/_work/SpotifyXP/SpotifyXP/SpotifyXP/target/SpotifyXP.jar
           draft: 'false'
           prerelease: 'false'
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: /home/grunner/actions-runner/_work/SpotifyXP/SpotifyXP/SpotifyXP/target/SpotifyXP.jar
-          asset_name: SpotifyXP.jar
-          asset_content_type: application/java-archive
