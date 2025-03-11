@@ -41,11 +41,6 @@ public class UpdaterUI extends JFrame {
     private boolean updateDone = false;
     private boolean disableUpdateFunc = false;
 
-    /**
-     * This token only has read access to the actions within the SpotifyXP repository
-     */
-    private String base64Token = "Z2l0aHViX3BhdF8xMUFQNUk3R1kwREp5RlZhcGVNdGk1X3F4bzhkU0Z6YnRWdXMydkJpV1JEVll4TlhrQWNCVG1xNzF6dGJEMmtZbXJDQTNDNU9HTEpTSmVpUW5I";
-
     public UpdaterUI() throws IOException {
         $$$setupUI$$$();
         setLocation(ContentPanel.frame.getLocation());
@@ -123,7 +118,7 @@ public class UpdaterUI extends JFrame {
             int dotState = 0;
             progresslabel.setText(PublicValues.language.translate("updater.availableui.updating"));
             progress.setMaximum(100000);
-            Request request = new Request.Builder().url(updateInfo.url).header("Authorization", "Bearer " + new String(Base64.getDecoder().decode(base64Token))).build();
+            Request request = new Request.Builder().url(updateInfo.release.assets.get(0).url).build();
             Response response = PublicValues.defaultHttpClient.newCall(request).execute();
             InputStream in = response.body().byteStream();
             byte[] data = new byte[1024];
@@ -180,7 +175,7 @@ public class UpdaterUI extends JFrame {
         this.updateInfo = updateInfo;
         progress.setVisible(false);
         progresslabel.setVisible(false);
-        changelog.setText(GitHubAPI.getCommitMessage(updateInfo.commit_id));
+        changelog.setText(updateInfo.release.name);
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
@@ -194,7 +189,7 @@ public class UpdaterUI extends JFrame {
     }
 
     public void open(Updater.UpdateInfo updateInfo) throws IOException {
-        changelog.setText(GitHubAPI.getCommitMessage(updateInfo.commit_id));
+        changelog.setText(updateInfo.release.name);
         this.updateInfo = updateInfo;
         super.open();
     }

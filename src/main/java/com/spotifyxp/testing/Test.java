@@ -31,10 +31,5 @@ public class Test {
         PublicValues.theme = new DarkGreen();
         PublicValues.theme.initTheme();
         PublicValues.defaultHttpClient = new OkHttpClient();
-
-        Updater.UpdateInfo updateInfo = new Updater.UpdateInfo();
-        updateInfo.commit_id = "cd0fbdc7736f45dc6569e205e773a9ce77147796";
-        updateInfo.url = "https://api.github.com/repos/SpotifyXP/SpotifyXP/actions/artifacts/2699340620/zip";
-        new Updater().invoke(updateInfo);
     }
 }

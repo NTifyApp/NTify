@@ -10,21 +10,20 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 public class Updater {
 
     public static class UpdateInfo implements Serializable {
-        public String commit_id = "";
-        public String url = "";
+       public GitHubAPI.Release release;
     }
 
     public static Optional<UpdateInfo> updateAvailable() throws IOException {
-        GitHubAPI.Artifacts artifacts = GitHubAPI.getArtifacts();
-        if(!artifacts.artifacts.get(0).workflow_run.head_sha.equals(ApplicationUtils.getFullVersion())) {
+        List<GitHubAPI.Release> releases = GitHubAPI.getReleases();
+        if(!ApplicationUtils.getFullVersion().startsWith(releases.get(0).name)) {
             UpdateInfo info = new UpdateInfo();
-            info.commit_id = artifacts.artifacts.get(0).workflow_run.head_sha;
-            info.url = artifacts.artifacts.get(0).archive_download_url;
+            info.release = releases.get(0);
             return Optional.of(info);
         }
         return Optional.empty();
