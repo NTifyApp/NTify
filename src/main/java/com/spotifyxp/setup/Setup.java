@@ -4,7 +4,6 @@ import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.deps.de.werwolf2303.javasetuptool.Logger;
 import com.spotifyxp.deps.de.werwolf2303.javasetuptool.RunnableWEC;
-import com.spotifyxp.deps.de.werwolf2303.javasetuptool.Setup.SetupBuilder;
 import com.spotifyxp.deps.de.werwolf2303.javasetuptool.components.AcceptComponent;
 import com.spotifyxp.deps.de.werwolf2303.javasetuptool.components.InstallProgressComponent;
 import com.spotifyxp.deps.mslinks.ShellLink;
@@ -17,23 +16,17 @@ import com.spotifyxp.utils.*;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
 public class Setup {
 
     @SuppressWarnings("all")
-    public Setup() {
+    public Setup() throws IOException {
         SplashPanel.frame.setVisible(false);
-        AcceptComponent thirdparty = new AcceptComponent();
-        thirdparty.load(new Resources().readToString("setup/thirdparty.html"));
-        com.spotifyxp.deps.de.werwolf2303.javasetuptool.PublicValues.logger = new Logger() {
-            @Override
-            public void catching(Throwable t) {
-                ConsoleLoggingModules.Throwable(t);
-            }
-        };
-        new com.spotifyxp.deps.de.werwolf2303.javasetuptool.Setup().open(new SetupBuilder()
+        AcceptComponent thirdparty = new AcceptComponent(new Resources().readToString("setup/thirdparty.html"));
+        com.spotifyxp.deps.de.werwolf2303.javasetuptool.Setup setup = new com.spotifyxp.deps.de.werwolf2303.javasetuptool.Setup.Builder()
                 .setProgramImage(new Resources().readToInputStream("setup.png"))
                 .setProgramName(ApplicationUtils.getName())
                 .setProgramVersion(ApplicationUtils.getVersion())
@@ -43,9 +36,9 @@ public class Setup {
                         System.exit(0);
                     }
                 })
-                .setInstallComponent(getForSystem())
-                .addComponent(thirdparty)
-                .build());
+                .addComponents(thirdparty, getForSystem())
+                .build();
+        setup.open();
         while (true) {
             try {
                 Thread.sleep(99);

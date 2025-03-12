@@ -132,6 +132,14 @@
             <version>3.3.2</version>
         </dependency>
 
+        <!-- Required for the setup -->
+        <dependency>
+            <groupId>com.weblookandfeel</groupId>
+            <artifactId>weblaf-ui</artifactId>
+            <version>1.2.14</version>
+        </dependency>
+        <!--                       -->
+
 
         <!-- Video Support -->
         <dependency>

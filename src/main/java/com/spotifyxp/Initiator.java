@@ -230,7 +230,12 @@ public class Initiator {
     static void checkSetup() {
         SplashPanel.linfo.setText("Checking setup...");
         if (!PublicValues.foundSetupArgument) {
-            new Setup();
+            try {
+                new Setup();
+            } catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+                JOptionPane.showMessageDialog(null, "Failed to open setup! Exception: " + e.getMessage());
+            }
         }
     }
 

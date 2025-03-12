@@ -50,6 +50,8 @@ def doJavaSetupTool():
         copyDirectory("deps/JavaSetupTool/src/main/java/de/werwolf2303/javasetuptool", "src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool")
         mass_replace("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool", "*.java", "import de.werwolf2303.javasetuptool", "import com.spotifyxp.deps.de.werwolf2303.javasetuptool")
         mass_replace("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool", "*.java", "package de.werwolf2303.javasetuptool", "package com.spotifyxp.deps.de.werwolf2303.javasetuptool")
+        mass_replace("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool", "*.form", "bind-to-class=\"", "bind-to-class=\"com.spotifyxp.deps.")
+        mass_replace("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool", "*.form", "de.werwolf2303.javasetuptool.swingextensions.JImagePanel", "com.spotifyxp.deps.de.werwolf2303.javasetuptool.swingextensions.JImagePanel")
     if os.path.exists("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool"):
         inp = input("Overwrite JavaSetupTool? [Y/N]")
         if inp.lower().__eq__("y"):
