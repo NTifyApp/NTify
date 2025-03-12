@@ -21,7 +21,7 @@ public class Updater {
 
     public static Optional<UpdateInfo> updateAvailable() throws IOException {
         List<GitHubAPI.Release> releases = GitHubAPI.getReleases();
-        if(!ApplicationUtils.getFullVersion().startsWith(releases.get(0).name)) {
+        if(!ApplicationUtils.getVersion().equals(releases.get(0).tag_name)) {
             UpdateInfo info = new UpdateInfo();
             info.release = releases.get(0);
             return Optional.of(info);
