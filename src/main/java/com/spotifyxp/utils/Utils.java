@@ -90,8 +90,11 @@ public class Utils {
     }
 
     public static boolean checkOrLockFile() throws IOException {
+        if(!new File(PublicValues.fileslocation, "lockfile").exists()) {
+            new File(PublicValues.fileslocation, "lockfile").createNewFile();
+        }
         FileChannel channel = FileChannel.open(
-                new File(PublicValues.configfilepath).toPath(),
+                new File(PublicValues.fileslocation, "lockfile").toPath(),
                 StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE
         );
