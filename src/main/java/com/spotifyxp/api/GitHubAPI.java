@@ -24,8 +24,6 @@ public class GitHubAPI {
     }
 
     public static List<Release> getReleases() throws IOException {
-        List<Release> releases = new Gson().fromJson(ConnectionUtils.makeGet("https://api.github.com/repos/SpotifyXP/SpotifyXP/releases", new HashMap<>()), new TypeToken<List<Release>>(){}.getType());
-        Collections.reverse(releases);
-        return releases;
+        return new Gson().fromJson(ConnectionUtils.makeGet("https://api.github.com/repos/SpotifyXP/SpotifyXP/releases", new HashMap<>()), new TypeToken<List<Release>>(){}.getType());
     }
 }
