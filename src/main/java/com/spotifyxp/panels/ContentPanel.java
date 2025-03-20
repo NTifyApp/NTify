@@ -49,6 +49,7 @@ public class ContentPanel extends JPanel {
     public static TrackPanel trackPanel;
     public static SpotifySectionPanel sectionPanel;
     public static ErrorDisplay errorDisplay;
+    public static InjectorStore injectorStore;
 
     public ContentPanel() throws IOException {
         PublicValues.contentPanel = this;
@@ -89,6 +90,8 @@ public class ContentPanel extends JPanel {
         createTrackPanel();
         SplashPanel.linfo.setText("Creating settingsPanel...");
         createSettings();
+        SplashPanel.linfo.setText("Creating injectorStore...");
+        injectorStore = new InjectorStore();
         SplashPanel.linfo.setText("Adding window mouse listener...");
         SplashPanel.linfo.setText("Deciding population of hotlist...");
         SplashPanel.linfo.setText("Making window interactive...");
@@ -374,11 +377,7 @@ public class ContentPanel extends JPanel {
         });
         audioVisualizer.addActionListener(e -> PublicValues.visualizer.open());
         extensions.addActionListener(e -> {
-            try {
-                new InjectorStore().open();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            injectorStore.open();
         });
         settingsItem.addActionListener(new AsyncActionListener(e -> settings.open()));
         logout.addActionListener(new AsyncActionListener(e -> {

@@ -34,6 +34,17 @@ public class Injector {
         if (!new File(PublicValues.appLocation, "Extensions").exists()) {
             new File(PublicValues.appLocation, "Extensions").mkdir();
         } else {
+            for(File file : new File(PublicValues.appLocation, "Extensions").listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".jar");
+                }
+            })) {
+                if(new File(file.getParentFile(), file.getName() + ".updated").exists()) {
+                    file.delete();
+                    new File(file.getParentFile(), file.getName() + ".updated").renameTo(file);
+                }
+            }
             availableExtensions = new File(PublicValues.appLocation, "Extensions").listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {

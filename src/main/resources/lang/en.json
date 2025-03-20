@@ -177,9 +177,6 @@
  "theme.tabpanelfield": "TabPanel Background Color",
  "theme.fontfield": "Font Color",
  "theme.touse": "Theme to use",
- "extension.updateAvailable.update": "Update",
- "extension.updater.tab": "Updater",
- "extension.store.tab": "Store",
  "addplaylist.title": "Create playlist",
  "addplaylist.ctxmenu.fromurl": "From url",
  "addplaylist.ctxmenu.fromfile": "From file",
@@ -235,5 +232,16 @@
  "updater.noupdatedialog.title": "SpotifyXP - Updater",
  "updater.noupdatedialog.message": "No update available",
  "utils.browserpath.unabletoopen.title": "Unable to open page",
- "utils.browserpath.unabletoopen.message": "Java reports that the Desktop class is not supported and no browser was set in SpotifyXP's settings"
+ "utils.browserpath.unabletoopen.message": "Java reports that the Desktop class is not supported and that no browser was set in SpotifyXP's settings",
+ "extensions.tab1": "Installed",
+ "extensions.tab2": "Store",
+ "extensions.module.updateButton": "Update",
+ "extensions.module.removeButton": "Remove",
+ "extensions.module.installButton": "Install",
+ "extensions.module.removal.dialog.title": "Info",
+ "extensions.module.removal.dialog.description": "The extension will be uninstalled upon closing SpotifyXP",
+ "extensions.module.install.dialog.title": "Info",
+ "extensions.module.install.dialog.description": "The extension will be loaded upon starting SpotifyXP",
+ "extensions.module.update.dialog.title": "Info",
+ "extensions.module.update.dialog.description": "The extension will be updated upon restarting SpotifyXP"
 }
