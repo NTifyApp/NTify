@@ -1,5 +1,6 @@
 package com.spotifyxp.injector;
 
+import com.google.gson.Gson;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
@@ -84,6 +85,7 @@ public class Injector {
      *
      * @param path path of jar file
      */
+    //ToDo: Implement dependencies in plugin.json
     @SuppressWarnings("unchecked")
     public void loadJarAt(String path) {
         if (!path.split("\\.")[path.split("\\.").length - 1].equalsIgnoreCase("jar")) return; //Invalid file
@@ -95,8 +97,8 @@ public class Injector {
         boolean foundAuthor = false;
         try {
             URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{new File(path).toURI().toURL()});
-            JSONObject config = new JSONObject(IOUtils.toString(Objects.requireNonNull(classLoader.getResourceAsStream("plugin.json")), Charset.defaultCharset()));
-            Class<?> jarclass = classLoader.loadClass(config.getString("main"));
+            InjectorAPI.JarExtension pluginJSON = new Gson().fromJson(IOUtils.toString(Objects.requireNonNull(classLoader.getResourceAsStream("plugin.json")), Charset.defaultCharset()), InjectorAPI.JarExtension.class);
+            Class<?> jarclass = classLoader.loadClass(pluginJSON.getMain());
             Object t = jarclass.newInstance();
             for (Method m : jarclass.getDeclaredMethods()) {
                 if (m.getName().equals("getIdentifier")) {
@@ -119,6 +121,22 @@ public class Injector {
                     entry.dependencies = (ArrayList<Dependency>) o;
                 }
             }
+            //Support for the new plugin.json
+            if(!foundVersion || !foundAuthor || !foundIdentifier) {
+                if(pluginJSON.getVersion() != null) {
+                    entry.version = pluginJSON.getVersion();
+                    foundVersion = true;
+                }
+                if(pluginJSON.getAuthor() != null) {
+                    entry.author = pluginJSON.getAuthor();
+                    foundAuthor = true;
+                }
+                if(pluginJSON.getIdentifier() != null) {
+                    entry.identifier = pluginJSON.getIdentifier();
+                    foundIdentifier = true;
+                }
+            }
+            //----
             entry.filename = new File(path).getName();
             if (foundVersion & foundIdentifier) {
                 boolean metDependencies = true;
