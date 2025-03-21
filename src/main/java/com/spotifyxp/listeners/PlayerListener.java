@@ -56,6 +56,7 @@ public class PlayerListener implements Player.EventsListener {
 
     public PlayerListener(com.spotifyxp.api.Player p) {
         pl = p;
+        timer.schedule(new PlayerThread(), 0, 1000);
     }
 
     @Override
@@ -77,7 +78,6 @@ public class PlayerListener implements Player.EventsListener {
             PublicValues.lyricsDialog.open(playableId.toSpotifyUri());
         }
         Events.triggerEvent(SpotifyXPEvents.trackNext.getName());
-        timer.schedule(new PlayerThread(), 0, 1000);
         try {
             StringBuilder artists = new StringBuilder();
             switch (playableId.toSpotifyUri().split(":")[1]) {
