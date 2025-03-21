@@ -23,10 +23,7 @@ import com.spotifyxp.support.SupportModuleLoader;
 import com.spotifyxp.theming.ThemeLoader;
 import com.spotifyxp.updater.Updater;
 import com.spotifyxp.updater.UpdaterUI;
-import com.spotifyxp.utils.ApplicationUtils;
-import com.spotifyxp.utils.GraphicalMessage;
-import com.spotifyxp.utils.Resources;
-import com.spotifyxp.utils.Utils;
+import com.spotifyxp.utils.*;
 import okhttp3.*;
 import org.apache.commons.io.output.NullPrintStream;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +51,7 @@ public class Initiator {
         System.setProperty("http.agent", ApplicationUtils.getUserAgent()); //Setting the user agent string that SpotifyXP uses
         checkDebug(); //Checking if debug is enabled
         detectOS(); //Detecting the operating system
+        detectArchitecture();
         checkSetup();
         initLanguageSupport(); //Initializing the language support
         initConfig(); //Initializing the configuration
@@ -148,6 +146,11 @@ public class Initiator {
         SplashPanel.linfo.setText("Detecting operating system...");
         PublicValues.osType = libDetect.getDetectedOS();
         new SupportModuleLoader().loadModules();
+    }
+
+    static void detectArchitecture() {
+        SplashPanel.linfo.setText("Detecting architecture...");
+        new ArchitectureDetection();
     }
 
     static void initializeVideoPlayback() {
