@@ -12,6 +12,7 @@ import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
+import com.spotifyxp.panels.Queue;
 import com.spotifyxp.utils.ClipboardUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -148,7 +149,7 @@ public enum GlobalContextMenus {
 
         @Override
         public boolean shouldBeAdded(JComponent component, Class<?> containingClass) {
-            return true;
+            return component instanceof JTable;
         }
 
         @Override
@@ -245,7 +246,7 @@ public enum GlobalContextMenus {
 
         @Override
         public boolean shouldBeAdded(JComponent component, Class<?> containingClass) {
-            return true;
+            return component instanceof JTable;
         }
 
         @Override
@@ -275,7 +276,7 @@ public enum GlobalContextMenus {
 
         @Override
         public boolean shouldBeAdded(JComponent component, Class<?> containingClass) {
-            return true;
+            return !(containingClass.isAssignableFrom(Queue.class));
         }
 
         @Override
@@ -310,7 +311,7 @@ public enum GlobalContextMenus {
 
         @Override
         public boolean shouldBeAdded(JComponent component, Class<?> containingClass) {
-            return true;
+            return component instanceof JTable;
         }
 
         @Override
