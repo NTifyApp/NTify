@@ -84,6 +84,8 @@ public class InjectorStore extends JFrame {
 
         installedTab.setLayout(new BoxLayout(installedTab, BoxLayout.Y_AXIS));
         availableTab.setLayout(new BoxLayout(availableTab, BoxLayout.Y_AXIS));
+
+        setTitle(PublicValues.language.translate("extension.title"));
     }
 
     private void refreshExtensionsAvailable() throws IOException {

@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import re
 
 root = "src/main/java"
 langf = "src/main/resources/lang/"
@@ -61,6 +62,13 @@ for f in files:
         line = file.readline()
         if not line:
             break
+        if (file.name.endswith("ConfigValues.java")):
+            regex = r'"([^"]*)"'
+            parameters = re.findall(regex, line)
+            if len(parameters) > 0:
+                for parameter in parameters:
+                    used.append(parameter)
+            continue
         if not line.__contains__("PublicValues.language.translate"):
             continue
         if not line.__contains__("translate(\""):
