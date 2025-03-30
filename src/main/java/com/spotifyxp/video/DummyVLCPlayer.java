@@ -9,7 +9,7 @@ public class DummyVLCPlayer implements VLCPlayer {
     }
 
     @Override
-    public Panel getComponent() {
+    public Container getComponent() {
         throw new UnsupportedOperationException("This is a dummy VLC player");
     }
 
@@ -55,6 +55,11 @@ public class DummyVLCPlayer implements VLCPlayer {
 
     @Override
     public void resume() {
+        throw new UnsupportedOperationException("This is a dummy VLC player");
+    }
+
+    @Override
+    public void removeOnTakeOver() {
         throw new UnsupportedOperationException("This is a dummy VLC player");
     }
 

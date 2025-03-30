@@ -40,7 +40,6 @@ public class PiPPlayer extends JFrame {
     public static JImageButton closeButton;
     public static JImageButton nextButton;
     public static JImageButton previousButton;
-    public static JPanel videoContainer;
 
     public static String pausePath = "/icons/playerpausedark.svg";
     public static String playPath = "/icons/playerplaydark.svg";
@@ -57,7 +56,7 @@ public class PiPPlayer extends JFrame {
 
     public static ArrayList<JImageButton> controlButtons ;
 
-    public static javax.swing.JFrame controlsWindow;
+    public static JPanel controlsContainer;
 
     void resizeComponents() {
         for(Component component : container.getComponents()) {
@@ -122,7 +121,7 @@ public class PiPPlayer extends JFrame {
 
         @Override
         public void mouseEntered(MouseEvent e) {
-            controlsWindow.setVisible(true);
+            controlsContainer.setVisible(true);
             revalidate();
             repaint();
         }
@@ -130,7 +129,7 @@ public class PiPPlayer extends JFrame {
         @Override
         public void mouseExited(MouseEvent e) {
             if(contains(e.getPoint())) return;
-            controlsWindow.setVisible(false);
+            controlsContainer.setVisible(false);
             revalidate();
             repaint();
         }
@@ -213,23 +212,7 @@ public class PiPPlayer extends JFrame {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                PublicValues.vlcPlayer.stop();
-                PublicValues.vlcPlayer.release();
                 dispose();
-                controlsWindow.dispose();
-            }
-        });
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                if(controlsWindow == null) return;
-                controlsWindow.setSize(new Dimension(getSize().width - (resizingRectSpacing * 2), getSize().height - (resizingRectSpacing * 2)));
-            }
-
-            @Override
-            public void componentMoved(ComponentEvent e) {
-                if(controlsWindow == null) return;
-                controlsWindow.setLocation(getLocation().x + resizingRectSpacing, getLocation().y + resizingRectSpacing);
             }
         });
         setAlwaysOnTop(true);
@@ -277,13 +260,6 @@ public class PiPPlayer extends JFrame {
         songImage.setSize(initialWindowSize, initialWindowSize);
         container.add(songImage, JLayeredPane.DEFAULT_LAYER);
 
-
-        videoContainer = new JPanel();
-        videoContainer.setBackground(Color.BLACK);
-        videoContainer.setVisible(false);
-        videoContainer.setLayout(new BorderLayout());
-        container.add(videoContainer, JLayeredPane.PALETTE_LAYER);
-
         closeButton = new JImageButton();
         closeButton.setBorderPainted(false);
         closeButton.setImage(new Resources().readToInputStream(closePath));
@@ -291,10 +267,7 @@ public class PiPPlayer extends JFrame {
         closeButton.addActionListener(new AsyncActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                PublicValues.vlcPlayer.stop();
-                PublicValues.vlcPlayer.release();
                 dispose();
-                controlsWindow.dispose();
             }
         }));
         closeButton.setBounds(resizingRect.width / 2 - buttonSize / 2, 0, buttonSize, buttonSize);
@@ -346,30 +319,17 @@ public class PiPPlayer extends JFrame {
         nextButton.setBounds(resizingRect.width - buttonSize, resizingRect.height - buttonSize, buttonSize, buttonSize);
         controlButtons.add(nextButton);
 
-        controlsWindow = new javax.swing.JFrame();
-        controlsWindow.addMouseListener(mouseAdapter);
-        controlsWindow.addMouseMotionListener(mouseMotionListener);
-        controlsWindow.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseExited(MouseEvent e) {
-                controlsWindow.setVisible(false);
-            }
-        });
-        controlsWindow.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentShown(ComponentEvent e) {
-                revalidate();
-                repaint();
-            }
-        });
-        controlsWindow.setLayout(null);
-        controlsWindow.add(closeButton);
-        controlsWindow.add(nextButton);
-        controlsWindow.add(playPause);
-        controlsWindow.add(previousButton);
-        controlsWindow.setUndecorated(true);
-        controlsWindow.setBackground(new Color(0, 0, 0, 0));
-        controlsWindow.setAlwaysOnTop(true);
+        controlsContainer = new JPanel();
+        controlsContainer.setName("ResizeRect");
+        controlsContainer.setBackground(new Color(0, 0, 0, 0));
+        controlsContainer.setOpaque(false);
+        controlsContainer.setLayout(null);
+        controlsContainer.setVisible(false);
+        controlsContainer.add(closeButton);
+        controlsContainer.add(previousButton);
+        controlsContainer.add(playPause);
+        controlsContainer.add(nextButton);
+        container.add(controlsContainer, JLayeredPane.PALETTE_LAYER);
 
         Events.subscribe(SpotifyXPEvents.playerresume.getName(), new EventSubscriber() {
             @Override
@@ -414,134 +374,10 @@ public class PiPPlayer extends JFrame {
     }
 
     @Override
-    public void close() {
-        if(PublicValues.vlcPlayer.isVideoPlaybackEnabled()) {
-            videoContainer.remove(PublicValues.vlcPlayer.getComponent());
-            PublicValues.vlcPlayer.getComponent().getComponent(0).removeMouseListener(mouseAdapter);
-            PublicValues.vlcPlayer.getComponent().getComponent(0).removeMouseMotionListener(mouseMotionListener);
-            Events.unsubscribe(SpotifyXPEvents.trackNext.getName(), onNextTrack);
-            Events.unsubscribe(SpotifyXPEvents.playerpause.getName(), onPause);
-            Events.unsubscribe(SpotifyXPEvents.playerresume.getName(), onPlay);
-        }
-        super.close();
-    }
-
-    EventSubscriber onPause = new EventSubscriber() {
-        @Override
-        public void run(Object... data) {
-            if(!videoContainer.isVisible()) return;
-            if(PublicValues.vlcPlayer.wasReleased()) return;
-            if(!PublicValues.vlcPlayer.isPlaying()) return;
-            PublicValues.vlcPlayer.pause();
-        }
-    };
-
-    EventSubscriber onPlay = new EventSubscriber() {
-        @Override
-        public void run(Object... data) {
-            if(!videoContainer.isVisible()) return;
-            if(PublicValues.vlcPlayer.wasReleased()) return;
-            if(PublicValues.vlcPlayer.isPlaying()) return;
-            PublicValues.vlcPlayer.resume();
-        }
-    };
-
-    private String convertUrlToName(String url) {
-        return url.substring(url.lastIndexOf('/') + 1);
-    }
-
-    void clearCache() throws NullPointerException{
-        for(File file : Objects.requireNonNull(cachePath.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.getName().toLowerCase().endsWith(".mp4");
-            }
-        }))) {
-            if(!file.delete()) {
-                ConsoleLogging.warning("Failed to remove file in cvnscache");
-            }
-        }
-    }
-
-    private void loadCanvas(String uri) {
-        try {
-            if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
-                clearCache();
-                String cvnsUrl = PublicValues.session.api().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
-                        .addEntities(CanvazOuterClass.EntityCanvazRequest.Entity.newBuilder()
-                                .setEntityUri(uri)
-                                .buildPartial())
-                        .build()).getCanvases(0).getUrl();
-                try (BufferedInputStream in = new BufferedInputStream(new URL(cvnsUrl).openStream());
-                     FileOutputStream fileOutputStream = new FileOutputStream(new File(cachePath, convertUrlToName(cvnsUrl)));) {
-                    byte[] dataBuffer = new byte[1024];
-                    int bytesRead;
-                    while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
-                        fileOutputStream.write(dataBuffer, 0, bytesRead);
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                videoContainer.setVisible(true);
-                PublicValues.vlcPlayer.play(new File(cachePath, convertUrlToName(cvnsUrl)).getAbsolutePath());
-            } else {
-                String url = PublicValues.session.api().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
-                        .addEntities(CanvazOuterClass.EntityCanvazRequest.Entity.newBuilder()
-                                .setEntityUri(uri)
-                                .buildPartial())
-                        .build()).getCanvases(0).getUrl();
-                videoContainer.setVisible(true);
-                PublicValues.vlcPlayer.play(url);
-            }
-        } catch (IndexOutOfBoundsException ignored) {
-            // No canvas for track
-            ConsoleLogging.info("No canvas available for track");
-            videoContainer.setVisible(false);
-        } catch (IOException | MercuryClient.MercuryException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    EventSubscriber onNextTrack = new EventSubscriber() {
-        @Override
-        public void run(Object... data) {
-            if(!videoContainer.isVisible()) return;
-            if(PublicValues.vlcPlayer.wasReleased()) return;
-            PublicValues.vlcPlayer.stop();
-            MetadataWrapper metadataWrapper = InstanceManager.getSpotifyPlayer().currentMetadata();
-            if (metadataWrapper == null || metadataWrapper.id == null) {
-                videoContainer.setVisible(false);
-                return;
-            }
-            if(!metadataWrapper.isTrack()) {
-                // Canvases are only available for tracks
-                videoContainer.setVisible(false);
-                return;
-            }
-            loadCanvas(metadataWrapper.id.toSpotifyUri());
-        }
-    };
-
-    @Override
     public void open() {
         super.open();
         resizeComponents();
         setLocation(ContentPanel.frame.getLocation());
-        controlsWindow.setLocation(getLocation());
-        controlsWindow.setSize(getSize());
-        if(PublicValues.vlcPlayer.isVideoPlaybackEnabled()) {
-            PublicValues.vlcPlayer.init(this::close);
-            PublicValues.vlcPlayer.setLooping(true);
-            PublicValues.vlcPlayer.getComponent().getComponent(0).addMouseListener(mouseAdapter);
-            PublicValues.vlcPlayer.getComponent().getComponent(0).addMouseMotionListener(mouseMotionListener);
-            videoContainer.add(PublicValues.vlcPlayer.getComponent(), BorderLayout.CENTER);
-            revalidate();
-            repaint();
-            loadCanvas(Objects.requireNonNull(InstanceManager.getSpotifyPlayer().currentMetadata()).id.toSpotifyUri());
-            Events.subscribe(SpotifyXPEvents.trackNext.getName(), onNextTrack);
-            Events.subscribe(SpotifyXPEvents.playerpause.getName(), onPause);
-            Events.subscribe(SpotifyXPEvents.playerresume.getName(), onPlay);
-        }
         if(InstanceManager.getSpotifyPlayer().isPaused()) {
             playPause.setImage(new Resources().readToInputStream(playPath));
         }else{

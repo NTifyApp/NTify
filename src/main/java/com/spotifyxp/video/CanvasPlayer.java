@@ -3,6 +3,8 @@ package com.spotifyxp.video;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.deps.com.spotify.canvaz.CanvazOuterClass;
+import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Episode;
+import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.events.EventSubscriber;
@@ -23,22 +25,11 @@ import java.util.Objects;
 
 public class CanvasPlayer extends JFrame {
     private File cachePath;
+    private boolean videoLoaded = false;
 
     public CanvasPlayer() {
         setTitle("SpotifyXP - Canvas"); // ToDo: Translate
         setPreferredSize(new Dimension(290, 460));
-        Events.subscribe(SpotifyXPEvents.trackNext.getName(), onNextTrack);
-        Events.subscribe(SpotifyXPEvents.playerpause.getName(), onPause);
-        Events.subscribe(SpotifyXPEvents.playerresume.getName(), onPlay);
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                PlayerArea.canvasPlayerButton.isFilled = false;
-                PlayerArea.canvasPlayerButton.setImage(Graphics.VIDEO.getPath());
-                PublicValues.vlcPlayer.stop();
-                PublicValues.vlcPlayer.release();
-            }
-        });
         if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
             cachePath = new File(PublicValues.appLocation, "cvnscache");
             if(!cachePath.exists()) {
@@ -48,14 +39,19 @@ public class CanvasPlayer extends JFrame {
                 }
             }
         }
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                close();
+            }
+        });
     }
 
     EventSubscriber onPause = new EventSubscriber() {
         @Override
         public void run(Object... data) {
-            if(!isVisible()) return;
-            if(PublicValues.vlcPlayer.wasReleased()) return;
-            if(!PublicValues.vlcPlayer.isPlaying()) return;
+            if(!videoLoaded) return;
             PublicValues.vlcPlayer.pause();
         }
     };
@@ -63,9 +59,7 @@ public class CanvasPlayer extends JFrame {
     EventSubscriber onPlay = new EventSubscriber() {
         @Override
         public void run(Object... data) {
-            if(!isVisible()) return;
-            if(PublicValues.vlcPlayer.wasReleased()) return;
-            if(PublicValues.vlcPlayer.isPlaying()) return;
+            if(!videoLoaded) return;
             PublicValues.vlcPlayer.resume();
         }
     };
@@ -96,6 +90,7 @@ public class CanvasPlayer extends JFrame {
                                 .setEntityUri(uri)
                                 .buildPartial())
                         .build()).getCanvases(0).getUrl();
+                if(cvnsUrl.isEmpty()) return;
                 try (BufferedInputStream in = new BufferedInputStream(new URL(cvnsUrl).openStream());
                      FileOutputStream fileOutputStream = new FileOutputStream(new File(cachePath, convertUrlToName(cvnsUrl)));) {
                     byte[] dataBuffer = new byte[1024];
@@ -107,12 +102,16 @@ public class CanvasPlayer extends JFrame {
                     throw new RuntimeException(e);
                 }
                 PublicValues.vlcPlayer.play(new File(cachePath, convertUrlToName(cvnsUrl)).getAbsolutePath());
+                videoLoaded = true;
             } else {
-                PublicValues.vlcPlayer.play(PublicValues.session.api().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
+                String cvnsUrl = PublicValues.session.api().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
                         .addEntities(CanvazOuterClass.EntityCanvazRequest.Entity.newBuilder()
                                 .setEntityUri(uri)
                                 .buildPartial())
-                        .build()).getCanvases(0).getUrl());
+                        .build()).getCanvases(0).getUrl();
+                if(cvnsUrl.isEmpty()) return;
+                PublicValues.vlcPlayer.play(cvnsUrl);
+                videoLoaded = true;
             }
         } catch (IndexOutOfBoundsException ignored) {
             // No canvas for track
@@ -125,33 +124,42 @@ public class CanvasPlayer extends JFrame {
     EventSubscriber onNextTrack = new EventSubscriber() {
         @Override
         public void run(Object... data) {
-            if(!isVisible()) return;
-            if(PublicValues.vlcPlayer.wasReleased()) return;
             PublicValues.vlcPlayer.stop();
-            MetadataWrapper metadataWrapper = InstanceManager.getSpotifyPlayer().currentMetadata();
-            if (metadataWrapper == null || metadataWrapper.id == null) {
-                return;
+            String uri = "";
+            if (data[0] instanceof Track) {
+                uri = ((Track) data[0]).getUri();
+            } else if (data[0] instanceof Episode) {
+                uri = ((Episode) data[0]).getUri();
+            } else {
+                ConsoleLogging.error("Invalid object type in next track: " + data[0].getClass().getSimpleName());
             }
-            if(!metadataWrapper.isTrack()) {
-                // Canvases are only available for tracks
-                return;
-            }
-            loadCanvas(metadataWrapper.id.toSpotifyUri());
+            loadCanvas(uri);
         }
     };
 
     @Override
     public void close() {
         remove(PublicValues.vlcPlayer.getComponent());
-        super.close();
+        PlayerArea.canvasPlayerButton.isFilled = false;
+        PlayerArea.canvasPlayerButton.setImage(Graphics.VIDEO.getPath());
+        PublicValues.vlcPlayer.stop();
+        PublicValues.vlcPlayer.release();
+        Events.unsubscribe(SpotifyXPEvents.trackNext.getName(), onNextTrack);
+        Events.unsubscribe(SpotifyXPEvents.playerpause.getName(), onPause);
+        Events.unsubscribe(SpotifyXPEvents.playerresume.getName(), onPlay);
+        PublicValues.vlcPlayer.removeOnTakeOver();
+        dispose();
     }
 
     @Override
     public void open() throws NullPointerException {
         add(PublicValues.vlcPlayer.getComponent());
+        super.open();
+        Events.subscribe(SpotifyXPEvents.trackNext.getName(), onNextTrack);
+        Events.subscribe(SpotifyXPEvents.playerpause.getName(), onPause);
+        Events.subscribe(SpotifyXPEvents.playerresume.getName(), onPlay);
         PublicValues.vlcPlayer.init(this::close);
         PublicValues.vlcPlayer.setLooping(true);
-        super.open();
         loadCanvas(Objects.requireNonNull(InstanceManager.getSpotifyPlayer().currentMetadata()).id.toSpotifyUri());
     }
 }

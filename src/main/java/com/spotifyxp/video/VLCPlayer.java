@@ -8,7 +8,7 @@ import java.awt.*;
 **/
 public interface VLCPlayer {
     boolean isVideoPlaybackEnabled();
-    Panel getComponent();
+    Container getComponent();
 
     /**
      * @param onTakeover - Will be called when a new class requests video playback
@@ -22,6 +22,7 @@ public interface VLCPlayer {
     boolean isPlaying();
     boolean wasReleased();
     void resume();
+    void removeOnTakeOver();
 
     /**
      * Releases system resources needed for vlc

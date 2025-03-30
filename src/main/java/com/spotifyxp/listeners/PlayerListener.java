@@ -77,12 +77,12 @@ public class PlayerListener implements Player.EventsListener {
         if (PlayerArea.playerAreaLyricsButton.isFilled) {
             PublicValues.lyricsDialog.open(playableId.toSpotifyUri());
         }
-        Events.triggerEvent(SpotifyXPEvents.trackNext.getName());
         try {
             StringBuilder artists = new StringBuilder();
             switch (playableId.toSpotifyUri().split(":")[1]) {
                 case "episode":
                     Episode episode = InstanceManager.getSpotifyApi().getEpisode(playableId.toSpotifyUri().split(":")[2]).build().execute();
+                    Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), episode);
                     PlayerArea.playerPlayTimeTotal.setText(TrackUtils.getHHMMSSOfTrack(episode.getDurationMs()));
                     PlayerArea.playerTitle.setText(episode.getName());
                     artists.append(episode.getShow().getPublisher());
@@ -95,6 +95,7 @@ public class PlayerListener implements Player.EventsListener {
                     break;
                 case "track":
                     Track track = InstanceManager.getSpotifyApi().getTrack(playableId.toSpotifyUri().split(":")[2]).build().execute();
+                    Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), track);
                     PlayerArea.playerPlayTimeTotal.setText(TrackUtils.getHHMMSSOfTrack(track.getDurationMs()));
                     PlayerArea.playerTitle.setText(track.getName());
                     for (ArtistSimplified artist : track.getArtists()) {
@@ -114,6 +115,7 @@ public class PlayerListener implements Player.EventsListener {
                 default:
                     ConsoleLogging.warning(PublicValues.language.translate("playerlistener.playableid.unknowntype"));
                     Track t = InstanceManager.getSpotifyApi().getTrack(playableId.toSpotifyUri().split(":")[2]).build().execute();
+                    Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), t);
                     PlayerArea.playerPlayTimeTotal.setText(String.valueOf(t.getDurationMs()));
                     PlayerArea.playerTitle.setText(t.getName());
                     for (ArtistSimplified artist : t.getArtists()) {
