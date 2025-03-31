@@ -19,49 +19,12 @@ import java.util.regex.Pattern;
 
 public class LogPrintStream {
     private final PrintStream internalPrintStream;
-    private boolean enableLogging = true;
+    private boolean enableLogging = false;
     private String currentLogFile = "";
+    private FileWriter writer = null;
 
     public PrintStream asPrintStream() {
         return internalPrintStream;
-    }
-
-    public static void sortFilesByDate(File[] files) {
-        Pattern pattern = Pattern.compile("-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("-MM-dd_HH-mm-ss");
-        Arrays.sort(files, (file1, file2) -> {
-            LocalDateTime dateTime1 = null;
-            LocalDateTime dateTime2 = null;
-            Matcher matcher1 = pattern.matcher(FilenameUtils.removeExtension(file1.getName()));
-            if (matcher1.find()) {
-                String datePart = matcher1.group();
-                try {
-                    dateTime1 = LocalDateTime.parse(datePart, formatter);
-                } catch (DateTimeParseException e) {
-                    ConsoleLogging.warning("Exception while sorting logs");
-                    ConsoleLogging.Throwable(e);
-                }
-            }
-            Matcher matcher2 = pattern.matcher(FilenameUtils.removeExtension(file2.getName()));
-            if (matcher2.find()) {
-                String datePart = matcher2.group();
-                try {
-                    dateTime2 = LocalDateTime.parse(datePart, formatter);
-                } catch (DateTimeParseException e) {
-                    ConsoleLogging.warning("Exception while sorting logs");
-                    ConsoleLogging.Throwable(e);
-                }
-            }
-            if (dateTime1 == null && dateTime2 == null) {
-                return 0;
-            } else if (dateTime1 == null) {
-                return 1;
-            } else if (dateTime2 == null) {
-                return -1;
-            } else {
-                return dateTime1.compareTo(dateTime2);
-            }
-        });
     }
 
     public void setLogging(boolean logging) {
@@ -77,36 +40,43 @@ public class LogPrintStream {
             }
         });
         if(foundLogs != null && foundLogs.length > PublicValues.config.getInt(ConfigValues.logging_maxkept.name)) {
-            sortFilesByDate(foundLogs);
             for(int i = 0; i < (PublicValues.config.getInt(ConfigValues.logging_maxkept.name) - foundLogs.length); i++) {
                 if(!foundLogs[i].delete()) {
                     ConsoleLogging.error("Failed to delete log: " + foundLogs[i].getName());
                 }
             }
         }
+        if(enableLogging) {
+            try {
+                File logs = new File(PublicValues.fileslocation, "logs");
+                if (!logs.exists()) {
+                    if (!logs.mkdir()) {
+                        throw new RuntimeException("Failed to create logs directory");
+                    }
+                }
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+                String logFileName = new File(formatter.format(new Date()) + ".log").getName();
+                currentLogFile = logFileName;
+                if (!new File(logs, logFileName).createNewFile()) {
+                    throw new RuntimeException("Failed to create log file");
+                }
+                writer = new FileWriter(new File(logs, logFileName));
+            }catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+            }
+        }
     }
 
     public LogPrintStream(boolean enablePrint, PrintStream originalPrintStream) throws IOException {
-        File logs = new File(PublicValues.fileslocation, "logs");
-        if(!logs.exists()) {
-            if(!logs.mkdir()) {
-                throw new RuntimeException("Failed to create logs directory");
-            }
-        }
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-        String logFileName = new File(formatter.format(new Date()) + ".log").getName();
-        currentLogFile = logFileName;
-        if(!new File(logs, logFileName).createNewFile()) {
-            throw new RuntimeException("Failed to create log file");
-        }
-        FileWriter writer = new FileWriter(new File(logs, logFileName));
         Runtime.getRuntime().addShutdownHook(new Thread("logprintstream-shutdown-hook") {
             @Override
             public void run() {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if(enableLogging) {
+                    try {
+                        writer.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         });
