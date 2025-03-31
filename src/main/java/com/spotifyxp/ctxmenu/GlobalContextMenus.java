@@ -281,6 +281,7 @@ public enum GlobalContextMenus {
 
         @Override
         public boolean showItem(JComponent component, ArrayList<String> uris) {
+            if(uris == null) return false;
             boolean containsOtherThanTrackOrEpisode = false;
             for(String uri : uris) {
                 if(!uri.split(":")[1].equalsIgnoreCase("track")

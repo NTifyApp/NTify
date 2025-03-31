@@ -18,30 +18,81 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.*;
+import java.util.Timer;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class HomePanel extends JScrollPane implements View {
     public static JPanel content;
     public static Optional<UnofficialSpotifyAPI.HomeTab> tab;
     public static ContextMenu menu;
-    public static CompletableFuture<?> future;
+    public static Timer reloadTimer;
+    public static TimerTask nextReload;
 
     public HomePanel() {
         content = new JPanel();
         content.setLayout(null);
 
+        reloadTimer = new Timer();
+
         menu = new ContextMenu(content, null, getClass());
-        menu.addItem("Refresh", this::refill);
+        menu.addItem(PublicValues.language.translate("ui.general.refresh"), () -> {
+            nextReload.cancel();
+            reloadHome();
+        });
 
         setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         setVisible(false);
         setViewportView(content);
 
-        future = new CompletableFuture<>();
+        CompletableFuture<Boolean> homeFuture = loadHome();
+
+        Events.subscribe(SpotifyXPEvents.onFrameVisible.getName(), (args) -> {
+            Thread thread = new Thread(() -> {
+                try {
+                    homeFuture.join();
+                }catch (CancellationException e) {
+                    ConsoleLogging.error("Failed to get home tab");
+                    return;
+                }
+                SwingUtilities.invokeLater(this::fill);
+                nextReload = new TimerTask() {
+                    @Override
+                    public void run() {
+                        reloadHome();
+                    }
+                };
+                reloadTimer.schedule(nextReload, Date.from(Instant.now().plusSeconds(3600))); //Every hour
+            }, "Wait for home tab");
+            thread.start();
+        });
+    }
+
+    private void reloadHome() {
+        Thread thread = new Thread(() -> {
+            try {
+                loadHome().join();
+            }catch (CancellationException e) {
+                ConsoleLogging.error("Failed to get home tab");
+                return;
+            }
+            content.removeAll();
+            SwingUtilities.invokeLater(this::fill);
+            nextReload = new TimerTask() {
+                @Override
+                public void run() {
+                    reloadHome();
+                }
+            };
+            reloadTimer.schedule(nextReload, Date.from(Instant.now().plusSeconds(3600))); //Every hour
+        }, "Wait for home tab");
+        thread.start();
+    }
+
+    private CompletableFuture<Boolean> loadHome() {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
         Thread requestTabThread = new Thread(() -> {
             try {
                 tab = InstanceManager.getUnofficialSpotifyApi().getHomeTab();
@@ -52,20 +103,7 @@ public class HomePanel extends JScrollPane implements View {
             }
         }, "Request home tab");
         requestTabThread.start();
-        Events.subscribe(SpotifyXPEvents.onFrameVisible.getName(), (args) -> {
-            Thread thread = new Thread(() -> {
-                try {
-                    future.get();
-                }catch (CancellationException e) {
-                    ConsoleLogging.error("Failed to get home tab");
-                    return;
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
-                }
-                SwingUtilities.invokeLater(this::fill);
-            }, "Wait for home tab");
-            thread.start();
-        });
+        return future;
     }
 
     public enum ContentTypes {
@@ -213,28 +251,6 @@ public class HomePanel extends JScrollPane implements View {
             addModule(section, titleHeight, xCache, yCache, yCache - titleHeight - titleSpacing, width, height);
             yCache += height + spacing;
         }
-    }
-
-    void requestHome() {
-        Thread thread = new Thread(() -> {
-            try {
-                tab = InstanceManager.getUnofficialSpotifyApi().getHomeTab();
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        fill();
-                    }
-                });
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, "Request home");
-        thread.start();
-    }
-
-    void refill() {
-        content.removeAll();
-        requestHome();
     }
 
     void fill() {
