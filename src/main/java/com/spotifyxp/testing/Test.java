@@ -7,7 +7,6 @@ import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.lib.libLanguage;
 import com.spotifyxp.support.LinuxSupportModule;
 import com.spotifyxp.theming.themes.DarkGreen;
-import com.spotifyxp.updater.Updater;
 import okhttp3.OkHttpClient;
 
 import java.io.IOException;

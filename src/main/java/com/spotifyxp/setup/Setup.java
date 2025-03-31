@@ -2,7 +2,6 @@ package com.spotifyxp.setup;
 
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.de.werwolf2303.javasetuptool.Logger;
 import com.spotifyxp.deps.de.werwolf2303.javasetuptool.RunnableWEC;
 import com.spotifyxp.deps.de.werwolf2303.javasetuptool.components.AcceptComponent;
 import com.spotifyxp.deps.de.werwolf2303.javasetuptool.components.InstallProgressComponent;
@@ -10,7 +9,6 @@ import com.spotifyxp.deps.mslinks.ShellLink;
 import com.spotifyxp.deps.mslinks.ShellLinkHelper;
 import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.logging.ConsoleLoggingModules;
 import com.spotifyxp.panels.SplashPanel;
 import com.spotifyxp.utils.*;
 import org.apache.commons.io.IOUtils;

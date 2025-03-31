@@ -14,6 +14,7 @@ import com.spotifyxp.guielements.Settings;
 import com.spotifyxp.injector.InjectorStore;
 import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.logging.LogsViewer;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.updater.Updater;
@@ -337,6 +338,7 @@ public class ContentPanel extends JPanel {
         JMenuItem audioVisualizer = new JMenuItem(PublicValues.language.translate("ui.legacy.view.audiovisualizer"));
         JMenuItem playUri = new JMenuItem(PublicValues.language.translate("ui.legacy.playuri"));
         JMenuItem checkUpdate = new JMenuItem(PublicValues.language.translate("updater.menubar.title"));
+        JMenuItem openlogviewer = new JMenuItem(PublicValues.language.translate("logsviewer.open"));
         bar.add(file);
         bar.add(edit);
         bar.add(view);
@@ -358,6 +360,7 @@ public class ContentPanel extends JPanel {
         view.add(audioVisualizer);
         account.add(logout);
         help.add(extensions);
+        help.add(openlogviewer);
         if(!PublicValues.updaterDisabled) help.add(checkUpdate);
         help.add(about);
         checkUpdate.addActionListener(new ActionListener() {
@@ -373,6 +376,12 @@ public class ContentPanel extends JPanel {
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
+            }
+        });
+        openlogviewer.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new LogsViewer().open();
             }
         });
         audioVisualizer.addActionListener(e -> PublicValues.visualizer.open());

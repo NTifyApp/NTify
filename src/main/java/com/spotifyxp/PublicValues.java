@@ -13,6 +13,7 @@ import com.spotifyxp.history.PlaybackHistory;
 import com.spotifyxp.injector.Injector;
 import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.lib.libLanguage;
+import com.spotifyxp.logging.LogPrintStream;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.theming.Theme;
 import com.spotifyxp.theming.ThemeLoader;
@@ -81,6 +82,7 @@ public class PublicValues {
     public static OkHttpClient defaultHttpClient;
     public static VLCPlayer vlcPlayer = new DummyVLCPlayer();
     public static boolean updaterDisabled = false;
+    public static LogPrintStream logPrintStream;
     //Devstuff
     public static boolean locationFinderActive = false;
     //----

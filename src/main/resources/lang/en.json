@@ -226,5 +226,14 @@
  "extensions.module.install.dialog.title": "Info",
  "extensions.module.install.dialog.description": "The extension will be loaded upon starting SpotifyXP",
  "extensions.module.update.dialog.title": "Info",
- "extensions.module.update.dialog.description": "The extension will be updated upon restarting SpotifyXP"
+ "extensions.module.update.dialog.description": "The extension will be updated upon restarting SpotifyXP",
+ "ui.settings.logging.label": "Logging",
+ "ui.settings.logging.enablelogfile": "Enable file logging",
+ "ui.settings.logging.maxkeeplogs": "Max kept logs",
+ "logsviewer.title": "SpotifyXP - Logs Viewer",
+ "logsviewer.logs": "Logs",
+ "logsviewer.info": "Double click an entry to view it",
+ "logsviewer.tab1": "Logs",
+ "logsviewer.tab2": "Log",
+ "logsviewer.open": "Open log viewer"
 }

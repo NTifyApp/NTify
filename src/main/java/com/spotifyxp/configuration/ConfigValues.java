@@ -35,6 +35,8 @@ public enum ConfigValues {
     proxy_username("proxy.username", ConfigValueTypes.STRING, "ui.settings.proxy", ""),
     proxy_password("proxy.password", ConfigValueTypes.STRING, "ui.settings.proxy", ""),
     proxy_trustall("proxy.trustall", ConfigValueTypes.BOOLEAN, "ui.settings.proxy", false),
+    logging_enable("ui.settings.logging.enablelogfile", ConfigValueTypes.BOOLEAN, "ui.settings.logging.label", true),
+    logging_maxkept("ui.settings.logging.maxkeeplogs", ConfigValueTypes.INT, "ui.settings.logging.label", 10),
     other_autoplayenabled("user.settings.other.autoplayenabled", ConfigValueTypes.BOOLEAN, "ui.settings.other", true),
     other_crossfadeduration("user.settings.other.crossfadeduration", ConfigValueTypes.INT, "ui.settings.other", 0),
     other_enablenormalization("user.settings.other.enablenormalization", ConfigValueTypes.BOOLEAN, "ui.settings.other", true),

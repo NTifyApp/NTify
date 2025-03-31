@@ -3,9 +3,6 @@ package com.spotifyxp.pip;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.canvaz.CanvazOuterClass;
-import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
@@ -22,10 +19,8 @@ import com.spotifyxp.utils.Resources;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.*;
-import java.net.URL;
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Objects;
 
 public class PiPPlayer extends JFrame {
     public static JImagePanel songImage;

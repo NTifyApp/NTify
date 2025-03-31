@@ -13,6 +13,7 @@ import com.spotifyxp.lib.libLanguage;
 import com.spotifyxp.listeners.KeyListener;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.logging.ConsoleLoggingModules;
+import com.spotifyxp.logging.LogPrintStream;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.panels.PlayerArea;
@@ -25,7 +26,6 @@ import com.spotifyxp.updater.Updater;
 import com.spotifyxp.updater.UpdaterUI;
 import com.spotifyxp.utils.*;
 import okhttp3.*;
-import org.apache.commons.io.output.NullPrintStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +34,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.swing.*;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -55,6 +56,7 @@ public class Initiator {
         checkSetup();
         initLanguageSupport(); //Initializing the language support
         initConfig(); //Initializing the configuration
+        checkLogPrintStream(); //Checking some stuff after config is available
         setLanguage(); //Set the language to the one specified in the config
         creatingLock(); //Creating the 'LOCK' file
         PublicValues.defaultHttpClient = new OkHttpClient(); //Creating the default http client
@@ -133,12 +135,27 @@ public class Initiator {
     }
 
     static void checkDebug() {
+        PrintStream out = System.out;
         if (PublicValues.debug) {
             ConsoleLogging.setColored(!System.getProperty("os.name").toLowerCase().contains("win"));
             ConsoleLoggingModules.setColored(!System.getProperty("os.name").toLowerCase().contains("win"));
+            try {
+                LogPrintStream stream = new LogPrintStream(true, out);
+                PublicValues.logPrintStream = stream;
+                System.setOut(stream.asPrintStream());
+                System.setErr(stream.asPrintStream());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
-            System.setOut(new NullPrintStream());
-            System.setErr(new NullPrintStream());
+            try {
+                LogPrintStream stream = new LogPrintStream(false, out);
+                PublicValues.logPrintStream = stream;
+                System.setOut(stream.asPrintStream());
+                System.setErr(stream.asPrintStream());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -151,6 +168,11 @@ public class Initiator {
     static void detectArchitecture() {
         SplashPanel.linfo.setText("Detecting architecture...");
         new ArchitectureDetection();
+    }
+
+    static void checkLogPrintStream() {
+        PublicValues.logPrintStream.setLogging(PublicValues.config.getBoolean(ConfigValues.logging_enable.name));
+        PublicValues.logPrintStream.checkLogFiles();
     }
 
     static void initializeVideoPlayback() {

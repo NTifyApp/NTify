@@ -74,6 +74,7 @@ public class ArgParser {
         arguments.add(new Debug());
         arguments.add(new Development());
         arguments.add(new Language());
+        arguments.add(new LogViewer());
         arguments.add(new NoMediaControl());
         arguments.add(new RunUpdater());
         arguments.add(new SaveLog());

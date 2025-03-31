@@ -3,12 +3,10 @@ package com.spotifyxp.updater;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.GitHubAPI;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.swingextension.JFrame;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.apache.commons.io.IOUtils;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
@@ -17,14 +15,10 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.Base64;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
