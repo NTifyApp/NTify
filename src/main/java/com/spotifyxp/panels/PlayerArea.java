@@ -59,6 +59,7 @@ public class PlayerArea extends JPanel {
     private static boolean doneLastParsing = false;
     public static ContextMenu contextMenu;
     public static PiPPlayer pipPlayer;
+    private boolean wasPaused = false;
 
     public PlayerArea(JFrame frame) {
         setBounds(72, 0, 565, 100);
@@ -275,6 +276,7 @@ public class PlayerArea extends JPanel {
         playerCurrentTime.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                wasPaused = InstanceManager.getSpotifyPlayer().isPaused();
                 InstanceManager.getPlayer().getPlayer().pause();
                 PlayerListener.pauseTimer = true;
             }
@@ -284,7 +286,9 @@ public class PlayerArea extends JPanel {
             public void mouseReleased(MouseEvent e) {
                 PlayerListener.pauseTimer = false;
                 InstanceManager.getPlayer().getPlayer().seek(playerCurrentTime.getValue() * 1000);
-                InstanceManager.getPlayer().getPlayer().play();
+                if(!wasPaused) {
+                    InstanceManager.getPlayer().getPlayer().play();
+                }
             }
         }));
         playerCurrentTime.addChangeListener(e -> playerPlayTime.setText(TrackUtils.getHHMMSSOfTrack(InstanceManager.getPlayer().getPlayer().time())));
