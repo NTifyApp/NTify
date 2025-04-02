@@ -54,7 +54,7 @@ If not existing, the team'll resolve it 😊
 
 <h4>Recommended</h4>
 
-* OS: Windows XP or above
+* OS: Windows XP & above
 * Processor: Anything that can handle SNES Emulation
 * RAM: 512MB
 * Storage (Without cache): 70MB
