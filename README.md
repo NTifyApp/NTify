@@ -4,7 +4,7 @@
   </a>
 <h3 align="center">SpotifyXP</h3>
  <p align="center">
-    A working Spotify Player for Windows XP & Above
+    A working Spotify Player for Windows XP.
     <br/>
     <br/>
     <a href="https://github.com/SpotifyXP/SpotifyXP/wiki">SpotifyXP Wiki</a>
@@ -14,11 +14,9 @@
   </p>
 </p>
 
-![Contributors](https://img.shields.io/github/contributors/SpotifyXP/SpotifyXP?color=dark-green) ![Issues](https://img.shields.io/github/issues/SpotifyXP/SpotifyXP)
+![Contributors](https://img.shields.io/github/contributors/SpotifyXP/SpotifyXP?color=dark-green) ![Issues](https://img.shields.io/github/issues/SpotifyXP/SpotifyXP) ![Downloads](https://img.shields.io/github/downloads/SpotifyXP/SpotifyXP/total)
 
-<!--![Downloads](https://img.shields.io/github/downloads/SpotifyXP/SpotifyXP/total)-->
-
-## <p align="center">Table Of Contents
+## Table Of Contents
 
 * [About the Project](#about-the-project)
 * [The SpotifyXP Wiki](#the-spotifyxp-wiki)
@@ -33,7 +31,7 @@
 * [Special Thanks](#Special-Thanks)
 </p>
 
-## <p align="center">About The Project
+## About The Project
 
 Stable version
 ![Screen Shot](SpotifyXPShowStable.png)
