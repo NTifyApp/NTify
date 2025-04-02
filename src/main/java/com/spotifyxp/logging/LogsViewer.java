@@ -18,9 +18,9 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 
 public class LogsViewer extends JFrame {
@@ -81,6 +81,7 @@ public class LogsViewer extends JFrame {
                 return name.toLowerCase(Locale.ENGLISH).endsWith(".log");
             }
         }));
+        Arrays.sort(files, Comparator.comparing(f -> LocalDateTime.parse(f.getName().replace(".log", ""), DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))));
         for (File log : files) {
             ((DefaultListModel<String>) logsList.getModel()).addElement(FilenameUtils.removeExtension(log.getName()));
             logs.add(log);

@@ -2,20 +2,17 @@ package com.spotifyxp.logging;
 
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
+import javax.xml.crypto.Data;
 import java.io.*;
 import java.nio.charset.Charset;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 
 public class LogPrintStream {
     private final PrintStream internalPrintStream;
@@ -40,7 +37,8 @@ public class LogPrintStream {
             }
         });
         if(foundLogs != null && foundLogs.length > PublicValues.config.getInt(ConfigValues.logging_maxkept.name)) {
-            for(int i = 0; i < (PublicValues.config.getInt(ConfigValues.logging_maxkept.name) - foundLogs.length); i++) {
+            Arrays.sort(foundLogs, Comparator.comparing(f -> LocalDateTime.parse(f.getName().replace(".log", ""), DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))));
+            for(int i = 0; i < (foundLogs.length - PublicValues.config.getInt(ConfigValues.logging_maxkept.name) + 1); i++) {
                 if(!foundLogs[i].delete()) {
                     ConsoleLogging.error("Failed to delete log: " + foundLogs[i].getName());
                 }
