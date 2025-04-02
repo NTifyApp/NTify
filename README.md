@@ -99,7 +99,7 @@ Run SpotifyXP.jar, then review the T&Cs.
 
 See **New Login Methods*.
 
-Then, enjoy your legally streamed music.
+Then, enjoy streaming.
 
 ## New login methods
 1. Zeroconf: In a modern Spotify client, choose SpotifyXP under devices to authenticate (**Requires Spotify Premium**).
@@ -128,7 +128,6 @@ limitations under the License.
 ## Authors
 
 * [Werwolf2303](https://github.com/Werwolf2303/)
-* [Anthony](https://twitter.com/intent/user?screen_name=anthonydavenpod)
 
 ## Special Thanks
 
