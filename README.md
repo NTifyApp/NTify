@@ -74,7 +74,6 @@ If not existing, the team'll resolve it 😊
 <p>If you want to translate this project look into src/main/resources/lang/skeleton.json</p>
 <p>Make sure you have run 'python3 i18nhelper.py -skeleton' to make sure the skeleton is up to date</p>
 <p>Rename skeleton.json to [2DigitLanguageCode].json</p>
-(English UK & Scotland taken)
 
 ## Built With
 
