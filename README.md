@@ -30,7 +30,7 @@
 * [New Login Methods](#new-login-methods)
 * [License](#license)
 * [Authors](#authors)
-* [Special thanks](#Special-thanks)
+* [Special Thanks](#Special-Thanks)
 
 ## About The Project
 
@@ -77,8 +77,7 @@ If not existing, the team'll resolve it 😊
 
 ## Built With
 
-SpotifyXP is build with
-<br><h4><a href="https://github.com/SpotifyXP/SpotifyXP/blob/main/src/main/resources/setup/thirdparty.html">Thirdparty.html</a></h4>
+SpotifyXP is build with <a href="https://github.com/SpotifyXP/SpotifyXP/blob/main/src/main/resources/setup/thirdparty.html">Thirdparty.html</a>
 
 ## Getting Started
 
@@ -131,7 +130,7 @@ limitations under the License.
 * [Werwolf2303](https://github.com/Werwolf2303/)
 * [Anthony](https://twitter.com/intent/user?screen_name=anthonydavenpod)
 
-## Special thanks
+## Special Thanks
 
 * [StapleBacon5037](https://github.com/StapleBacon5037) - For improving the readme
 * [skippster1337](https://github.com/skipster1337) - For listing SpotifyXP on his site
