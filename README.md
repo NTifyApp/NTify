@@ -40,7 +40,7 @@ We originally developed SpotifyXP for a computer that runs Windows XP.
 
 <h3>Why use SpotifyXP:</h3>
 
-SpotifyXP keeps the music alive on Windows versions up to 8.1!
+On December 2022, Spotify shutdown it's last version for Windows XP, making this application the only way to listen to Spotify.
 
 ## The SpotifyXP Wiki
 
