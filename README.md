@@ -4,20 +4,17 @@
   </a>
 <h3 align="center">SpotifyXP</h3>
  <p align="center">
-    A real Spotify Player for Windows XP
+    A working Spotify Player for Windows XP.
     <br/>
     <br/>
     <a href="https://github.com/SpotifyXP/SpotifyXP/wiki">SpotifyXP Wiki</a>
     .
-    <a href="https://github.com/SpotifyXP/SpotifyXP/issues">Report Bug</a>
+    <a href="https://github.com/SpotifyXP/SpotifyXP/issues">Report Issue</a>
     .
-    <a href="https://github.com/SpotifyXP/SpotifyXP/issues">Request Feature</a>
   </p>
 </p>
 
-![Contributors](https://img.shields.io/github/contributors/SpotifyXP/SpotifyXP?color=dark-green) ![Issues](https://img.shields.io/github/issues/SpotifyXP/SpotifyXP)
-
-<!--![Downloads](https://img.shields.io/github/downloads/SpotifyXP/SpotifyXP/total)-->
+![Contributors](https://img.shields.io/github/contributors/SpotifyXP/SpotifyXP?color=dark-green) ![Issues](https://img.shields.io/github/issues/SpotifyXP/SpotifyXP) ![Downloads](https://img.shields.io/github/downloads/SpotifyXP/SpotifyXP/total)
 
 ## Table Of Contents
 
@@ -29,18 +26,17 @@
 * [Getting Started](#getting-started)
 * [Usage](#usage)
 * [New Login Methods](#new-login-methods)
-* [Contributing](#contributing)
 * [License](#license)
 * [Authors](#authors)
-* [Special thanks](#Special-thanks)
+* [Special Thanks](#Special-Thanks)
+</p>
 
 ## About The Project
 
 Stable version
 ![Screen Shot](SpotifyXPShowStable.png)
 
-
-I developed SpotifyXP for my old daily driver that runs Windows XP. My daily driver is now an MacBook Pro (2022)
+We originally developed SpotifyXP for a computer that runs Windows XP.
 
 <h3>Why use SpotifyXP:</h3>
 
@@ -48,19 +44,20 @@ On December 2022, Spotify shutdown it's last version for Windows XP, making this
 
 ## The SpotifyXP Wiki
 
-The SpotifyXP Wiki is available to help fix any bugs or problems that may be found when using SpotifyXP.
-When you have an issue, check the Wiki before creating an Issue to see if that issue had already been resolved.
+The SpotifyXP Wiki is available to help when using SpotifyXP.
+Check existing issues before reporting a new one.
+If not existing, the team'll resolve it 😊
 
 
 ## System Requirements
 
 <h4>Recommended</h4>
 
-* OS: Windows XP or above
+* OS: Windows XP & above
 * Processor: Anything that can handle SNES Emulation
 * RAM: 512MB
 * Storage (Without cache): 70MB
-* Storage (With cache): My folder is 700MB
+* Storage (With cache): 700MB
 
 <h4>Minimum</h4>
 
@@ -68,7 +65,7 @@ When you have an issue, check the Wiki before creating an Issue to see if that i
 * Processor: Anything that can handle SNES Emulation
 * RAM: 256MB
 * Storage (Without cache): 70MB
-* Storage (With cache): My folder is 700MB
+* Storage (With cache): 700MB
 
 ## Translating
 
@@ -76,43 +73,39 @@ When you have an issue, check the Wiki before creating an Issue to see if that i
 <p>Make sure you have run 'python3 i18nhelper.py -skeleton' to make sure the skeleton is up to date</p>
 <p>Rename skeleton.json to [2DigitLanguageCode].json</p>
 
-
 ## Built With
 
-SpotifyXP is build with
-<br><h4><a href="https://github.com/SpotifyXP/SpotifyXP/blob/main/src/main/resources/setup/thirdparty.html">Thirdparty.html</a></h4>
+SpotifyXP is build with <a href="https://github.com/SpotifyXP/SpotifyXP/blob/main/src/main/resources/setup/thirdparty.html">Thirdparty.html</a>
 
 ## Getting Started
 
 ### Prerequisites:
 
-- VLC Media Player version 3.0.20 (Stable versions)
-- Java 8 151 (Click ok on the dialog)
+- <a href="https://www.videolan.org/">VLC</a> Media Player 3
+- Java 8 (Build 151 and higher)
 
 ### ***!! Important !!***
-- VLC needs to be the same architecture as the java version e.g. **x64** or **x86**
+- Match VLC's architecture (x64 or x86) to your Java version.
 
 ### Install instructions
 
-1. Download the nightly version under the Actions tab
-2. Double click **SpotifyXP.jar** or run this in the directory where **SpotifyXP.jar** is downloaded: <pre>java -jar SpotifyXP.jar</pre>
+1. Download the latest version under the Actions or Releases tab
+Run SpotifyXP.jar, then review the T&Cs.
+
 
 ## Usage
 
-Follow the instructions under the header **Getting Started**. Then, select one of the options under the header **New Login Methods**. 
-Then, enjoy the music.
+See **New Login Methods*.
+
+Then, enjoy streaming.
 
 ## New login methods
-1. Zeroconf: open a modern Spotify client and select SpotifyXP under devices and SpotifyXP should authenticate with Spotify. **Works only with Spotify Premium account**.
-2. OAuth: in the default browser's window which will open automatically, login with your credentials on Spotify website. Then confirm connecting SpotifyXP to your Spotify account and close the browser. **You need to have a modern browser that supports HTML5**.
-
+1. Zeroconf: In a modern Spotify client, choose SpotifyXP under devices to authenticate (**Requires Spotify Premium**).
+2. OAuth: Log into Spotify in the auto-opened browser window, confirm SpotifyXP connection, then close it. (needs a HTML5 supported browser)
 
 ## Compiling
 
-1. Git clone with '--recursive'
-2. Run the init.py
-3. Run the build.py
-4. Executable is target/SpotifyXP.jar
+Clone repo with '--recursive', run init.py, build.py, find executable at target/SpotifyXP.jar.
 
 ## Contributing
 
@@ -143,10 +136,11 @@ limitations under the License.
 
 ## Authors
 
-* [Werwolf2303](https://github.com/Werwolf2303/) 
+* [Werwolf2303](https://github.com/Werwolf2303/)
 
-## Special thanks
+## Special Thanks
 
 * [StapleBacon5037](https://github.com/StapleBacon5037) - For improving the readme
 * [skippster1337](https://github.com/skipster1337) - For listing SpotifyXP on his site
 * [Jri-creator](https://github.com/Jri-creator) - For the new setup image and improving the readme
+* [Anthony](https://twitter.com/intent/user?screen_name=anthonydavenpod) - For improving, spell correcting and simpifying the readme & bug stuff.
