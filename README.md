@@ -18,7 +18,7 @@
 
 <!--![Downloads](https://img.shields.io/github/downloads/SpotifyXP/SpotifyXP/total)-->
 
-## Table Of Contents
+## <p align="center">Table Of Contents
 
 * [About the Project](#about-the-project)
 * [The SpotifyXP Wiki](#the-spotifyxp-wiki)
@@ -31,8 +31,9 @@
 * [License](#license)
 * [Authors](#authors)
 * [Special Thanks](#Special-Thanks)
+</p>
 
-## About The Project
+## <p align="center">About The Project
 
 Stable version
 ![Screen Shot](SpotifyXPShowStable.png)
