@@ -14,6 +14,7 @@ import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.panels.ContentPanel;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -24,8 +25,13 @@ import org.jetbrains.annotations.Range;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 public class LinuxSupportModule implements SupportModule {
+    boolean pause = false;
+
     @Override
     public String getOSName() {
         return "Linux";
@@ -47,9 +53,33 @@ public class LinuxSupportModule implements SupportModule {
             );
             PublicValues.mpris = mediaPlayer.buildMPRISMediaPlayer2None(
                     new MPRISMediaPlayer.MediaPlayer2Builder()
+                            .setOnQuit(new TypeRunnable<Object>() {
+                                @Override
+                                public void run(Object value) {
+                                    System.exit(0);
+                                }
+                            })
+                            .setOnRaise(new TypeRunnable<Object>() {
+                                @Override
+                                public void run(Object value) {
+                                    ContentPanel.frame.toFront();
+                                }
+                            })
+                            .setSupportedUriSchemes("spotify:")
+                            .setCanQuit(true)
+                            .setCanRaise(true)
                             .setIdentity("SpotifyXP")
                             .setDesktopEntry("/home/werwolf2303/.local/share/applications/SpotifyXP.desktop"),
                     new MPRISMediaPlayer.PlayerBuilder()
+                            .setOnOpenURI(new TypeRunnable<String>() {
+                                @Override
+                                public void run(String value) {
+                                    if(value.split(":").length == 2) {
+                                        // URI
+                                        InstanceManager.getSpotifyPlayer().load(value, true, PublicValues.shuffle);
+                                    }
+                                }
+                            })
                             .setCanControl(true)
                             .setCanPlay(true)
                             .setCanPause(true)
@@ -94,7 +124,17 @@ public class LinuxSupportModule implements SupportModule {
         } catch (DBusException e) {
             ConsoleLogging.warning("Failed to initialize MPRIS support");
         }
-        Events.subscribe(SpotifyXPEvents.onFrameReady.getName(), new EventSubscriber() {
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                if(!InstanceManager.getSpotifyPlayer().isPaused()) {
+                    if(InstanceManager.getSpotifyPlayer().time() == -1) return;
+                    PublicValues.mpris.setPosition((int) TimeUnit.MILLISECONDS.toMicros(InstanceManager.getSpotifyPlayer().time()));
+                }
+            }
+        };
+        Timer timer = new Timer();
+        Events.subscribe(SpotifyXPEvents.injectorAPIReady.getName(), new EventSubscriber() {
             @Override
             public void run(Object... data) {
                 InstanceManager.getPlayer().getPlayer().addEventsListener(new Player.EventsListener() {
@@ -105,12 +145,16 @@ public class LinuxSupportModule implements SupportModule {
 
                     @Override
                     public void onTrackChanged(@NotNull Player player, @NotNull PlayableId id, @Nullable MetadataWrapper metadata, boolean userInitiated) {
-
+                        PublicValues.mpris.setPosition(0);
                     }
 
                     @Override
                     public void onPlaybackEnded(@NotNull Player player) {
-
+                        try {
+                            PublicValues.mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                        } catch (DBusException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
 
                     @Override
@@ -148,13 +192,12 @@ public class LinuxSupportModule implements SupportModule {
                     @Override
                     public void onMetadataAvailable(@NotNull Player player, @NotNull MetadataWrapper metadata) {
                         try {
-                            PublicValues.mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
                             assert metadata.id != null;
                             PublicValues.mpris.setMetadata(new Metadata.Builder()
                                     .setTrackID(new DBusPath("/"))
                                     .setTitle(metadata.getName())
                                     .setArtURL(URI.create(InstanceManager.getSpotifyApi().getTrack(metadata.id.toSpotifyUri().split(":")[2]).build().execute().getAlbum().getImages()[0].getUrl()))
-                                    .setLength(metadata.duration())
+                                    .setLength((int) TimeUnit.MILLISECONDS.toMicros(metadata.duration()))
                                     .setArtists(Collections.singletonList(metadata.getArtist()))
                                     .setAlbumName(metadata.getAlbumName())
                                     .build());
@@ -202,9 +245,28 @@ public class LinuxSupportModule implements SupportModule {
 
                     @Override
                     public void onFinishedLoading(@NotNull Player player) {
-
+                        if(player.isPaused()) {
+                            try {
+                                PublicValues.mpris.setPlaybackStatus(PlaybackStatus.PAUSED);
+                            } catch (DBusException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }else if (player.isActive()) {
+                            try {
+                                PublicValues.mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
+                            } catch (DBusException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }else {
+                            try {
+                                PublicValues.mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                            } catch (DBusException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
                     }
                 });
+                if(PublicValues.mpris != null) timer.schedule(task, 0, 1000);
             }
         });
     }

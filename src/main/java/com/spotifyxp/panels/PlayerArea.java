@@ -286,7 +286,7 @@ public class PlayerArea extends JPanel {
             public void mouseReleased(MouseEvent e) {
                 PlayerListener.pauseTimer = false;
                 InstanceManager.getPlayer().getPlayer().seek(playerCurrentTime.getValue() * 1000);
-                if(!wasPaused) {
+                if (!wasPaused) {
                     InstanceManager.getPlayer().getPlayer().play();
                 }
             }
@@ -346,7 +346,7 @@ public class PlayerArea extends JPanel {
             }
         });
 
-        if(PublicValues.vlcPlayer.isVideoPlaybackEnabled()) canvasPlayer = new CanvasPlayer();
+        if (PublicValues.vlcPlayer.isVideoPlaybackEnabled()) canvasPlayer = new CanvasPlayer();
         canvasPlayerButton = new JSVGPanel();
         canvasPlayerButton.setImage(Graphics.VIDEO.getPath());
         canvasPlayerButton.getJComponent().setBackground(heart.getJComponent().getBackground());
@@ -366,7 +366,8 @@ public class PlayerArea extends JPanel {
                 }
             }
         }));
-        if(PublicValues.vlcPlayer.isVideoPlaybackEnabled()) PublicValues.contentPanel.add(canvasPlayerButton.getJComponent());
+        if (PublicValues.vlcPlayer.isVideoPlaybackEnabled())
+            PublicValues.contentPanel.add(canvasPlayerButton.getJComponent());
 
 
         historyButton = new JSVGPanel();
@@ -403,7 +404,7 @@ public class PlayerArea extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if(SwingUtilities.isRightMouseButton(e)) {
+                if (SwingUtilities.isRightMouseButton(e)) {
                     contextMenu.showAt(ContentPanel.playerArea, e.getX(), e.getY());
                 }
             }
@@ -427,16 +428,9 @@ public class PlayerArea extends JPanel {
                                 heart.isFilled = true;
                                 heart.setImage(Graphics.HEARTFILLED.getPath());
                             }
-                            EventSubscriber subscriber = new EventSubscriber() {
-                                @Override
-                                public void run(Object... data) {
-                                    InstanceManager.getSpotifyPlayer().seek(lastPlayState.playerslider * 1000);
-                                    playerAreaVolumeSlider.setValue(Integer.parseInt(lastPlayState.playervolume));
-                                    Events.unsubscribe(SpotifyXPEvents.playerLockRelease.getName(), this);
-                                    doneLastParsing = true;
-                                }
-                            };
-                            Events.subscribe(SpotifyXPEvents.playerLockRelease.getName(), subscriber);
+                            InstanceManager.getSpotifyPlayer().seek(lastPlayState.playerslider * 1000);
+                            playerAreaVolumeSlider.setValue(Integer.parseInt(lastPlayState.playervolume));
+                            doneLastParsing = true;
                         }
                         if (!lastPlayState.history.isEmpty()) {
                             try {
@@ -472,7 +466,7 @@ public class PlayerArea extends JPanel {
     @SuppressWarnings({"ConstantConditions", "Duplicates"})
     public static void saveCurrentState() {
         try {
-            if(InstanceManager.getSpotifyPlayer().currentPlayable() == null) return;
+            if (InstanceManager.getSpotifyPlayer().currentPlayable() == null) return;
             List<PlayerState.PlayableUri> playableQueue = new ArrayList<>();
             List<ContextTrackOuterClass.ContextTrack> playableQueueTracks = InstanceManager.getSpotifyPlayer().tracks(true).next;
             for (int playableQueueTracksIndex = 0; playableQueueTracksIndex < playableQueueTracks.size(); playableQueueTracksIndex++) {
@@ -513,7 +507,7 @@ public class PlayerArea extends JPanel {
             ConsoleLogging.Throwable(e);
             GraphicalMessage.openException(e);
             if (new File(PublicValues.fileslocation, "play.state").exists()) {
-                if(!new File(PublicValues.fileslocation, "play.state").delete()) {
+                if (!new File(PublicValues.fileslocation, "play.state").delete()) {
                     ConsoleLogging.warning("Failed to delete play.state");
                 }
             }
@@ -547,7 +541,7 @@ public class PlayerArea extends JPanel {
     }
 
     public void reset() {
-        if(!ContentPanel.frame.isVisible()) {
+        if (!ContentPanel.frame.isVisible()) {
             Events.subscribe(SpotifyXPEvents.onFrameVisible.getName(), data -> {
                 Thread thread = new Thread(() -> {
                     try {
@@ -567,12 +561,12 @@ public class PlayerArea extends JPanel {
         playerCurrentTime.setMaximum(381);
         heart.setImage(Graphics.HEART.getPath());
         heart.isFilled = false;
-        if(playerAreaLyricsButton.isFilled) {
+        if (playerAreaLyricsButton.isFilled) {
             PublicValues.lyricsDialog.close();
             playerAreaLyricsButton.setImage(Graphics.MICROPHONE.getPath());
             playerAreaLyricsButton.isFilled = false;
         }
-        if(playerAreaRepeatingButton.isFilled) {
+        if (playerAreaRepeatingButton.isFilled) {
             InstanceManager.getPlayer().getPlayer().setRepeat(false, false);
             playerAreaRepeatingButton.setImage(Graphics.REPEAT.getPath());
             playerAreaRepeatingButton.isFilled = false;
