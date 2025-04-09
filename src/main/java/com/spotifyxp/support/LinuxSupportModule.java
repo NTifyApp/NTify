@@ -1,6 +1,7 @@
 package com.spotifyxp.support;
 
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.deps.org.mpris.MPRISMP2None;
 import com.spotifyxp.deps.org.mpris.MPRISMediaPlayer;
 import com.spotifyxp.deps.org.mpris.Metadata;
 import com.spotifyxp.deps.org.mpris.TypeRunnable;
@@ -29,8 +30,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * !!Warning!! This class will be stripped from the final executable if the flag linuxSupport is false
+ */
 public class LinuxSupportModule implements SupportModule {
-    boolean pause = false;
+    public static MPRISMP2None mpris;
 
     @Override
     public String getOSName() {
@@ -51,7 +55,7 @@ public class LinuxSupportModule implements SupportModule {
                     DBusConnection.newConnection(DBusConnection.DBusBusType.SESSION),
                     "spotifyxp"
             );
-            PublicValues.mpris = mediaPlayer.buildMPRISMediaPlayer2None(
+            mpris = mediaPlayer.buildMPRISMediaPlayer2None(
                     new MPRISMediaPlayer.MediaPlayer2Builder()
                             .setOnQuit(new TypeRunnable<Object>() {
                                 @Override
@@ -129,7 +133,7 @@ public class LinuxSupportModule implements SupportModule {
             public void run() {
                 if(!InstanceManager.getSpotifyPlayer().isPaused()) {
                     if(InstanceManager.getSpotifyPlayer().time() == -1) return;
-                    PublicValues.mpris.setPosition((int) TimeUnit.MILLISECONDS.toMicros(InstanceManager.getSpotifyPlayer().time()));
+                    mpris.setPosition((int) TimeUnit.MILLISECONDS.toMicros(InstanceManager.getSpotifyPlayer().time()));
                 }
             }
         };
@@ -145,13 +149,13 @@ public class LinuxSupportModule implements SupportModule {
 
                     @Override
                     public void onTrackChanged(@NotNull Player player, @NotNull PlayableId id, @Nullable MetadataWrapper metadata, boolean userInitiated) {
-                        PublicValues.mpris.setPosition(0);
+                        mpris.setPosition(0);
                     }
 
                     @Override
                     public void onPlaybackEnded(@NotNull Player player) {
                         try {
-                            PublicValues.mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                            mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
                         } catch (DBusException e) {
                             throw new RuntimeException(e);
                         }
@@ -160,7 +164,7 @@ public class LinuxSupportModule implements SupportModule {
                     @Override
                     public void onPlaybackPaused(@NotNull Player player, long trackTime) {
                         try {
-                            PublicValues.mpris.setPlaybackStatus(PlaybackStatus.PAUSED);
+                            mpris.setPlaybackStatus(PlaybackStatus.PAUSED);
                         } catch (DBusException e) {
                             throw new RuntimeException(e);
                         }
@@ -169,7 +173,7 @@ public class LinuxSupportModule implements SupportModule {
                     @Override
                     public void onPlaybackResumed(@NotNull Player player, long trackTime) {
                         try {
-                            PublicValues.mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
+                            mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
                         } catch (DBusException e) {
                             throw new RuntimeException(e);
                         }
@@ -178,7 +182,7 @@ public class LinuxSupportModule implements SupportModule {
                     @Override
                     public void onPlaybackFailed(@NotNull Player player, @NotNull Exception e) {
                         try {
-                            PublicValues.mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                            mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
                         } catch (DBusException ex) {
                             throw new RuntimeException(ex);
                         }
@@ -193,7 +197,7 @@ public class LinuxSupportModule implements SupportModule {
                     public void onMetadataAvailable(@NotNull Player player, @NotNull MetadataWrapper metadata) {
                         try {
                             assert metadata.id != null;
-                            PublicValues.mpris.setMetadata(new Metadata.Builder()
+                            mpris.setMetadata(new Metadata.Builder()
                                     .setTrackID(new DBusPath("/"))
                                     .setTitle(metadata.getName())
                                     .setArtURL(URI.create(InstanceManager.getSpotifyApi().getTrack(metadata.id.toSpotifyUri().split(":")[2]).build().execute().getAlbum().getImages()[0].getUrl()))
@@ -212,7 +216,7 @@ public class LinuxSupportModule implements SupportModule {
                     public void onPlaybackHaltStateChanged(@NotNull Player player, boolean halted, long trackTime) {
                         if (halted) {
                             try {
-                                PublicValues.mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                                mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
                             } catch (DBusException ex) {
                                 throw new RuntimeException(ex);
                             }
@@ -232,7 +236,7 @@ public class LinuxSupportModule implements SupportModule {
                     @Override
                     public void onPanicState(@NotNull Player player) {
                         try {
-                            PublicValues.mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                            mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
                         } catch (DBusException ex) {
                             throw new RuntimeException(ex);
                         }
@@ -247,26 +251,26 @@ public class LinuxSupportModule implements SupportModule {
                     public void onFinishedLoading(@NotNull Player player) {
                         if(player.isPaused()) {
                             try {
-                                PublicValues.mpris.setPlaybackStatus(PlaybackStatus.PAUSED);
+                                mpris.setPlaybackStatus(PlaybackStatus.PAUSED);
                             } catch (DBusException e) {
                                 throw new RuntimeException(e);
                             }
                         }else if (player.isActive()) {
                             try {
-                                PublicValues.mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
+                                mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
                             } catch (DBusException e) {
                                 throw new RuntimeException(e);
                             }
                         }else {
                             try {
-                                PublicValues.mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                                mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
                             } catch (DBusException e) {
                                 throw new RuntimeException(e);
                             }
                         }
                     }
                 });
-                if(PublicValues.mpris != null) timer.schedule(task, 0, 1000);
+                if(mpris != null) timer.schedule(task, 0, 1000);
             }
         });
     }

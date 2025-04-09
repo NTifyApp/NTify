@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - developer
+    paths:
+      - 'src/**'
+      - 'deps/**'
+      - 'pom.xml'
   workflow_dispatch:
 jobs:
   build:
@@ -27,11 +31,9 @@ jobs:
       - name: Save commit ID to file
         working-directory: ./SpotifyXP
         run: echo ${{ steps.get_commit_id.outputs.COMMIT_ID }} > src/main/resources/commit_id.txt
-      - name: Run init.py
+      - name: Build with Maven and build.py
         working-directory: ./SpotifyXP
-        run: python3 init.py
-      - name: Build with Maven
-        run: mvn --batch-mode -f SpotifyXP/pom.xml --update-snapshots package
+        run: python3 build.py
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4.6.0
         with:

@@ -1,5 +1,6 @@
 package com.spotifyxp.testing;
 
+import com.spotifyxp.Flags;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.events.Events;

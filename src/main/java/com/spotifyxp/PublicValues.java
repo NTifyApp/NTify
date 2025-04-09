@@ -6,7 +6,6 @@ import com.spotifyxp.args.ArgParser;
 import com.spotifyxp.audio.Quality;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.org.mpris.MPRISMP2None;
 import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
 import com.spotifyxp.dialogs.LyricsDialog;
 import com.spotifyxp.history.PlaybackHistory;
@@ -78,7 +77,6 @@ public class PublicValues {
     public static boolean wasOffline;
     public static CountryCode countryCode;
     public static boolean enableMediaControl = true;
-    public static MPRISMP2None mpris;
     public static OkHttpClient defaultHttpClient;
     public static VLCPlayer vlcPlayer = new DummyVLCPlayer();
     public static boolean updaterDisabled = false;

@@ -1,13 +1,15 @@
 package com.spotifyxp.support;
 
+import com.spotifyxp.Flags;
+
 import java.util.ArrayList;
 
 public class SupportModuleLoader {
     private static final ArrayList<SupportModule> supportModules = new ArrayList<>();
 
     public SupportModuleLoader() {
-        supportModules.add(new LinuxSupportModule());
-        supportModules.add(new MacOSXSupportModule());
+        if(Flags.linuxSupport) supportModules.add(new LinuxSupportModule());
+        if(Flags.macosSupport) supportModules.add(new MacOSXSupportModule());
     }
 
     public void loadModules() {

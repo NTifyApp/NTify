@@ -62,7 +62,7 @@ public class Initiator {
         PublicValues.defaultHttpClient = new OkHttpClient(); //Creating the default http client
         initProxy();
         checkUpdate();
-        initializeVideoPlayback();
+        if(Flags.videoPlaybackSupport) initializeVideoPlayback();
         loadExtensions(); //Loading extensions if there are any
         initGEH(); //Initializing the global exception handler
         storeArguments(args); //Storing the program arguments in PublicValues.class
@@ -163,6 +163,18 @@ public class Initiator {
         SplashPanel.linfo.setText("Detecting operating system...");
         PublicValues.osType = libDetect.getDetectedOS();
         new SupportModuleLoader().loadModules();
+        if(!Flags.linuxSupport) {
+            if(PublicValues.osType == libDetect.OSType.Linux) {
+                JOptionPane.showMessageDialog(null, "SpotifyXP was built without Linux support", "Fatal error", JOptionPane.ERROR_MESSAGE);
+                System.exit(0);
+            }
+        }
+        if(!Flags.macosSupport) {
+            if(PublicValues.osType == libDetect.OSType.MacOS) {
+                JOptionPane.showMessageDialog(null, "SpotifyXP was built without MacOS support", "Fatal error", JOptionPane.ERROR_MESSAGE);
+                System.exit(0);
+            }
+        }
     }
 
     static void detectArchitecture() {
@@ -176,12 +188,14 @@ public class Initiator {
     }
 
     static void initializeVideoPlayback() {
-        try {
-            Class<?> util = Class.forName("com.spotifyxp.deps.uk.co.caprica.vlcj.SPXPInit");
-            util.getMethod("init").invoke(util);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            ConsoleLogging.info("SpotifyXP was built without video playback support");
+        if(Flags.videoPlaybackSupport) {
+            try {
+                Class<?> util = Class.forName("com.spotifyxp.deps.uk.co.caprica.vlcj.SPXPInit");
+                util.getMethod("init").invoke(util);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                ConsoleLogging.info("SpotifyXP was built without video playback support");
+            }
         }
     }
 
