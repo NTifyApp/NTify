@@ -583,7 +583,7 @@ public class Search extends JPanel implements View {
                 lazyLoadingDeInit = null;
             }
             if (ContentPanel.currentView == Views.ARTIST) {
-                ArtistPanel.contentPanel.setVisible(true);
+                ContentPanel.artistPanel.setVisible(true);
             } else {
                 ContentPanel.searchPanel.setVisible(true);
             }

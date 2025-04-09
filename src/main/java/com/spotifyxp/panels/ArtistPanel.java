@@ -105,7 +105,7 @@ public class ArtistPanel extends JScrollPane implements View {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 2) {
                     isLastArtist = true;
-                    ArtistPanel.contentPanel.setVisible(false);
+                    setVisible(false);
                     Search.searchplaylistpanel.setVisible(true);
                     Search.searchplaylistsongscache.clear();
                     ((DefaultTableModel) Search.searchplaylisttable.getModel()).setRowCount(0);
