@@ -141,19 +141,8 @@ public class UpdaterUI extends JFrame {
             }
             stream.close();
             in.close();
-            ZipInputStream zipStream = new ZipInputStream(new FileInputStream(new File(PublicValues.appLocation, "SpotifyXP.jar.zip")));
-            zipStream.getNextEntry();
-            try (FileOutputStream fos =  new FileOutputStream(new File(PublicValues.appLocation, "SpotifyXP.jar"));
-                 BufferedInputStream bis = new BufferedInputStream(zipStream)) {
-
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = bis.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
-                }
-            }
-            zipStream.close();
-            new File(PublicValues.appLocation, "SpotifyXP.jar.zip").delete();
+            new File(PublicValues.fileslocation, "SpotifyXP.jar").delete();
+            new File(PublicValues.fileslocation, "SpotifyXP.jar.zip").renameTo(new File(PublicValues.fileslocation, "SpotifyXP.jar"));
         } catch (SocketTimeoutException socketTimeoutException) {
             download();
         } catch (Exception exception) {
