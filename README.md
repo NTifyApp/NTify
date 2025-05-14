@@ -1,25 +1,24 @@
 <p align="center">
-  <a href="https://github.com/SpotifyXP/SpotifyXP">
-    <img src="https://raw.githubusercontent.com/SpotifyXP/SpotifyXP/main/src/main/resources/spotifyxp.png" alt="Logo" width="80" height="80">
+  <a href="https://github.com/NTify/NTify">
+    <img src="src/main/resources/ntify.png" alt="Logo" width="80" height="80">
   </a>
-<h3 align="center">SpotifyXP</h3>
+<h3 align="center">NTify</h3>
  <p align="center">
     A working Spotify Player for Windows XP.
     <br/>
     <br/>
-    <a href="https://github.com/SpotifyXP/SpotifyXP/wiki">SpotifyXP Wiki</a>
+    <a href="https://github.com/NTify/NTify/wiki">NTify Wiki</a>
     .
-    <a href="https://github.com/SpotifyXP/SpotifyXP/issues">Report Issue</a>
+    <a href="https://github.com/NTify/NTify/issues">Report Issue</a>
     .
   </p>
-</p>
 
-![Contributors](https://img.shields.io/github/contributors/SpotifyXP/SpotifyXP?color=dark-green) ![Issues](https://img.shields.io/github/issues/SpotifyXP/SpotifyXP) ![Downloads](https://img.shields.io/github/downloads/SpotifyXP/SpotifyXP/total)
+![Contributors](https://img.shields.io/github/contributors/NTifyApp/NTify?color=dark-green) ![Issues](https://img.shields.io/github/issues/NTifyApp/NTify) ![Downloads](https://img.shields.io/github/downloads/NTifyApp/NTify/total)
 
 ## Table Of Contents
 
 * [About the Project](#about-the-project)
-* [The SpotifyXP Wiki](#the-spotifyxp-wiki)
+* [The NTify Wiki](#the-NTify-wiki)
 * [System Requirements](#system-requirements)
 * [Translating](#translating)
 * [Built With](#built-with)
@@ -34,19 +33,19 @@
 ## About The Project
 
 Stable version
-![Screen Shot](SpotifyXPShowStable.png)
+![Screen Shot](NTifyShowStable.png)
 
-We originally developed SpotifyXP for a computer that runs Windows XP.
+We originally developed NTify for a computer that runs Windows XP.
 
-<h3>Why use SpotifyXP:</h3>
+<h3>Why use NTify:</h3>
 
-On December 2022, Spotify shutdown it's last version for Windows XP, making this application the only way to listen to Spotify.
+On December 2022, Spotify shutdown it's last version for Windows XP, making this application the only way to listen to it.
 
-## The SpotifyXP Wiki
+## The NTify Wiki
 
-The SpotifyXP Wiki is available to help when using SpotifyXP.
+The NTify Wiki is available to help when using NTify.
 Check existing issues before reporting a new one.
-If not existing, the team'll resolve it 😊
+If not existing, we'll resolve it 😊
 
 
 ## System Requirements
@@ -75,7 +74,7 @@ If not existing, the team'll resolve it 😊
 
 ## Built With
 
-SpotifyXP is build with <a href="https://github.com/SpotifyXP/SpotifyXP/blob/main/src/main/resources/setup/thirdparty.html">Thirdparty.html</a>
+NTify is built with <a href="https://github.com/NTify/NTify/blob/main/src/main/resources/setup/thirdparty.html">Thirdparty.html</a>
 
 ## Getting Started
 
@@ -90,7 +89,7 @@ SpotifyXP is build with <a href="https://github.com/SpotifyXP/SpotifyXP/blob/mai
 ### Install instructions
 
 1. Download the latest version under the Actions or Releases tab
-Run SpotifyXP.jar, then review the T&Cs.
+   Run NTify.jar, then review the T&Cs.
 
 
 ## Usage
@@ -100,27 +99,16 @@ See **New Login Methods*.
 Then, enjoy streaming.
 
 ## New login methods
-1. Zeroconf: In a modern Spotify client, choose SpotifyXP under devices to authenticate (**Requires Spotify Premium**).
-2. OAuth: Log into Spotify in the auto-opened browser window, confirm SpotifyXP connection, then close it. (needs a HTML5 supported browser)
+1. Zeroconf: In a modern Spotify client, choose NTify under devices to authenticate (**Requires Spotify Premium**).
+2. OAuth: Log into Spotify in the auto-opened browser window, confirm NTify connection, then close it. (needs a HTML5 supported browser)
 
 ## Compiling
 
-Clone repo with '--recursive', run init.py, build.py, find executable at target/SpotifyXP.jar.
-
-## Contributing
-
-Just make your desired changes and open a pull request
-
-### Creating A Pull Request
-
-1. Fork the Project
-2. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-3. Push to the Branch (`git push origin main`)
-4. Open a Pull Request
+Clone repo with '--recursive', run init.py, build.py, find executable at target/NTify.jar.
 
 ## License
 
-Copyright [2025] [Gianluca Beil]
+Copyright [2025] [Gianluca Beil & Davenport Media]
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -140,7 +128,7 @@ limitations under the License.
 
 ## Special Thanks
 
-* [StapleBacon5037](https://github.com/StapleBacon5037) - For improving the readme
-* [skippster1337](https://github.com/skipster1337) - For listing SpotifyXP on his site
-* [Jri-creator](https://github.com/Jri-creator) - For the new setup image and improving the readme
-* [Anthony](https://twitter.com/intent/user?screen_name=anthonydavenpod) - For improving, spell correcting and simpifying the readme & bug stuff.
+* [Werwolf2303](https://github.com/Werwolf2303/) - For working brilliantly on NTify 😊
+* [Anthony](https://twitter.com/intent/user?screen_name=anthonydavenpod) - For heavily improving the readme & rebranding the setup image.
+* [Jri-creator](https://github.com/Jri-creator) - For the base setup image
+  This site/app is not affiliated with Spotify.
