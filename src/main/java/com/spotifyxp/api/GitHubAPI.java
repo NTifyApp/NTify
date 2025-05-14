@@ -27,7 +27,7 @@ public class GitHubAPI {
         List<Release> release = new Gson().fromJson(ConnectionUtils.makeGet("https://api.github.com/repos/SpotifyXP/SpotifyXP/releases", new HashMap<>()), new TypeToken<List<Release>>(){}.getType());
         for (Release r : release) {
             if(r.assets.isEmpty()) continue;
-            r.assets.get(0).url = "https://github.com/SpotifyXP/SpotifyXP/releases/download/" + r.tag_name + "/SpotifyXP.jar";
+            r.assets.get(0).url = "https://github.com/NTifyApp/NTify/releases/download/" + r.tag_name + "/NTify.jar";
         }
         return release;
     }

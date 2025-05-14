@@ -16,6 +16,7 @@ import com.spotifyxp.logging.LogPrintStream;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.theming.Theme;
 import com.spotifyxp.theming.ThemeLoader;
+import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.ArchitectureDetection;
 import com.spotifyxp.utils.Utils;
 import com.spotifyxp.video.DummyVLCPlayer;
@@ -43,7 +44,7 @@ public class PublicValues {
 
     public static ArchitectureDetection.Architecture architecture = ArchitectureDetection.Architecture.x86;
     public static libLanguage language = null;
-    public static String fileslocation = System.getenv("appdata") + File.separator +  "SpotifyXP";
+    public static String fileslocation = System.getenv("appdata") + File.separator + ApplicationUtils.getName();
     public static String configfilepath = fileslocation + File.separator + "config.json";
     public static Config config = null;
     public static Session session;
@@ -52,7 +53,7 @@ public class PublicValues {
     public static String[] args = null;
     @Deprecated
     public static String appLocation = fileslocation;
-    public static String deviceName = "SpotifyXP";
+    public static String deviceName = ApplicationUtils.getName();
     public static Theme theme = null;
     public static libDetect.OSType osType;
     public static boolean foundSetupArgument = false;

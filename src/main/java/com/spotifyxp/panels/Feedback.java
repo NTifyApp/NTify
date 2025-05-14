@@ -97,7 +97,7 @@ public class Feedback extends JPanel implements View {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ConnectionUtils.openBrowser("https://github.com/SpotifyXP/SpotifyXP/issues/new");
+                    ConnectionUtils.openBrowser("https://github.com/NTifyApp/NTify/issues/new");
                 } catch (URISyntaxException | IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -122,7 +122,7 @@ public class Feedback extends JPanel implements View {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ConnectionUtils.openBrowser("https://github.com/SpotifyXP/SpotifyXP/issues");
+                    ConnectionUtils.openBrowser("https://github.com/NTifyApp/NTify/issues");
                 } catch (URISyntaxException | IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -146,7 +146,7 @@ public class Feedback extends JPanel implements View {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ConnectionUtils.openBrowser("https://github.com/SpotifyXP/SpotifyXP");
+                    ConnectionUtils.openBrowser("https://github.com/NTifyApp/NTify");
                 } catch (URISyntaxException | IOException ex) {
                     throw new RuntimeException(ex);
                 }

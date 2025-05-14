@@ -39,16 +39,16 @@ public class Updater {
 
         // 1. Copy SpotifyXP into tmp
         Files.copy(
-                Paths.get(PublicValues.appLocation + File.separator + "SpotifyXP.jar"),
-                new File(System.getProperty("java.io.tmpdir"), "SpotifyXP.jar").toPath(),
+                Paths.get(PublicValues.appLocation + File.separator + "NTify.jar"),
+                new File(System.getProperty("java.io.tmpdir"), "NTify.jar").toPath(),
                 StandardCopyOption.REPLACE_EXISTING
         );
 
-        // 2. Execute the copied SpotifyXP.jar and stop the current process
+        // 2. Execute the copied NTify.jar and stop the current process
         ProcessBuilder builder = new ProcessBuilder(
                 "java",
                 "-jar",
-                new File(PublicValues.tempPath, "SpotifyXP.jar").getAbsolutePath(),
+                new File(PublicValues.tempPath, "NTify.jar").getAbsolutePath(),
                 "--run-updater=" + Base64.getEncoder().encodeToString(serializedUpdateInfo)
         );
         builder.start();

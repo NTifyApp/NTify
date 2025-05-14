@@ -89,7 +89,7 @@ public class UpdaterUI extends JFrame {
                 ProcessBuilder builder = new ProcessBuilder(
                         "java",
                         "-jar",
-                        new File(PublicValues.appLocation, "SpotifyXP.jar").getAbsolutePath()
+                        new File(PublicValues.appLocation, "NTify.jar").getAbsolutePath()
                 );
                 try {
                     builder.start();
@@ -117,7 +117,7 @@ public class UpdaterUI extends JFrame {
             InputStream in = response.body().byteStream();
             byte[] data = new byte[1024];
             long downloadedFileSize = 0;
-            FileOutputStream stream = new FileOutputStream(new File(PublicValues.appLocation, "SpotifyXP.jar.zip"));
+            FileOutputStream stream = new FileOutputStream(new File(PublicValues.appLocation, "NTify.jar.zip"));
             int x;
             while ((x = in.read(data, 0, 1024)) >= 0) {
                 downloadedFileSize += x;
@@ -141,8 +141,8 @@ public class UpdaterUI extends JFrame {
             }
             stream.close();
             in.close();
-            new File(PublicValues.fileslocation, "SpotifyXP.jar").delete();
-            new File(PublicValues.fileslocation, "SpotifyXP.jar.zip").renameTo(new File(PublicValues.fileslocation, "SpotifyXP.jar"));
+            new File(PublicValues.fileslocation, "NTify.jar").delete();
+            new File(PublicValues.fileslocation, "NTify.jar.zip").renameTo(new File(PublicValues.fileslocation, "NTify.jar"));
         } catch (SocketTimeoutException socketTimeoutException) {
             download();
         } catch (Exception exception) {

@@ -165,13 +165,13 @@ public class Initiator {
         new SupportModuleLoader().loadModules();
         if(!Flags.linuxSupport) {
             if(PublicValues.osType == libDetect.OSType.Linux) {
-                JOptionPane.showMessageDialog(null, "SpotifyXP was built without Linux support", "Fatal error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, ApplicationUtils.getName() + " was built without Linux support", "Fatal error", JOptionPane.ERROR_MESSAGE);
                 System.exit(0);
             }
         }
         if(!Flags.macosSupport) {
             if(PublicValues.osType == libDetect.OSType.MacOS) {
-                JOptionPane.showMessageDialog(null, "SpotifyXP was built without MacOS support", "Fatal error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, ApplicationUtils.getName() + " was built without MacOS support", "Fatal error", JOptionPane.ERROR_MESSAGE);
                 System.exit(0);
             }
         }

@@ -72,13 +72,13 @@ public class Setup {
                 String jarPath = Initiator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
                 macos.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                         .setFrom(jarPath)
-                        .setTo(PublicValues.appLocation + File.separator + "SpotifyXP.jar")
+                        .setTo(PublicValues.appLocation + File.separator + "NTify.jar")
                         .setType(InstallProgressComponent.FileOperationTypes.COPY));
                 macos.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                         .setCustom(() -> {
-                            MacOSAppUtil util = new MacOSAppUtil("SpotifyXP");
-                            util.setIcon("spotifyxp.icns");
-                            util.setExecutableLocation(PublicValues.appLocation + "/SpotifyXP.jar");
+                            MacOSAppUtil util = new MacOSAppUtil(ApplicationUtils.getName());
+                            util.setIcon("ntify.icns");
+                            util.setExecutableLocation(PublicValues.appLocation + "/NTify.jar");
                             try {
                                 util.create();
                                 return true;
@@ -109,7 +109,7 @@ public class Setup {
             String jarPath = Initiator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
             win.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                     .setFrom(jarPath)
-                    .setTo(PublicValues.appLocation + "/SpotifyXP.jar")
+                    .setTo(PublicValues.appLocation + "/NTify.jar")
                     .setType(InstallProgressComponent.FileOperationTypes.COPY));
             win.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                     .setCustom(() -> {
@@ -118,8 +118,8 @@ public class Setup {
                             shellLink.setIconLocation(PublicValues.appLocation + "/ntify.ico");
                             shellLink.setCMDArgs("--setup-complete");
                             ShellLinkHelper helper = new ShellLinkHelper(shellLink);
-                            helper.setLocalTarget("C", PublicValues.appLocation.replace("C:\\", "") + "/SpotifyXP.jar");
-                            helper.saveTo(System.getProperty("user.home") + "/Desktop/SpotifyXP.lnk");
+                            helper.setLocalTarget("C", PublicValues.appLocation.replace("C:\\", "") + "/NTify.jar");
+                            helper.saveTo(System.getProperty("user.home") + "/Desktop/NTify.lnk");
                             return true;
                         } catch (Exception e) {
                             ConsoleLogging.Throwable(e);
@@ -150,17 +150,17 @@ public class Setup {
                 String jarPath = Initiator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
                 linux.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                         .setFrom(jarPath)
-                        .setTo(PublicValues.appLocation + File.separator + "SpotifyXP.jar")
+                        .setTo(PublicValues.appLocation + File.separator + "NTify.jar")
                         .setType(InstallProgressComponent.FileOperationTypes.COPY));
                 linux.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                         .setCustom(() -> {
-                            LinuxAppUtil util = new LinuxAppUtil("SpotifyXP");
+                            LinuxAppUtil util = new LinuxAppUtil(ApplicationUtils.getName());
                             util.setVersion(ApplicationUtils.getVersion());
                             util.setComment("Listen to Spotify");
                             util.setPath(PublicValues.appLocation);
-                            util.setExecutableLocation("java -jar SpotifyXP.jar --setup-complete");
+                            util.setExecutableLocation("java -jar NTify.jar --setup-complete");
                             util.setIconlocation(PublicValues.appLocation + "/ntify.ico");
-                            util.setCategories("Java", "Music");
+                            util.setCategories("Java", "Audio");
                             try {
                                 util.create();
                                 return true;

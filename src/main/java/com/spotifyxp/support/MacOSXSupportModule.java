@@ -2,6 +2,7 @@ package com.spotifyxp.support;
 
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.utils.ApplicationUtils;
 
 import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
@@ -17,13 +18,13 @@ public class MacOSXSupportModule implements SupportModule {
     @Override
     public void run() {
         if (!PublicValues.customSaveDir) {
-            PublicValues.fileslocation = System.getProperty("user.home") + "/Library/Application Support/SpotifyXP";
+            PublicValues.fileslocation = System.getProperty("user.home") + "/Library/Application Support/" + ApplicationUtils.getName();
             PublicValues.appLocation = PublicValues.fileslocation;
             PublicValues.configfilepath = PublicValues.fileslocation + "/config.json";
             PublicValues.tempPath = System.getProperty("java.io.tmpdir");
         }
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "SpotifyXP");
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", ApplicationUtils.getName());
         try {
             Class<?> util = Class.forName("com.apple.eawt.Application");
             Method getApplication = util.getMethod("getApplication", new Class[0]);

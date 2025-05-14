@@ -86,8 +86,8 @@ public class ArgParser {
      * Prints an argument help containing a list of all commands available
      */
     public void printHelp() {
-        System.out.println("SpotifyXP - " + ApplicationUtils.getVersion() + "\n");
-        System.out.println("Usage java -jar SpotifyXP.jar <argument>..." + "\n\n");
+        System.out.println(ApplicationUtils.getName() + " - " + ApplicationUtils.getVersion() + "\n");
+        System.out.println("Usage java -jar NTify.jar <argument>..." + "\n\n");
         for (com.spotifyxp.args.Argument a : arguments) {
             if (a.hasParameter()) {
                 System.out.println("--" + a.getName() + "=<parameter>" + "   =>   " + a.getDescription());

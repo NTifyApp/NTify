@@ -16,6 +16,7 @@ import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
+import com.spotifyxp.utils.ApplicationUtils;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.Range;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +47,7 @@ public class LinuxSupportModule implements SupportModule {
     public void run() {
         PublicValues.enableMediaControl = false;
         if (!PublicValues.customSaveDir) {
-            PublicValues.fileslocation = System.getProperty("user.home") + "/.local/share/SpotifyXP";
+            PublicValues.fileslocation = System.getProperty("user.home") + "/.local/share/" + ApplicationUtils.getName();
             PublicValues.appLocation = PublicValues.fileslocation;
             PublicValues.configfilepath = PublicValues.fileslocation + "/config.json";
             PublicValues.tempPath = System.getProperty("java.io.tmpdir");
@@ -53,7 +55,7 @@ public class LinuxSupportModule implements SupportModule {
         try {
             MPRISMediaPlayer mediaPlayer = new MPRISMediaPlayer(
                     DBusConnection.newConnection(DBusConnection.DBusBusType.SESSION),
-                    "spotifyxp"
+                    ApplicationUtils.getName().toLowerCase(Locale.ENGLISH)
             );
             mpris = mediaPlayer.buildMPRISMediaPlayer2None(
                     new MPRISMediaPlayer.MediaPlayer2Builder()
@@ -72,8 +74,8 @@ public class LinuxSupportModule implements SupportModule {
                             .setSupportedUriSchemes("spotify:")
                             .setCanQuit(true)
                             .setCanRaise(true)
-                            .setIdentity("SpotifyXP")
-                            .setDesktopEntry("/home/werwolf2303/.local/share/applications/SpotifyXP.desktop"),
+                            .setIdentity(ApplicationUtils.getName())
+                            .setDesktopEntry("/home/werwolf2303/.local/share/applications/" + ApplicationUtils.getName() + ".desktop"),
                     new MPRISMediaPlayer.PlayerBuilder()
                             .setOnOpenURI(new TypeRunnable<String>() {
                                 @Override
