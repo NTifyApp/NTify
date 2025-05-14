@@ -49,7 +49,7 @@ public class Initiator {
         PublicValues.argParser.parseArguments(args); //Parsing the arguments
         initEvents(); //Initializing the event support
         new SplashPanel().show(); //Initializing the splash panel
-        System.setProperty("http.agent", ApplicationUtils.getUserAgent()); //Setting the user agent string that NTify uses
+        System.setProperty("http.agent", ApplicationUtils.getUserAgent()); //Setting the user agent string that SpotifyXP uses
         checkDebug(); //Checking if debug is enabled
         detectOS(); //Detecting the operating system
         detectArchitecture();

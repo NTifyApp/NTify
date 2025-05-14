@@ -11,7 +11,7 @@ import java.io.IOException;
 public class JDialog extends javax.swing.JDialog {
     public JDialog() throws IOException {
         super(ContentPanel.frame);
-        setIconImage(ImageIO.read(new Resources().readToInputStream("spotifyxp.png")));
+        setIconImage(ImageIO.read(new Resources().readToInputStream("ntify.png")));
     }
 
     public void pack() {

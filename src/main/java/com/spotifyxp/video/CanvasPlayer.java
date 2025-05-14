@@ -14,6 +14,7 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.PlayerArea;
 import com.spotifyxp.swingextension.JFrame;
+import com.spotifyxp.utils.ApplicationUtils;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -27,7 +28,7 @@ public class CanvasPlayer extends JFrame {
     private boolean videoLoaded = false;
 
     public CanvasPlayer() {
-        setTitle("SpotifyXP - Canvas"); // ToDo: Translate
+        setTitle(ApplicationUtils.getName() + " - Canvas"); // ToDo: Translate
         setPreferredSize(new Dimension(290, 460));
         if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
             cachePath = new File(PublicValues.appLocation, "cvnscache");

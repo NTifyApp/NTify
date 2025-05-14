@@ -30,7 +30,7 @@ public class BackgroundService {
         }
         try {
             trayDialog = new SystemTrayDialog();
-            trayDialog.add(new ImageIcon(ImageIO.read(new Resources().readToInputStream("spotifyxp.png"))), "SpotifyXP");
+            trayDialog.add(new ImageIcon(ImageIO.read(new Resources().readToInputStream("ntify.png"))), "SpotifyXP");
             trayDialog.open(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {

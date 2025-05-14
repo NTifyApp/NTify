@@ -41,7 +41,7 @@ public class ContentPanel extends JPanel {
     public static JPanel tabPanel;
     public static final JTabbedPane legacySwitch = new JTabbedPane();
     public static final JMenuBar bar = new JMenuBar();
-    public static final JFrame frame = new JFrame("SpotifyXP - " + ApplicationUtils.getVersion() + " " + ApplicationUtils.getReleaseCandidate());
+    public static final JFrame frame = new JFrame(ApplicationUtils.getName() + " - " + ApplicationUtils.getVersion() + " " + ApplicationUtils.getReleaseCandidate());
     public static Views currentView = Views.HOME; //The view on start is home
     public static Views lastView = Views.HOME;
     public static View currentViewPanel;
@@ -180,7 +180,7 @@ public class ContentPanel extends JPanel {
             }
             String openSourceList = new Resources().readToString("setup/thirdparty.html");
             String finalHTML = cache.toString().split("<insertOpenSourceList>")[0] + openSourceList + cache.toString().split("</insertOpenSourceList>")[1];
-            dialog.open(PublicValues.language.translate("ui.menu.help.about"), finalHTML);
+            dialog.open(PublicValues.language.translate("ui.menu.help.about"), finalHTML.replace("%APPNAME%", ApplicationUtils.getName()));
         } catch (Exception ex) {
             GraphicalMessage.openException(ex);
             ConsoleLogging.Throwable(ex);

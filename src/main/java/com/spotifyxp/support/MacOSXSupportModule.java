@@ -31,7 +31,7 @@ public class MacOSXSupportModule implements SupportModule {
             Class[] params = new Class[1];
             params[0] = Image.class;
             Method setDockIconImage = util.getMethod("setDockIconImage", params);
-            URL url = Initiator.class.getClassLoader().getResource("spotifyxp.png");
+            URL url = Initiator.class.getClassLoader().getResource("ntify.png");
             Image image = Toolkit.getDefaultToolkit().getImage(url);
             setDockIconImage.invoke(application, image);
         } catch (Exception ignored) {
@@ -42,7 +42,7 @@ public class MacOSXSupportModule implements SupportModule {
                 Class[] params = new Class[1];
                 params[0] = Image.class;
                 Method setDockIconImage = util.getMethod("setIconImage", params);
-                URL url = Initiator.class.getClassLoader().getResource("spotifyxp.png");
+                URL url = Initiator.class.getClassLoader().getResource("ntify.png");
                 Image image = Toolkit.getDefaultToolkit().getImage(url);
                 setDockIconImage.invoke(application, image);
             } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |

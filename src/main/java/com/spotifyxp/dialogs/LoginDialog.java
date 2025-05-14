@@ -8,6 +8,7 @@ import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.guielements.Settings;
 import com.spotifyxp.swingextension.JFrame;
+import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.ClipboardUtil;
 import com.spotifyxp.utils.ConnectionUtils;
 import com.spotifyxp.utils.GraphicalMessage;
@@ -66,7 +67,7 @@ public class LoginDialog {
             EventSubscriber onOauthCancel,
             EventSubscriber onOauthExecute
     ) {
-        ImageIcon icon = new ImageIcon(Objects.requireNonNull(LoginDialog.class.getResource("/spotifyxp.png")));
+        ImageIcon icon = new ImageIcon(Objects.requireNonNull(LoginDialog.class.getResource("/ntify.png")));
         Dimension defaultDimension = new Dimension(296, 384);
         spotifyxplogo.setIcon(
                 new ImageIcon(icon.getImage().getScaledInstance((int) defaultDimension.getWidth() / 3, (int) defaultDimension.getWidth() / 3, Image.SCALE_FAST))
@@ -174,8 +175,8 @@ public class LoginDialog {
         if (frame != null) {
             return;
         }
-        frame = new JFrame("SpotifyXP - Login");
-        frame.setIconImage(Toolkit.getDefaultToolkit().getImage(LoginDialog.class.getResource("/spotifyxp.png")));
+        frame = new JFrame(ApplicationUtils.getName() + " - Login");
+        frame.setIconImage(Toolkit.getDefaultToolkit().getImage(LoginDialog.class.getResource("/ntify.png")));
         frame.setContentPane(new LoginDialog(onZeroconfCancel, onZeroconfExecute, onOauthCancel, onOauthExecute).contentPanel);
         frame.setResizable(false);
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);

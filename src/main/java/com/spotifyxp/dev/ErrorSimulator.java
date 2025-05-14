@@ -1,6 +1,7 @@
 package com.spotifyxp.dev;
 
 import com.spotifyxp.swingextension.JFrame;
+import com.spotifyxp.utils.ApplicationUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,7 +15,7 @@ public class ErrorSimulator extends JFrame {
         public ContentPanel() {
             setLayout(null);
             setPreferredSize(new Dimension(400, 25));
-            setTitle("SpotifyXP - Error Generator (Developer Tools)");
+            setTitle(ApplicationUtils.getName() + " - Error Generator (Developer Tools)");
 
             submit = new JButton("Submit");
             exceptionDescriptionOptional = new JTextField();

@@ -1,6 +1,10 @@
 package com.spotifyxp.lib;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.Resources;
 import org.json.JSONObject;
 
@@ -307,82 +311,35 @@ public class libLanguage {
 
     public String translate(String key) {
         final String[] ret = {key};
-        if (!jsoncache.isEmpty()) {
+        if(jsoncache.isEmpty()) {
             try {
-                JSONObject object = new JSONObject(jsoncache);
-                object.toMap().forEach(new BiConsumer<String, Object>() {
-                    @Override
-                    public void accept(String s, Object o) {
-                        if (s.equals(key)) {
-                            ret[0] = o.toString();
-                        }
+                JsonObject object = new Gson().fromJson(removeComment(new Resources().readToString(lf + "/" + languageCode + ".json")), JsonObject.class);
+                object.asMap().forEach((BiConsumer<String, Object>) (s, o) -> {
+                    if(s.equals(key)) {
+                        ret[0] = o.toString();
                     }
                 });
                 jsoncache = object.toString();
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                ConsoleLogging.error("Failed to get translation for: " + languageCode);
+                ConsoleLogging.Throwable(e);
             }
         }
-        if (afl) {
-            try {
-                JSONObject object = new JSONObject(removeComment(new Resources().readToString(lf + "/" + languageCode + ".json")));
-                object.toMap().forEach(new BiConsumer<String, Object>() {
-                    @Override
-                    public void accept(String s, Object o) {
-                        if (s.equals(key)) {
-                            ret[0] = o.toString();
-                        }
-                    }
-                });
-                jsoncache = object.toString();
-                return ret[0];
-            } catch (Exception e) {
-                if (langNotFound) {
-                    return key;
+        try {
+            JsonObject object = new Gson().fromJson(jsoncache, JsonObject.class);
+            object.asMap().forEach((BiConsumer<String, Object>) (s, o) -> {
+                if(s.equals(key)) {
+                    ret[0] = o.toString();
                 }
-                languageCode = "en";
-                langNotFound = true;
-                return translate(key);
-            }
-        } else {
-            if (!jsoncache.isEmpty()) {
-                try {
-                    JSONObject object = new JSONObject(jsoncache);
-                    object.toMap().forEach(new BiConsumer<String, Object>() {
-                        @Override
-                        public void accept(String s, Object o) {
-                            if (s.equals(key)) {
-                                ret[0] = o.toString();
-                            }
-                        }
-                    });
-                    jsoncache = object.toString();
-                    return ret[0];
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            try {
-                JSONObject object = new JSONObject(removeComment(new Resources().readToString(lf + "/" + languageCode + ".json")));
-                object.toMap().forEach(new BiConsumer<String, Object>() {
-                    @Override
-                    public void accept(String s, Object o) {
-                        if (s.equals(key)) {
-                            ret[0] = o.toString();
-                        }
-                    }
-                });
-                jsoncache = object.toString();
-            } catch (Exception e) {
-                if (langNotFound) {
-                    return key;
-                }
-                langNotFound = true;
-                languageCode = "en";
-                return translate(key);
-            }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return ret[0];
+        String input = ret[0];
+        if (input.length() >= 2 && input.charAt(0) == '\"' && input.charAt(input.length() - 1) == '\"') {
+            input = input.substring(1, input.length() - 1);
+        }
+        return input.replaceAll("%APPNAME%", ApplicationUtils.getName());
     }
 
     public ArrayList<String> getAvailableLanguages() {

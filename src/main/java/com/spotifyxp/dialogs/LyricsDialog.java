@@ -15,6 +15,7 @@ import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.panels.PlayerArea;
 import com.spotifyxp.swingextension.PaintPanel;
 import com.spotifyxp.swingextension.RAWTextArea;
+import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.ClipboardUtil;
 import com.spotifyxp.utils.GraphicalMessage;
 import com.spotifyxp.utils.Resources;
@@ -35,7 +36,7 @@ public class LyricsDialog extends JDialog {
 
     public LyricsDialog() {
         $$$setupUI$$$();
-        setTitle("SpotifyXP - Song Lyrics"); //ToDo: Translate
+        setTitle(ApplicationUtils.getName() + " - Song Lyrics"); //ToDo: Translate
         setContentPane(contentPanel);
     }
 
@@ -66,7 +67,7 @@ public class LyricsDialog extends JDialog {
                     }
                 });
                 try {
-                    setIconImage(ImageIO.read(new Resources().readToInputStream("spotifyxp.png")));
+                    setIconImage(ImageIO.read(new Resources().readToInputStream("ntify.png")));
                 } catch (Exception e) {
                     ConsoleLogging.Throwable(e);
                     if (PublicValues.config.getString(ConfigValues.hideExceptions.name).equals("false")) {
