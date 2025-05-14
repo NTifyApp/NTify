@@ -15,7 +15,7 @@ public class JFrame extends javax.swing.JFrame {
     public JFrame(String title) {
         super.setTitle(title);
         try {
-            setIconImage(ImageIO.read(new Resources().readToInputStream("spotifyxp.png")));
+            setIconImage(ImageIO.read(new Resources().readToInputStream("ntify.png")));
         } catch (IOException e) {
             GraphicalMessage.openException(e);
             ConsoleLogging.Throwable(e);
@@ -24,7 +24,7 @@ public class JFrame extends javax.swing.JFrame {
 
     public JFrame() {
         try {
-            setIconImage(ImageIO.read(new Resources().readToInputStream("spotifyxp.png")));
+            setIconImage(ImageIO.read(new Resources().readToInputStream("ntify.png")));
         } catch (IOException e) {
             GraphicalMessage.openException(e);
             ConsoleLogging.Throwable(e);
