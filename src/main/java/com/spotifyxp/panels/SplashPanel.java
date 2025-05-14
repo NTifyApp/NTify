@@ -53,11 +53,11 @@ public class SplashPanel {
         });
         JImagePanel image = new JImagePanel();
         linfo = new JLabel("Please wait...");
-        image.setImage(new Resources().readToInputStream("spotifyxp.png"));
+        image.setImage(new Resources().readToInputStream("ntify.png"));
         frame.getContentPane().add(image);
         frame.setPreferredSize(new Dimension(290, 300));
         try {
-            frame.setIconImage(ImageIO.read(new Resources().readToInputStream("spotifyxp.png")));
+            frame.setIconImage(ImageIO.read(new Resources().readToInputStream("ntify.png")));
         } catch (Exception e) {
             ConsoleLogging.Throwable(e);
             if (PublicValues.config.getString(ConfigValues.hideExceptions.name).equals("false")) {
