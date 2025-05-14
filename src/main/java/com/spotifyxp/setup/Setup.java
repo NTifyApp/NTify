@@ -66,8 +66,8 @@ public class Setup {
                         .setFrom(PublicValues.appLocation)
                         .setType(InstallProgressComponent.FileOperationTypes.CREATEDIR));
                 macos.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
-                        .setFrom(new Resources().readToInputStream("spotifyxp.ico"))
-                        .setTo(PublicValues.appLocation + File.separator + "spotifyxp.ico")
+                        .setFrom(new Resources().readToInputStream("ntify.ico"))
+                        .setTo(PublicValues.appLocation + File.separator + "ntify.ico")
                         .setType(InstallProgressComponent.FileOperationTypes.COPYSTREAM));
                 String jarPath = Initiator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
                 macos.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
@@ -103,8 +103,8 @@ public class Setup {
                     .setFrom(PublicValues.appLocation)
                     .setType(InstallProgressComponent.FileOperationTypes.CREATEDIR));
             win.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
-                    .setFrom(new Resources().readToInputStream("spotifyxp.ico"))
-                    .setTo(PublicValues.appLocation + "/spotifyxp.ico")
+                    .setFrom(new Resources().readToInputStream("ntify.ico"))
+                    .setTo(PublicValues.appLocation + "/ntify.ico")
                     .setType(InstallProgressComponent.FileOperationTypes.COPYSTREAM));
             String jarPath = Initiator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
             win.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
@@ -115,7 +115,7 @@ public class Setup {
                     .setCustom(() -> {
                         try {
                             ShellLink shellLink = new ShellLink();
-                            shellLink.setIconLocation(PublicValues.appLocation + "/SpotifyXP.ico");
+                            shellLink.setIconLocation(PublicValues.appLocation + "/ntify.ico");
                             shellLink.setCMDArgs("--setup-complete");
                             ShellLinkHelper helper = new ShellLinkHelper(shellLink);
                             helper.setLocalTarget("C", PublicValues.appLocation.replace("C:\\", "") + "/SpotifyXP.jar");
@@ -144,8 +144,8 @@ public class Setup {
                         .setFrom(PublicValues.appLocation)
                         .setType(InstallProgressComponent.FileOperationTypes.CREATEDIR));
                 linux.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
-                        .setFrom(new Resources().readToInputStream("spotifyxp.ico"))
-                        .setTo(PublicValues.appLocation + File.separator + "spotifyxp.ico")
+                        .setFrom(new Resources().readToInputStream("ntify.ico"))
+                        .setTo(PublicValues.appLocation + File.separator + "ntify.ico")
                         .setType(InstallProgressComponent.FileOperationTypes.COPYSTREAM));
                 String jarPath = Initiator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
                 linux.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
@@ -159,7 +159,7 @@ public class Setup {
                             util.setComment("Listen to Spotify");
                             util.setPath(PublicValues.appLocation);
                             util.setExecutableLocation("java -jar SpotifyXP.jar --setup-complete");
-                            util.setIconlocation(PublicValues.appLocation + "/spotifyxp.ico");
+                            util.setIconlocation(PublicValues.appLocation + "/ntify.ico");
                             util.setCategories("Java", "Music");
                             try {
                                 util.create();
