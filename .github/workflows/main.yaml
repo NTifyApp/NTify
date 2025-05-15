@@ -29,16 +29,16 @@ jobs:
         id: get_commit_id
         run: echo "COMMIT_ID=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
       - name: Save commit ID to file
-        working-directory: ./SpotifyXP
+        working-directory: ./NTify
         run: echo ${{ steps.get_commit_id.outputs.COMMIT_ID }} > src/main/resources/commit_id.txt
       - name: Build with Maven and build.py
-        working-directory: ./SpotifyXP
+        working-directory: ./NTify
         run: python3 build.py
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4.6.0
         with:
           name: Build
-          path: /home/grunner/actions-runner/_work/NTify/NTifyApp/NTify/target/NTify.jar
+          path: /home/grunner/actions-runner/_work/NTify/NTify/NTify/target/NTify.jar
       - name: Get commit info
         id: commit
         run: |
@@ -51,6 +51,6 @@ jobs:
         with:
           tag_name: ${{ env.sha }}
           name: ${{ env.title }}
-          files: /home/grunner/actions-runner/_work/NTify/NTifyApp/NTify/target/NTify.jar
+          files: /home/grunner/actions-runner/_work/NTify/NTify/NTify/target/NTify.jar
           draft: 'false'
           prerelease: 'false'
