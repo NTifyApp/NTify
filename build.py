@@ -5,7 +5,7 @@ import zipfile
 from init import doInit
 
 
-JAR_PATH = "target/SpotifyXP.jar"
+JAR_PATH = "target/NTify.jar"
 
 FLAGS_PATH = "src/main/java/com/spotifyxp/Flags.java"
 
@@ -124,7 +124,7 @@ with zipfile.ZipFile(JAR_PATH, "r") as jar_read:
         if array_contains(generally_ignored_directories, file, False):
             continue
         stripped_files.append(file)
-    temp_zip_path = "target/SpotifyXP.jar.temp"
+    temp_zip_path = "target/NTify.jar.temp"
     with zipfile.ZipFile(temp_zip_path, "w", zipfile.ZIP_DEFLATED) as temp_zip:
         for file in stripped_files:
             file_info = jar_read.getinfo(file)
