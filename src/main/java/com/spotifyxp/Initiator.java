@@ -194,7 +194,7 @@ public class Initiator {
                 util.getMethod("init").invoke(util);
             } catch (Exception ex) {
                 ex.printStackTrace();
-                ConsoleLogging.info("SpotifyXP was built without video playback support");
+                ConsoleLogging.info(ApplicationUtils.getName() + " was built without video playback support");
             }
         }
     }

@@ -6,6 +6,7 @@ import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.tray.SystemTrayDialog;
+import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.Resources;
 
 import javax.imageio.ImageIO;
@@ -30,7 +31,7 @@ public class BackgroundService {
         }
         try {
             trayDialog = new SystemTrayDialog();
-            trayDialog.add(new ImageIcon(ImageIO.read(new Resources().readToInputStream("ntify.png"))), "SpotifyXP");
+            trayDialog.add(new ImageIcon(ImageIO.read(new Resources().readToInputStream("ntify.png"))), ApplicationUtils.getName());
             trayDialog.open(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {

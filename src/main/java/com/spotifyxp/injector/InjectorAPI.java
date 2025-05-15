@@ -21,7 +21,7 @@ public class InjectorAPI {
     public static ArrayList<InjectorAPI.InjectorRepository> injectorRepos = new ArrayList<>();
 
     public InjectorAPI() {
-        injectorRepos.add(new InjectorAPI.InjectorRepository("https://spotifyxp.github.io/SpotifyXP-Repository/repo/"));
+        injectorRepos.add(new InjectorAPI.InjectorRepository("https://ntifyapp.github.io/Extensions-Repository/repo/"));
     }
 
     @FunctionalInterface

@@ -24,7 +24,7 @@ public class GitHubAPI {
     }
 
     public static List<Release> getReleases() throws IOException {
-        List<Release> release = new Gson().fromJson(ConnectionUtils.makeGet("https://api.github.com/repos/SpotifyXP/SpotifyXP/releases", new HashMap<>()), new TypeToken<List<Release>>(){}.getType());
+        List<Release> release = new Gson().fromJson(ConnectionUtils.makeGet("https://api.github.com/repos/NTifyApp/NTify/releases", new HashMap<>()), new TypeToken<List<Release>>(){}.getType());
         for (Release r : release) {
             if(r.assets.isEmpty()) continue;
             r.assets.get(0).url = "https://github.com/NTifyApp/NTify/releases/download/" + r.tag_name + "/NTify.jar";
