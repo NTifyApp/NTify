@@ -15,6 +15,8 @@
 
 ![Contributors](https://img.shields.io/github/contributors/NTifyApp/NTify?color=dark-green) ![Issues](https://img.shields.io/github/issues/NTifyApp/NTify) ![Downloads](https://img.shields.io/github/downloads/NTifyApp/NTify/total)
 
+<h3>Info: Free accounts are not supported
+
 ## Table Of Contents
 
 * [About the Project](#about-the-project)
@@ -32,7 +34,6 @@
 
 ## About The Project
 
-Stable version
 ![Screen Shot](NTifyShowStable.png)
 
 We originally developed NTify for a computer that runs Windows XP.
