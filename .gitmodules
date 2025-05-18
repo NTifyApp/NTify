@@ -1,0 +1,9 @@
+[submodule "deps/mpris-java"]
+	path = deps/mpris-java
+	url = https://github.com/SpotifyXP/mpris-java
+[submodule "deps/JavaSetupTool"]
+	path = deps/JavaSetupTool
+	url = https://github.com/werwolf2303/JavaSetupTool
+[submodule "deps/vlcj"]
+	path = deps/vlcj
+	url = https://github.com/SpotifyXP/vlcj
