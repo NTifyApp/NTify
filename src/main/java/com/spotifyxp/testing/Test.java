@@ -1,6 +1,7 @@
 package com.spotifyxp.testing;
 
 import com.spotifyxp.Flags;
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.events.Events;
@@ -24,7 +25,7 @@ public class Test {
         new LinuxSupportModule().run();
 
         PublicValues.config = new Config();
-        PublicValues.language = new libLanguage();
+        PublicValues.language = new libLanguage(Initiator.class);
         PublicValues.language.setNoAutoFindLanguage("en");
         PublicValues.language.setLanguageFolder("lang");
 

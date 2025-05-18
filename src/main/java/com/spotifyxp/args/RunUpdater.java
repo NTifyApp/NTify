@@ -1,5 +1,6 @@
 package com.spotifyxp.args;
 
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.deps.se.michaelthelin.spotify.Base64;
 import com.spotifyxp.events.Events;
@@ -26,7 +27,7 @@ public class RunUpdater implements Argument {
                 }
                 PublicValues.osType = libDetect.getDetectedOS();
                 new SupportModuleLoader().loadModules();
-                PublicValues.language = new libLanguage();
+                PublicValues.language = new libLanguage(Initiator.class);
                 PublicValues.language.setLanguageFolder("lang");
                 PublicValues.defaultHttpClient = new OkHttpClient();
                 try {

@@ -1,5 +1,6 @@
 package com.spotifyxp.args;
 
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.lib.libLanguage;
 import com.spotifyxp.logging.LogsViewer;
@@ -17,7 +18,7 @@ public class LogViewer implements Argument {
             @Override
             public void run() {
                 new DarkGreen().initTheme();
-                PublicValues.language = new libLanguage();
+                PublicValues.language = new libLanguage(Initiator.class);
                 PublicValues.language.setLanguageFolder("lang");
                 PublicValues.language.setNoAutoFindLanguage("en");
                 LogsViewer viewer = new LogsViewer();

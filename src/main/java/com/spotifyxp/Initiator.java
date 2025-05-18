@@ -246,7 +246,7 @@ public class Initiator {
 
     static void initLanguageSupport() {
         SplashPanel.linfo.setText("Init Language...");
-        PublicValues.language = new libLanguage();
+        PublicValues.language = new libLanguage(Initiator.class);
         PublicValues.language.setLanguageFolder("lang");
     }
 

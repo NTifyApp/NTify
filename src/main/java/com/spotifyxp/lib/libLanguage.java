@@ -12,9 +12,6 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.function.BiConsumer;
 
-/**
- * <a style="color:red">In use by SpotifyXP. !!!DO NOT USE!!!</a>
- */
 @SuppressWarnings("Convert2Lambda")
 public class libLanguage {
     /*
@@ -255,7 +252,10 @@ public class libLanguage {
         }
     }
 
-    public libLanguage() {
+    private final Class<?> clazz;
+
+    public libLanguage(Class<?> clazz) {
+        this.clazz = clazz;
     }
 
     boolean afl = false;
@@ -313,7 +313,7 @@ public class libLanguage {
         final String[] ret = {key};
         if(jsoncache.isEmpty()) {
             try {
-                JsonObject object = new Gson().fromJson(removeComment(new Resources().readToString(lf + "/" + languageCode + ".json")), JsonObject.class);
+                JsonObject object = new Gson().fromJson(removeComment(new Resources().readToString(clazz, lf + "/" + languageCode + ".json")), JsonObject.class);
                 object.asMap().forEach((BiConsumer<String, Object>) (s, o) -> {
                     if(s.equals(key)) {
                         ret[0] = o.toString();
@@ -348,7 +348,7 @@ public class libLanguage {
             if (languages.contains(language.getName())) {
                 continue;
             }
-            if (new Resources().readToInputStream("lang/" + language.getCode() + ".json") != null) {
+            if (new Resources().readToInputStream(clazz, "lang/" + language.getCode() + ".json") != null) {
                 languages.add(language.getName());
             }
         }
