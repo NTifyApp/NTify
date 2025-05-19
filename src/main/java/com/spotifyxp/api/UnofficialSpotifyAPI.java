@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -589,6 +591,7 @@ public class UnofficialSpotifyAPI {
             root = new JSONObject(new JSONObject(ConnectionUtils.makeGet(url,
                     MapUtils.of("Authorization", "Bearer " + InstanceManager.getSpotifyApi().getAccessToken(), "App-Platform", "Win32", "User-Agent", ApplicationUtils.getUserAgent()))).getJSONObject("data").getJSONObject("home").toString());
         }
+        Files.write(Paths.get("homedump.json"), root.toString().getBytes());
         try {
             return Optional.of(HomeTab.fromJSON(root));
         }catch (JSONException e) {

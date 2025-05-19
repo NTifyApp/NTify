@@ -21,7 +21,7 @@ public class OAuthPKCE {
 
 
     /**
-     * Refreshes the Spotify api token and forwards that to all programm parts that needs it
+     * Refreshes the Spotify api token
      */
     public void refresh() {
         token = Token.getDefaultToken();

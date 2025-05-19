@@ -3,11 +3,15 @@ package com.spotifyxp.utils;
 
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
+import com.spotifyxp.events.Events;
+import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
 import okhttp3.FormBody;
 import okhttp3.Headers;
 import okhttp3.Request;
+import okhttp3.Response;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -16,19 +20,33 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class ConnectionUtils {
 
+    @Nullable
     public static String makeGet(String url, @Nullable Map<String, String> headers) throws IOException {
         Request.Builder requestBuilder = new Request.Builder()
                 .url(url)
                 .addHeader("User-Agent", ApplicationUtils.getUserAgent())
                 .get();
         if (headers != null) requestBuilder.headers(Headers.of(headers));
-        return Objects.requireNonNull(PublicValues.defaultHttpClient.newCall(requestBuilder.build()).execute().body()).string();
+        Response response = Objects.requireNonNull(PublicValues.defaultHttpClient.newCall(requestBuilder.build()).execute());
+        if(response.code() == 401) {
+            if(headers.containsKey("Authorization") && url.contains("spotify.com")) {
+                Events.triggerEvent(SpotifyXPEvents.apikeyrefresh.getName());
+                Map<String, String> newHeaders = new HashMap<>(headers);
+                newHeaders.put("Authorization", "Bearer " + InstanceManager.getSpotifyApi().getAccessToken());
+                return makeGet(url, newHeaders);
+            }else {
+                return null;
+            }
+        }else {
+            return response.body().string();
+        }
     }
 
     public static boolean isWebsiteReachable(String url) {
@@ -40,6 +58,7 @@ public class ConnectionUtils {
         }
     }
 
+    @Nullable
     public static String makePost(String url, NameValuePair[] topost, @Nullable Map<String, String> headers) throws Exception {
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         for (NameValuePair pair : topost) {
@@ -50,14 +69,39 @@ public class ConnectionUtils {
                 .addHeader("User-Agent", ApplicationUtils.getUserAgent())
                 .post(formBodyBuilder.build());
         if (headers != null) requestBuilder.headers(Headers.of(headers));
-        return Objects.requireNonNull(PublicValues.defaultHttpClient.newCall(requestBuilder.build()).execute().body()).string();
+        Response response = Objects.requireNonNull(PublicValues.defaultHttpClient.newCall(requestBuilder.build()).execute());
+        if(response.code() == 401) {
+            if(headers.containsKey("Authorization") && url.contains("spotify.com")) {
+                Events.triggerEvent(SpotifyXPEvents.apikeyrefresh.getName());
+                Map<String, String> newHeaders = new HashMap<>(headers);
+                newHeaders.put("Authorization", "Bearer " + InstanceManager.getSpotifyApi().getAccessToken());
+                return makeGet(url, newHeaders);
+            }else {
+                return null;
+            }
+        }else {
+            return response.body().string();
+        }
     }
 
+    @Nullable
     public static String makeDelete(String url, @Nullable Map<String, String> headers) throws IOException {
         Request.Builder requestBuilder = new Request.Builder()
                 .addHeader("User-Agent", ApplicationUtils.getUserAgent());
         if (headers != null) requestBuilder.headers(Headers.of(headers));
-        return Objects.requireNonNull(PublicValues.defaultHttpClient.newCall(requestBuilder.build()).execute().body()).string();
+        Response response = Objects.requireNonNull(PublicValues.defaultHttpClient.newCall(requestBuilder.build()).execute());
+        if(response.code() == 401) {
+            if(headers.containsKey("Authorization") && url.contains("spotify.com")) {
+                Events.triggerEvent(SpotifyXPEvents.apikeyrefresh.getName());
+                Map<String, String> newHeaders = new HashMap<>(headers);
+                newHeaders.put("Authorization", "Bearer " + InstanceManager.getSpotifyApi().getAccessToken());
+                return makeGet(url, newHeaders);
+            }else {
+                return null;
+            }
+        }else {
+            return response.body().string();
+        }
     }
 
     public static void openBrowser(String url) throws URISyntaxException, IOException {

@@ -41,6 +41,8 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.dealer.ApiClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.dealer.DealerClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.events.EventSubscriber;
+import com.spotifyxp.events.Events;
+import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLoggingModules;
 import okhttp3.*;
 import okhttp3.Authenticator;
@@ -744,6 +746,8 @@ public final class Session implements Closeable {
             synchronized (reconnectionListeners) {
                 reconnectionListeners.forEach(ReconnectionListener::onConnectionEstablished);
             }
+
+            Events.triggerEvent(SpotifyXPEvents.apikeyrefresh.getName());
         } catch (IOException | GeneralSecurityException | SpotifyAuthenticationException ex) {
             if (closing)
                 return;

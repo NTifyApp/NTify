@@ -64,7 +64,7 @@ public class HomePanel extends JScrollPane implements View {
                         reloadHome();
                     }
                 };
-                reloadTimer.schedule(nextReload, Date.from(Instant.now().plusSeconds(3600))); //Every hour
+                reloadTimer.schedule(nextReload, Date.from(Instant.now().plusSeconds(1800))); // Every 30 minutes
             }, "Wait for home tab");
             thread.start();
         });
@@ -86,7 +86,7 @@ public class HomePanel extends JScrollPane implements View {
                     reloadHome();
                 }
             };
-            reloadTimer.schedule(nextReload, Date.from(Instant.now().plusSeconds(3600))); //Every hour
+            reloadTimer.schedule(nextReload, Date.from(Instant.now().plusSeconds(1800))); // Every 30 minutes
         }, "Wait for home tab");
         thread.start();
     }
