@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package spotifyxp.concert;
+
+option java_package = "com.spotifyxp.protogens";
+
+message ConcertRequest {
+  string id = 1;
+}
+
+message ConcertResponse {
+  message Artist {
+    string name = 1;
+    string image = 2;
+    string id = 3;
+  }
+
+  message Date {
+    string time = 1;
+    int64 unknown = 2;
+  }
+
+  message Genre {
+    string name = 1;
+    string conceptUri = 2;
+    string concertsGenreUri = 3;
+  }
+
+  message ConcertInfo {
+    string colorCode = 1;
+    Artist artist = 2;
+    string id = 3;
+    string artistName = 4;
+    Date date = 5;
+    string fullLocation = 6;
+    string venueName = 8;
+    string cityCountry = 9;
+    repeated Genre genres = 11;
+  }
+
+  message Playlist {
+    string artistName = 1;
+    string name = 2;
+    string image = 3;
+    string uri = 4;
+    int64 unknown = 5;
+  }
+
+  message PlaylistContainer {
+    Playlist playlist = 2;
+  }
+
+  message DateInfo {
+    Date date = 1;
+  }
+
+  message VenueMapService {
+    int64 id = 1;
+    string url = 2;
+  }
+
+  message Venue {
+    string venueName = 1;
+    string venueLocation = 2;
+    repeated VenueMapService mapServices = 4;
+  }
+
+  message VenueInfo {
+    Venue venue = 1;
+    DateInfo dateInfo = 2;
+  }
+
+  message TicketServiceInfo {
+    string companyName = 1;
+    string companyBranding = 2;
+    string bookUrl = 3;
+  }
+
+  message TicketInfo {
+    TicketServiceInfo ticketServiceInfo = 2;
+    string disclaimer = 5;
+  }
+
+  message Section {
+    optional string name = 1;
+    optional TicketInfo ticketInfo = 3;
+    optional PlaylistContainer playlistContainer = 5;
+    optional VenueInfo venueInfo = 8;
+  }
+
+  ConcertInfo concertInfo = 1;
+  repeated Section sections = 2;
+}

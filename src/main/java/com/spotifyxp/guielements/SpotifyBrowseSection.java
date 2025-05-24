@@ -22,7 +22,7 @@ public class SpotifyBrowseSection extends JScrollPane {
     private ArrayList<String> uris;
     private ContextMenu contextMenu;
 
-    public SpotifyBrowseSection(List<ArrayList<String>> entries, int x, int y, int width, int height) {
+    public SpotifyBrowseSection(List<ArrayList<String>> entries) {
         table = new DefTable();
         uris = new ArrayList<>();
 
@@ -89,10 +89,9 @@ public class SpotifyBrowseSection extends JScrollPane {
         });
 
         setViewportView(table);
-        setBounds(x, y, width, height);
     }
 
-    public SpotifyBrowseSection(ArrayList<UnofficialSpotifyAPI.SpotifyBrowseEntry> entries, int x, int y, int width, int height) {
+    public SpotifyBrowseSection(ArrayList<UnofficialSpotifyAPI.SpotifyBrowseEntry> entries) {
         table = new DefTable();
         uris = new ArrayList<>();
 
@@ -164,6 +163,5 @@ public class SpotifyBrowseSection extends JScrollPane {
         });
 
         setViewportView(table);
-        setBounds(x, y, width, height);
     }
 }

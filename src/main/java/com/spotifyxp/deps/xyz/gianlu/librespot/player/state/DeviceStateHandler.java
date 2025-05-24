@@ -72,17 +72,6 @@ public final class DeviceStateHandler implements Closeable, DealerClient.Message
     private String lastCommandSentByDeviceId;
 
     public DeviceStateHandler(@NotNull Session session, @NotNull PlayerConfiguration conf) {
-        Events.subscribe(SpotifyXPEvents.connectionId.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                try {
-                    onMessage((String) data[0], (Map<String, String>) data[1], (byte[]) data[2]);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-
         this.session = session;
         this.deviceInfo = initializeDeviceInfo(session, conf);
         this.putStateWorker = new AsyncWorker<>("put-state-worker", this::putConnectState);

@@ -3,19 +3,28 @@ package com.spotifyxp.panels;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.configuration.ConfigValues;
+import com.spotifyxp.guielements.ArtistEventView;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.guielements.SpotifyBrowseModule;
+import com.spotifyxp.guielements.SpotifyBrowseSection;
+import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.protogens.ConcertsOuterClass;
 
 import javax.swing.*;
+import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.NoSuchElementException;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class BrowsePanel extends JScrollPane implements View {
     public static UnofficialSpotifyAPI.SpotifyBrowse spotifyBrowse;
@@ -42,6 +51,7 @@ public class BrowsePanel extends JScrollPane implements View {
         setVisible(false);
         setViewportView(contentPanel);
         setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        getVerticalScrollBar().setUnitIncrement(32);
 
         Thread thread = new Thread(() -> {
             try {
@@ -206,15 +216,288 @@ public class BrowsePanel extends JScrollPane implements View {
     IDRunnable idRunnable = id -> {
         ContentPanel.switchView(Views.BROWSESECTION);
         Thread thread = new Thread(() -> {
-            try {
-                ContentPanel.sectionPanel.fillWith(UnofficialSpotifyAPI.getSpotifyBrowseSection(id));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            switch (id) {
+                case "spotify:concerts":
+                    try {
+                        ContentPanel.sectionPanel.fillWith(concertsToViewDescriptor(UnofficialSpotifyAPI.getConcerts()));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    break;
+                default:
+                    try {
+                        ContentPanel.sectionPanel.fillWith(browseSectionToViewDescriptor(UnofficialSpotifyAPI.getSpotifyBrowseSection(id)));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
             }
         });
         thread.start();
         ContentPanel.blockTabSwitch();
     };
+
+    private SpotifySectionPanel.ViewDescriptorBuilder concertsToViewDescriptor(ConcertsOuterClass.Concerts concerts) {
+        SpotifySectionPanel.ViewDescriptorBuilder builder = new SpotifySectionPanel.ViewDescriptorBuilder();
+
+        builder.setTitle(concerts.getHeader().getTitle());
+
+        for(ConcertsOuterClass.Concerts.SectionsContainer container : concerts.getSectionsContainer().getSectionsContainerList()) {
+            DefTable eventsTable = new DefTable();
+            JScrollPane eventsTableScrollPane = new JScrollPane(eventsTable);
+            JPanel contentPanel = new JPanel();
+            DefTable eventsListTable = new DefTable();
+            JScrollPane eventsListTableScrollPane = new JScrollPane(eventsListTable);
+            JPanel alternateTablesTableContainer = new JPanel();
+            JPanel alternateTablesContainer = new JPanel(new BorderLayout());
+            JButton backButton = new JButton(PublicValues.language.translate("ui.back"));
+            AtomicReference<ArtistEventView> eventView = new AtomicReference<>();
+
+            AtomicBoolean isOnTicketView = new AtomicBoolean(false);
+
+            HashMap<String, List<ConcertsOuterClass.Concerts.ArtistConcertConcert>> concertsMap = new HashMap<>();
+            ArrayList<ConcertsOuterClass.Concerts.ArtistConcertConcert> currentEventsList = new ArrayList<>();
+
+            alternateTablesTableContainer.setLayout(new BoxLayout(alternateTablesTableContainer, BoxLayout.Y_AXIS));
+            alternateTablesContainer.add(alternateTablesTableContainer, BorderLayout.CENTER);
+
+            contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+
+            contentPanel.add(eventsTableScrollPane);
+            contentPanel.add(alternateTablesContainer);
+
+            backButton.setForeground(PublicValues.globalFontColor);
+            backButton.addActionListener(e -> {
+                contentPanel.setBorder(BorderFactory.createEmptyBorder());
+                if(isOnTicketView.get()) {
+                    eventView.get().setVisible(false);
+                    backButton.setVisible(false);
+                    eventsTableScrollPane.setVisible(true);
+
+                    contentPanel.revalidate();
+                    contentPanel.repaint();
+
+                    return;
+                }
+                eventsTableScrollPane.setVisible(true);
+                eventsListTableScrollPane.setVisible(false);
+                backButton.setVisible(false);
+
+                contentPanel.revalidate();
+                contentPanel.repaint();
+            });
+            backButton.setVisible(false);
+
+            alternateTablesContainer.add(backButton, BorderLayout.NORTH);
+
+            alternateTablesTableContainer.add(eventsListTableScrollPane);
+
+            eventsListTableScrollPane.setVisible(false);
+
+            eventsTable.setModel(new DefaultTableModel(new Object[][]{}, new Object[]{
+                    "Artist",
+                    ""
+            }));
+
+            eventsTable.setForeground(PublicValues.globalFontColor);
+            eventsTable.getTableHeader().setForeground(PublicValues.globalFontColor);
+
+            ArrayList<String> eventsList = new ArrayList<>();
+
+            eventsTable.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if(e.getClickCount() == 2
+                            && !SwingUtilities.isRightMouseButton(e)
+                            && eventsTable.getSelectedRow() != -1) {
+                        List<ConcertsOuterClass.Concerts.ArtistConcertConcert> concerts = concertsMap.get(
+                                eventsTable.getModel().getValueAt(eventsTable.getSelectedRow(), 0).toString()
+                        );
+
+                        if(concerts.size() > 1) {
+                            ((DefaultTableModel) eventsListTable.getModel()).setRowCount(0);
+                            currentEventsList.addAll(concerts);
+
+                            eventsTableScrollPane.setVisible(false);
+                            eventsListTableScrollPane.setVisible(true);
+                            backButton.setVisible(true);
+
+                            contentPanel.revalidate();
+                            contentPanel.repaint();
+
+                            eventsList.clear();
+
+                            for(ConcertsOuterClass.Concerts.ArtistConcertConcert concert : concerts) {
+                                eventsList.add(concert.getConcertUri().split(":")[2]);
+                                eventsListTable.addModifyAction(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ((DefaultTableModel) eventsListTable.getModel()).addRow(new Object[]{
+                                                concert.getLocationName(),
+                                                formatDate(parseDate(concert.getDate().getTime()))
+                                        });
+                                    }
+                                });
+                            }
+                        }else {
+                            new Thread(() -> {
+                                try {
+                                    backButton.setVisible(true);
+                                    eventView.set(new ArtistEventView(UnofficialSpotifyAPI.getConcert(concerts.get(0).getConcertUri().split(":")[2])));
+                                    eventsTableScrollPane.setVisible(false);
+                                    alternateTablesTableContainer.add(eventView.get());
+                                    contentPanel.setBorder(new LineBorder(Color.GRAY, 1));
+                                    contentPanel.revalidate();
+                                    contentPanel.repaint();
+                                    isOnTicketView.set(true);
+                                } catch (IOException ex) {
+                                    ConsoleLogging.Throwable(ex);
+                                }
+                            }).start();
+                        }
+                    }
+                }
+            });
+
+            eventsListTable.setModel(new DefaultTableModel(new Object[][]{}, new Object[]{
+                    "Location",
+                    "Date"
+            }));
+
+            eventsListTable.setForeground(PublicValues.globalFontColor);
+            eventsListTable.getTableHeader().setForeground(PublicValues.globalFontColor);
+
+
+            eventsListTable.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if(e.getClickCount() == 2 && !SwingUtilities.isRightMouseButton(e) && eventsListTable.getSelectedRow() != -1) {
+                        new Thread(() -> {
+                            try {
+                                backButton.setVisible(true);
+                                eventsListTableScrollPane.setVisible(false);
+                                eventView.set(new ArtistEventView(UnofficialSpotifyAPI.getConcert(eventsList.get(eventsListTable.getSelectedRow()))));
+                                alternateTablesTableContainer.add(eventView.get());
+                                contentPanel.setBorder(new LineBorder(Color.GRAY, 1));
+                                contentPanel.revalidate();
+                                contentPanel.repaint();
+                                isOnTicketView.set(true);
+                            } catch (IOException ex) {
+                                ConsoleLogging.Throwable(ex);
+                            }
+                        }).start();
+                    }
+                }
+            });
+
+            for(ConcertsOuterClass.Concerts.UNKNContainer unknContainer : container.getArtistContainerList()) {
+                for(ConcertsOuterClass.Concerts.ArtistsContainer artistContainer : unknContainer.getArtistsList()) {
+                    if(artistContainer.hasArtist()) {
+                        ConcertsOuterClass.Concerts.Artist artist = artistContainer.getArtist();
+
+                        concertsMap.put(artist.getName(), artist.getArtistConcerts().getConcertsList());
+
+                        eventsTable.addModifyAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                ((DefaultTableModel) eventsTable.getModel()).addRow(new Object[]{
+                                        artist.getName(),
+                                        artist.getArtistConcerts().getConcertsList().size() + " Events"
+                                });
+                            }
+                        });
+                    }else if(artistContainer.hasConcert()) {
+                        ConcertsOuterClass.Concerts.Concert concert = artistContainer.getConcert();
+
+                        concertsMap.put(concert.getArtist(), new ArrayList<ConcertsOuterClass.Concerts.ArtistConcertConcert>() {{
+                            add(ConcertsOuterClass.Concerts.ArtistConcertConcert.newBuilder()
+                                    .setDate(concert.getDate())
+                                    .setArtist(concert.getArtist())
+                                    .setConcertUri(concert.getConcertUri())
+                                    .setLocationName(concert.getLocationName())
+                                    .build());
+                        }});
+
+                        eventsTable.addModifyAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                ((DefaultTableModel) eventsTable.getModel()).addRow(new Object[]{
+                                        concert.getArtist(),
+                                        concert.getLocationName() + " • " + formatDate(parseDate(concert.getDate().getTime()))
+                                });
+                            }
+                        });
+                    }else {
+                        ConsoleLogging.warning("[BrowsePanel events] Got artist container that doesn't have recognized content");
+                    }
+                }
+            }
+
+            builder.addComponent(new SpotifySectionPanel.ViewDescriptorComponent(
+                    container.getDescription().getText(),
+                    contentPanel
+            ));
+        }
+
+        return builder;
+    }
+
+    private OffsetDateTime parseDate(String date) throws DateTimeParseException {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
+        return OffsetDateTime.parse(date, formatter);
+    }
+
+    private String formatDate(OffsetDateTime date) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM HH:mm");
+        return date.format(formatter);
+    }
+
+    private SpotifySectionPanel.ViewDescriptorBuilder browseSectionToViewDescriptor(UnofficialSpotifyAPI.SpotifyBrowseSection section) {
+        SpotifySectionPanel.ViewDescriptorBuilder builder = new SpotifySectionPanel.ViewDescriptorBuilder();
+
+        builder.setTitle(section.getHeader());
+
+        ArrayList<Integer> skip = new ArrayList<>();
+
+        for(int i = 0; i < section.getBody().size(); i++) {
+            if(skip.contains(i)) {
+                continue;
+            }
+            UnofficialSpotifyAPI.SpotifyBrowseEntry entry = section.getBody().get(i);
+            if(entry.getComponent().getId().contains("carousel")) {
+                builder.addComponent(new SpotifySectionPanel.ViewDescriptorComponent(
+                        entry.getText().getTitle(),
+                        new SpotifyBrowseSection(entry.getChildren().get())
+                ));
+            }
+            if(entry.getComponent().getCategory().contains("card") && !entry.getChildren().isPresent()) {
+                ArrayList<ArrayList<String>> entries = new ArrayList<>();
+
+                for(int j = 0; j < section.getBody().subList(i, section.getBody().size()).size(); j++) {
+                    UnofficialSpotifyAPI.SpotifyBrowseEntry cardEntry = section.getBody().subList(i, section.getBody().size()).get(j);
+                    if(cardEntry.getComponent().getCategory().contains("card")) {
+                        entries.add(new ArrayList<>(Arrays.asList(cardEntry.getText().getTitle(), cardEntry.getText().getDescription().orElse(""), cardEntry.getText().getSubtitle().orElse(""), cardEntry.getEvents().get().getEvents().get(0).getData_uri().get().getUri())));
+                        skip.add(i + j);
+                    } else {
+                        break;
+                    }
+                }
+
+                if(i == 0) {
+                    builder.addComponent(new SpotifySectionPanel.ViewDescriptorComponent(
+                            "",
+                            new SpotifyBrowseSection(entries)
+                    ));
+                }else {
+                    builder.addComponent(new SpotifySectionPanel.ViewDescriptorComponent(
+                            section.getBody().get(i-1).getText().getTitle(),
+                            new SpotifyBrowseSection(entries)
+                    ));
+                }
+            }
+        }
+
+        return builder;
+    }
 
     @Override
     public void makeVisible() {

@@ -14,7 +14,6 @@ public class SpotifySectionPanel extends JScrollPane implements View {
     public static JButton backButton;
     public static JLayeredPane contentPanel;
     public static JLabel title;
-    private UnofficialSpotifyAPI.SpotifyBrowseSection section;
 
     public SpotifySectionPanel() {
         contentPanel = new JLayeredPane();
@@ -31,9 +30,12 @@ public class SpotifySectionPanel extends JScrollPane implements View {
         backButton.setBounds(0, 0, 89, 23);
         backButton.setForeground(PublicValues.globalFontColor);
         backButton.addActionListener(new AsyncActionListener(e -> {
-            contentPanel.removeAll();
-            contentPanel.add(title);
-            contentPanel.add(backButton, JLayeredPane.PALETTE_LAYER);
+            for(Component component : contentPanel.getComponents()) {
+                if(component.getName() != null && component.getName().equals("BackButton") && component instanceof JButton) {
+                    continue;
+                }
+                contentPanel.remove(component);
+            }
             contentPanel.revalidate();
             contentPanel.repaint();
             ContentPanel.switchView(ContentPanel.lastView);
@@ -43,6 +45,7 @@ public class SpotifySectionPanel extends JScrollPane implements View {
             ContentPanel.frame.revalidate();
             ContentPanel.frame.repaint();
         }));
+        backButton.setName("BackButton");
         contentPanel.add(backButton, JLayeredPane.PALETTE_LAYER);
 
         title = new JLabel();
@@ -52,12 +55,43 @@ public class SpotifySectionPanel extends JScrollPane implements View {
         title.setHorizontalAlignment(SwingConstants.CENTER);
         title.setBorder(null);
         title.setFont(title.getFont().deriveFont(Font.BOLD).deriveFont(23f));
-
-        contentPanel.add(title);
     }
 
-    void fillIt() {
-        title.setText(section.getHeader().getText().getTitle());
+    public static class ViewDescriptorBuilder {
+        private String title = "";
+        private ArrayList<ViewDescriptorComponent> components = new ArrayList<>();
+
+        public ViewDescriptorBuilder setTitle(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public ViewDescriptorBuilder addComponent(ViewDescriptorComponent component) {
+            components.add(component);
+            return this;
+        }
+
+        private ArrayList<ViewDescriptorComponent> getComponents() {
+            return components;
+        }
+    }
+
+    public static class ViewDescriptorComponent {
+        private String title = "";
+        private Component component;
+
+        public ViewDescriptorComponent(String title, Component component) {
+            this.title = title;
+            this.component = component;
+        }
+    }
+
+    public void fillWith(ViewDescriptorBuilder builder) {
+        ArrayList<ViewDescriptorComponent> components = builder.getComponents();
+
+        title.setText(builder.title);
+
+        contentPanel.add(title);
 
         int yCache = 80;
         int xCache = 10;
@@ -66,52 +100,23 @@ public class SpotifySectionPanel extends JScrollPane implements View {
         int spacing = 70;
         int titleHeight = getFontMetrics(title.getFont()).getHeight();
         int titleSpacing = 5;
-        ArrayList<Integer> skip = new ArrayList<>();
-        for(int i = 0; i < section.getBody().size(); i++) {
-            if(skip.contains(i)) {
-                continue;
-            }
-            UnofficialSpotifyAPI.SpotifyBrowseEntry entry = section.getBody().get(i);
-            if(entry.getComponent().getId().contains("carousel")) {
-                JLabel titleOfEntry = new JLabel(entry.getText().getTitle());
-                titleOfEntry.setForeground(PublicValues.globalFontColor);
-                titleOfEntry.setBounds(xCache, yCache - titleHeight - titleSpacing, width, titleHeight);
-                SpotifyBrowseSection spotifyBrowseSection = new SpotifyBrowseSection(entry.getChildren().get(), xCache, yCache, width, height);
 
-                contentPanel.add(titleOfEntry);
-                contentPanel.add(spotifyBrowseSection);
+        for(ViewDescriptorComponent component : components) {
+            JLabel titleOfEntry = new JLabel(component.title);
+            titleOfEntry.setForeground(PublicValues.globalFontColor);
+            titleOfEntry.setBounds(xCache, yCache - titleHeight - titleSpacing, width, titleHeight);
 
-                yCache += height + spacing;
-            }
-            if(entry.getComponent().getCategory().contains("card") && !entry.getChildren().isPresent()) {
-                JLabel titleOfEntry = new JLabel(section.getBody().get(i-1).getText().getTitle());
-                titleOfEntry.setForeground(PublicValues.globalFontColor);
-                titleOfEntry.setBounds(xCache, yCache - titleHeight - titleSpacing, width, titleHeight);
-                ArrayList<ArrayList<String>> entries = new ArrayList<>();
-                for(int j = 0; j < section.getBody().subList(i, section.getBody().size()).size(); j++) {
-                    UnofficialSpotifyAPI.SpotifyBrowseEntry cardEntry = section.getBody().subList(i, section.getBody().size()).get(j);
-                    if(cardEntry.getComponent().getCategory().contains("card")) {
-                        entries.add(new ArrayList<>(Arrays.asList(cardEntry.getText().getTitle(), cardEntry.getText().getDescription().orElse(""), cardEntry.getText().getSubtitle().orElse(""), cardEntry.getEvents().get().getEvents().get(0).getData_uri().get().getUri())));
-                        skip.add(i + j);
-                    } else {
-                        break;
-                    }
-                }
-                SpotifyBrowseSection spotifyBrowseSection = new SpotifyBrowseSection(entries, xCache, yCache, width, height);
+            component.component.setBounds(xCache, yCache, width, height);
 
-                contentPanel.add(titleOfEntry);
-                contentPanel.add(spotifyBrowseSection);
-            }
+            contentPanel.add(titleOfEntry);
+            contentPanel.add(component.component);
+
+            yCache += height + spacing;
         }
 
-        contentPanel.setPreferredSize(new Dimension(width, yCache + 10));
+        contentPanel.setPreferredSize(new Dimension(width, yCache + 10 - title.getHeight()));
         contentPanel.revalidate();
         contentPanel.repaint();
-    }
-
-    public void fillWith(UnofficialSpotifyAPI.SpotifyBrowseSection section) {
-        this.section = section;
-        fillIt();
     }
 
     @Override

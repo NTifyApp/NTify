@@ -59,7 +59,17 @@ public class Initiator {
         checkLogPrintStream(); //Checking some stuff after config is available
         setLanguage(); //Set the language to the one specified in the config
         creatingLock(); //Creating the 'LOCK' file
-        PublicValues.defaultHttpClient = new OkHttpClient(); //Creating the default http client
+        PublicValues.defaultHttpClient = new OkHttpClient.Builder()
+                .addNetworkInterceptor(new Interceptor() {
+                    @Override
+                    public @NotNull Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
+                        if(chain.request().headers().get("User-Agent").contains("Spotify/")) return chain.proceed(chain.request());
+                        return chain.proceed(chain.request().newBuilder()
+                                .header("User-Agent", ApplicationUtils.getUserAgent())
+                                .build());
+                    }
+                })
+                .build(); //Creating the default http client
         initProxy();
         checkUpdate();
         if(Flags.videoPlaybackSupport) initializeVideoPlayback();
@@ -86,7 +96,7 @@ public class Initiator {
         if (PublicValues.config.getBoolean(ConfigValues.proxy_enable.name)) {
             SplashPanel.linfo.setText("Initializing proxy...");
             try {
-                OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+                OkHttpClient.Builder clientBuilder = PublicValues.defaultHttpClient.newBuilder();
                 clientBuilder.setProxyAuthenticator$okhttp(new Authenticator() {
                     @Nullable
                     @Override

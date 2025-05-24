@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package spotifyxp.concerts;
+
+option java_package = "com.spotifyxp.protogens";
+
+message Concerts {
+  message Header {
+    string image = 1;
+    string title = 2;
+    Location location = 3;
+  }
+
+  message Location {
+    string name = 1;
+    int64 unknown = 2;
+  }
+
+  message Date {
+    string time = 1;
+    int64 unknown = 2;
+  }
+
+  message SectionDescription {
+    string text = 1;
+  }
+
+  message ArtistConcertConcert {
+    string artist = 1;
+    string locationName = 2;
+    string concertUri = 3;
+    Date date = 4;
+  }
+
+  message ArtistConcerts {
+    string name = 1;
+    string image = 2;
+    string uri = 3;
+    repeated ArtistConcertConcert concerts = 4;
+  }
+
+  message Artist {
+    string name = 1;
+    string image = 3;
+    Date from = 4;
+    Date to = 5;
+    ArtistConcerts artistConcerts = 6;
+  }
+
+  message Concert {
+    string artist = 1;
+    string locationName = 2;
+    string artistImage = 3;
+    string concertUri = 4;
+    Date date = 5;
+  }
+
+  message ArtistsContainer {
+    optional Concert concert = 2;
+    optional Artist artist = 3;
+  }
+
+  message UNKNContainer {
+    repeated ArtistsContainer artists = 1;
+  }
+
+  message SectionsContainer {
+    string id = 1;
+    SectionDescription description = 2;
+    repeated UNKNContainer artistContainer = 4;
+  }
+
+  message UNKNSectionsContainer {
+    repeated SectionsContainer sectionsContainer = 1;
+  }
+
+  Header header = 1;
+  UNKNSectionsContainer sectionsContainer = 2;
+}

@@ -5,16 +5,24 @@ import com.spotifyxp.deps.com.spotify.canvaz.CanvazOuterClass;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.protogens.Concert;
+import com.spotifyxp.protogens.ConcertsOuterClass;
 import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.ConnectionUtils;
 import com.spotifyxp.utils.MapUtils;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.ZoneId;
@@ -22,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.zip.GZIPInputStream;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class UnofficialSpotifyAPI {
@@ -591,7 +600,6 @@ public class UnofficialSpotifyAPI {
             root = new JSONObject(new JSONObject(ConnectionUtils.makeGet(url,
                     MapUtils.of("Authorization", "Bearer " + InstanceManager.getSpotifyApi().getAccessToken(), "App-Platform", "Win32", "User-Agent", ApplicationUtils.getUserAgent()))).getJSONObject("data").getJSONObject("home").toString());
         }
-        Files.write(Paths.get("homedump.json"), root.toString().getBytes());
         try {
             return Optional.of(HomeTab.fromJSON(root));
         }catch (JSONException e) {
@@ -1058,18 +1066,18 @@ public class UnofficialSpotifyAPI {
     }
 
     public static class SpotifyBrowseSection {
-        private final SpotifyBrowseEntry header;
+        private final String header;
         private final String id;
         private final ArrayList<SpotifyBrowseEntry> body;
 
-        private SpotifyBrowseSection(SpotifyBrowseEntry header, String id,
+        private SpotifyBrowseSection(String header, String id,
                                      ArrayList<SpotifyBrowseEntry> body) {
             this.header = header;
             this.id = id;
             this.body = body;
         }
 
-        public SpotifyBrowseEntry getHeader() {
+        public String getHeader() {
             return header;
         }
 
@@ -1087,25 +1095,65 @@ public class UnofficialSpotifyAPI {
             for(Object object : jsonObject.getJSONArray("body")) {
                 entries.add(SpotifyBrowseEntry.fromJSON(object.toString()));
             }
-            return new SpotifyBrowseSection(SpotifyBrowseEntry.fromJSON(jsonObject.getJSONObject("header").toString()),
+            String header;
+            if(jsonObject.has("header")) {
+                header = jsonObject.getJSONObject("header").getJSONObject("text").getString("title");
+            }else{
+                header = jsonObject.getString("title");
+            }
+            return new SpotifyBrowseSection(header,
                     jsonObject.getString("id"), entries);
         }
     }
 
     public static SpotifyBrowse getSpotifyBrowse() throws IOException {
-        String query = "?platform=android&client-timezone=" + URLEncoder.encode("{\"timeZone\":\"" + ZoneId.systemDefault() + "\"}", Charset.defaultCharset().toString()) + "&podcast=true&locale=" + Locale.getDefault();
-        return SpotifyBrowse.fromJSON(ConnectionUtils.makeGet("https://spclient.wg.spotify.com/hubview-mobile-v1/browse" + query, new HashMap<String, String>() {{
-            //put("client-token", PublicValues.session.api().getClientToken());
+        String query = "?platform=android&client-timezone=" + ZoneId.systemDefault().toString().replace("/", "%2F") + "&podcast=true&locale=" + Locale.getDefault();
+        byte[] response = ConnectionUtils.makeGetRaw("https://spclient.wg.spotify.com/hubview-mobile-v1/browse/" + query, new HashMap<String, String>() {{
+            put("client-token", PublicValues.session.api().getClientToken());
             put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
-        }}));
+            put("app-platform", "Android");
+            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
+            put("accept-encoding", "gzip");
+            put("user-agent", "Spotify/8.9.96.476 Android/31 (Android SDK built for x86_64) " + ApplicationUtils.getName() + "/" + ApplicationUtils.getVersion());
+        }}).bytes();
+        return SpotifyBrowse.fromJSON(IOUtils.toString(
+                new GZIPInputStream(new ByteArrayInputStream(response)),
+                StandardCharsets.UTF_8
+        ));
     }
 
     // The endpoint returns an id of 'browse-page-mobile-fallback' when there is something wrong
     public static SpotifyBrowseSection getSpotifyBrowseSection(String sectionUri) throws IOException {
-        String query = "?platform=android&client-timezone=" + URLEncoder.encode("{\"timeZone\":\"" + ZoneId.systemDefault() + "\"}", Charset.defaultCharset().toString()) + "&podcast=true&locale=" + Locale.getDefault();
-        return SpotifyBrowseSection.fromJSON(ConnectionUtils.makeGet("https://spclient.wg.spotify.com/hubview-mobile-v1/browse/" + sectionUri + query, new HashMap<String, String>() {{
-            //put("client-token", PublicValues.session.api().getClientToken());
+        String query = "?platform=android&client-timezone=" + ZoneId.systemDefault().toString().replace("/", "%2F") + "&podcast=true&locale=" + Locale.getDefault();
+        byte[] response = ConnectionUtils.makeGetRaw("https://spclient.wg.spotify.com/hubview-mobile-v1/browse/" + sectionUri + query, new HashMap<String, String>() {{
+            put("client-token", PublicValues.session.api().getClientToken());
             put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
-        }}));
+            put("app-platform", "Android");
+            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
+            put("accept-encoding", "gzip");
+            put("user-agent", "Spotify/8.9.96.476 Android/31 (Android SDK built for x86_64) " + ApplicationUtils.getName() + "/" + ApplicationUtils.getVersion());
+        }}).bytes();
+        return SpotifyBrowseSection.fromJSON(IOUtils.toString(
+                new GZIPInputStream(new ByteArrayInputStream(response)),
+                StandardCharsets.UTF_8
+        ));
+    }
+
+    public static ConcertsOuterClass.Concerts getConcerts() throws IOException {
+        return ConcertsOuterClass.Concerts.parseFrom(ConnectionUtils.makePostRaw("https://spclient.wg.spotify.com/live-events-view/spotify.liveeventsview.v2.LiveEventsFeedService/GetPage", RequestBody.create(Concert.ConcertRequest.newBuilder()
+                .setId("ignored")
+                .build().toByteArray(), MediaType.get("application/x-protobuf")), new HashMap<String, String>() {{
+            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
+            put("app-platform", "Win32");
+        }}).bytes());
+    }
+
+    public static Concert.ConcertResponse getConcert(String id) throws IOException {
+        return Concert.ConcertResponse.parseFrom(ConnectionUtils.makePostRaw("https://spclient.wg.spotify.com/live-events-view/spotify.liveeventsview.v1.EventPageService/EventPage", RequestBody.create(Concert.ConcertRequest.newBuilder()
+                        .setId(id)
+                .build().toByteArray(), MediaType.get("application/x-protobuf")), new HashMap<String, String>() {{
+            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
+            put("app-platform", "Win32");
+        }}).bytes());
     }
 }

@@ -201,27 +201,6 @@ public class DealerClient implements Closeable {
             }
         }
 
-        if (!interesting && uri.startsWith("hm://pusher/v1/connections")) {
-            //Give it to DeviceStateHandler
-            CompletableFuture<Boolean> future = new CompletableFuture<>();
-            Thread giveConnectionIdThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (true) {
-                        for (Events.Event event : Events.getEventsList()) {
-                            if (event.getName() == SpotifyXPEvents.connectionId.getName()) {
-                                if (!event.getSubscribers().isEmpty()) future.complete(true);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }, "Get connection id");
-            giveConnectionIdThread.start();
-            Events.triggerEventButWait(SpotifyXPEvents.connectionId.getName(), future, uri, headers, decodedPayload);
-            return;
-        }
-
         if (!interesting) ConsoleLoggingModules.debug("Couldn't dispatch message: " + uri);
     }
 

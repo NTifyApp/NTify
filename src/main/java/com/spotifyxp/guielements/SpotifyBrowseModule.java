@@ -31,7 +31,11 @@ public class SpotifyBrowseModule extends JPanel {
                     globalRightClickListener.run(e.getX() + x, e.getY() + y);
                     return;
                 }
-                idRunnable.run(genreId.split(":")[2]);
+                try {
+                    idRunnable.run(genreId.split(":")[2]);
+                }catch (ArrayIndexOutOfBoundsException ex) {
+                    idRunnable.run(genreId);
+                }
             }
         });
     }
