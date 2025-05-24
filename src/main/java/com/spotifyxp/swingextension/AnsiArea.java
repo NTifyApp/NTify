@@ -51,7 +51,6 @@ public class AnsiArea extends JTextPane {
     }
 
     public void parse(String input) {
-        setText("");
         Matcher matcher = ANSI_SGR_PATTERN.matcher(input);
         Color currentBackground;
         Color currentTextColor;

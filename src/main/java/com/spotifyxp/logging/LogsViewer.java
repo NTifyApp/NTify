@@ -13,9 +13,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
@@ -58,12 +56,16 @@ public class LogsViewer extends JFrame {
                     contextMenu.showAt(logsList, getX(), getY());
                 } else if (e.getClickCount() == 2) {
                     new Thread(() -> {
+                        tabs.setSelectedIndex(1);
+                        ansiArea.setText("");
                         try {
-                            ansiArea.parse(IOUtils.toString(Files.newInputStream(logs.get(logsList.getSelectedIndex()).toPath()), StandardCharsets.UTF_8));
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(logs.get(tabs.getSelectedIndex()).toPath())));
+                            reader.lines().forEach(line -> {
+                                ansiArea.parse(line + "\n");
+                            });
                         } catch (IOException ex) {
                             throw new RuntimeException(ex);
                         }
-                        tabs.setSelectedIndex(1);
                     }, "Parse log file").start();
                 }
             }
