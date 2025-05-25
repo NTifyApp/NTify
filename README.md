@@ -1,15 +1,15 @@
 <p align="center">
-  <a href="https://github.com/NTify/NTify">
-    <img src="src/main/resources/ntify.png" alt="Logo" width="80" height="80">
+  <a href="https://github.com/NTifyApp/NTify">
+    <img src="https://raw.githubusercontent.com/NTifyApp/NTify/refs/heads/developer/src/main/resources/ntify.png" alt="Logo" width="80" height="80">
   </a>
 <h3 align="center">NTify</h3>
  <p align="center">
     A working Spotify Player for Windows XP.
     <br/>
     <br/>
-    <a href="https://github.com/NTify/NTify/wiki">NTify Wiki</a>
+    <a href="https://github.com/NTifyApp/NTify/wiki">NTify Wiki</a>
     .
-    <a href="https://github.com/NTify/NTify/issues">Report Issue</a>
+    <a href="https://github.com/NTifyApp/NTify/issues">Report Issue</a>
     .
   </p>
 
