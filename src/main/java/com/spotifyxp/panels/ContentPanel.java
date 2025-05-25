@@ -527,17 +527,4 @@ public class ContentPanel extends JPanel {
         mainframe.setAlwaysOnTop(false);
         Events.triggerEvent(SpotifyXPEvents.onFrameVisible.getName());
     }
-
-    private static void scrollToCenter(JScrollPane scrollPane, int x, int y) {
-        SwingUtilities.invokeLater(() -> {
-            JViewport viewport = scrollPane.getViewport();
-            Rectangle bounds = viewport.getViewRect();
-            Dimension size = viewport.getViewSize();
-
-            int centerX = (size.width - bounds.width) / 2 + x - bounds.width / 2;
-            int centerY = (size.height - bounds.height) / 2 + y - bounds.height / 2;
-
-            viewport.setViewPosition(new Point(centerX, centerY));
-        });
-    }
 }

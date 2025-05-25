@@ -1,5 +1,6 @@
 package com.spotifyxp.api;
 
+import com.google.gson.Gson;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.deps.com.spotify.canvaz.CanvazOuterClass;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
@@ -26,10 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -1104,6 +1102,93 @@ public class UnofficialSpotifyAPI {
             return new SpotifyBrowseSection(header,
                     jsonObject.getString("id"), entries);
         }
+    }
+
+    public static class ArtistUnionHeaderImageDataSource {
+        public int maxHeight;
+        public int maxWidth;
+        public String url;
+    }
+
+    public static class ArtistUnionHeaderImageData {
+        public List<ArtistUnionHeaderImageDataSource> sources;
+    }
+
+    public static class ArtistUnionHeaderImage {
+        public ArtistUnionHeaderImageData data;
+    }
+
+    public static class ArtistUnionRelatedArtistsArtistProfile {
+        public String name;
+    }
+
+    public static class ArtistUnionRelatedArtistsArtist {
+        public ArtistUnionRelatedArtistsArtistProfile profile;
+        public String uri;
+    }
+
+    public static class ArtistUnionRelatedArtists {
+        public List<ArtistUnionRelatedArtistsArtist> items;
+    }
+
+    public static class ArtistUnionDiscoveredOnItemData {
+        public String __typename;
+        public String description;
+        public String name;
+        public String uri;
+    }
+
+    public static class ArtistUnionDiscoveredOnItem {
+        public ArtistUnionDiscoveredOnItemData data;
+    }
+
+    public static class ArtistUnionDiscoveredOn {
+        public List<ArtistUnionDiscoveredOnItem> items;
+    }
+
+    public static ArtistUnionDiscoveredOn getArtistDiscoveredOn(String uri) throws IOException {
+        String requestJSON = "{\"variables\": {\"uri\": \"%s\"},\"operationName\": \"queryArtistDiscoveredOn\",\"extensions\": {\"persistedQuery\": {\"version\": 1,\"sha256Hash\": \"71c2392e4cecf6b48b9ad1311ae08838cbdabcfd189c6bf0c66c2430b8dcfdb1\"}}}";
+        ArtistUnionDiscoveredOn discoveredOn = new Gson().fromJson(new JSONObject(ConnectionUtils.makePostRaw("https://api-partner.spotify.com/pathfinder/v2/query", RequestBody.create(
+                MediaType.parse("application/json"),
+                String.format(requestJSON, uri)
+        ), new HashMap<String, String>() {{
+            put("client-token", PublicValues.session.api().getClientToken());
+            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
+            put("app-platform", "Win32");
+            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
+            put("accept", "application/json");
+        }}).string()).getJSONObject("data").getJSONObject("artistUnion").getJSONObject("relatedContent").getJSONObject("discoveredOnV2").toString(), ArtistUnionDiscoveredOn.class);
+        return discoveredOn;
+    }
+
+    public static ArtistUnionRelatedArtists getArtistRelatedArtists(String uri) throws IOException {
+        String requestJSON = "{\"variables\": {\"uri\": \"%s\"},\"operationName\": \"queryArtistRelated\",\"extensions\": {\"persistedQuery\": {\"version\": 1,\"sha256Hash\": \"3d031d6cb22a2aa7c8d203d49b49df731f58b1e2799cc38d9876d58771aa66f3\"}}}";
+        ArtistUnionRelatedArtists artists = new Gson().fromJson(new JSONObject(ConnectionUtils.makePostRaw("https://api-partner.spotify.com/pathfinder/v2/query", RequestBody.create(
+                MediaType.parse("application/json"),
+                String.format(requestJSON, uri)
+        ), new HashMap<String, String>() {{
+            put("client-token", PublicValues.session.api().getClientToken());
+            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
+            put("app-platform", "Win32");
+            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
+            put("accept", "application/json");
+        }}).string()).getJSONObject("data").getJSONObject("artistUnion").getJSONObject("relatedContent").getJSONObject("relatedArtists").toString(), ArtistUnionRelatedArtists.class);
+        return artists;
+    }
+
+    public static ArtistUnionHeaderImage getArtistHeaderImage(String uri) throws IOException {
+        String requestJSON = "{\"variables\": {\"uri\": \"%s\",\"locale\": \"\"},\"operationName\": \"queryArtistOverview\",\"extensions\": {\"persistedQuery\": {\"version\": 1,\"sha256Hash\": \"1ac33ddab5d39a3a9c27802774e6d78b9405cc188c6f75aed007df2a32737c72\"}}}";
+        ArtistUnionHeaderImage image = new Gson().fromJson(new JSONObject(ConnectionUtils.makePostRaw("https://api-partner.spotify.com/pathfinder/v2/query", RequestBody.create(
+                MediaType.parse("application/json"),
+                String.format(requestJSON, uri)
+        ), new HashMap<String, String>() {{
+            put("client-token", PublicValues.session.api().getClientToken());
+            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
+            put("app-platform", "Win32");
+            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
+            put("accept", "application/json");
+        }}).string()).getJSONObject("data").getJSONObject("artistUnion").getJSONObject("headerImage").toString(), ArtistUnionHeaderImage.class);
+        return image;
     }
 
     public static SpotifyBrowse getSpotifyBrowse() throws IOException {
