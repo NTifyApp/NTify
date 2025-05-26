@@ -54,3 +54,20 @@ jobs:
           files: /home/grunner/actions-runner/_work/NTify/NTify/NTify/target/NTify.jar
           draft: 'false'
           prerelease: 'false'
+      - name: Make public directory
+        working-directory: ./NTify
+        run: mkdir public
+      - name: Copy app screenshot to public directory
+        working-directory: ./NTify
+        run: cp NTifyShowStable.png public/
+      - name: Copy newest release to public directory
+        working-directory: ./NTify
+        run: cp /home/grunner/actions-runner/_work/NTify/NTify/NTify/target/NTify.jar public/
+      - name: Copy release title to public directory
+        working-directory: .NTify
+        run: echo ${{ env.title }} > public/commit_title.txt
+      - name: Upload to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./NTify/public
