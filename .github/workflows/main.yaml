@@ -44,16 +44,6 @@ jobs:
         run: |
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo "title=$(git log -1 --pretty=format:%s)" >> $GITHUB_ENV
-      - name: Creating release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.sha }}
-          name: ${{ env.title }}
-          files: /home/grunner/actions-runner/_work/NTify/NTify/NTify/target/NTify.jar
-          draft: 'false'
-          prerelease: 'false'
       - name: Make public directory
         working-directory: ./NTify
         run: mkdir public
@@ -71,3 +61,13 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./NTify/public
+      - name: Creating release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.sha }}
+          name: ${{ env.title }}
+          files: /home/grunner/actions-runner/_work/NTify/NTify/NTify/target/NTify.jar
+          draft: 'false'
+          prerelease: 'false'
