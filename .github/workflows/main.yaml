@@ -44,6 +44,7 @@ jobs:
         run: |
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo "title=$(git log -1 --pretty=format:%s)" >> $GITHUB_ENV
+          echo "message=$(git log -1 --pretty=format:%b)" >> $GITHUB_ENV
       - name: Creating release
         uses: softprops/action-gh-release@v2
         env:
@@ -66,6 +67,9 @@ jobs:
       - name: Copy release title to public directory
         working-directory: ./NTify
         run: echo ${{ env.title }} > public/commit_title.txt
+      - name: Copy release message to public directory
+        working-directory: ./NTify
+        run: echo ${{ env.message }} > public/commit_message.txt
       - name: Upload to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
