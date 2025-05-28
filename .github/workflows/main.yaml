@@ -44,7 +44,9 @@ jobs:
         run: |
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo "title=$(git log -1 --pretty=format:%s)" >> $GITHUB_ENV
-          echo "message=$(git log -1 --pretty=format:%b)" >> $GITHUB_ENV
+          echo "message<<EOF" >> $GITHUB_ENV
+          git log -1 --pretty=format:%b >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
       - name: Creating release
         uses: softprops/action-gh-release@v2
         env:
