@@ -100,7 +100,7 @@ See **New Login Methods*.
 Then, enjoy streaming.
 
 ## New login methods
-1. Zeroconf: In a modern Spotify client, choose NTify under devices to authenticate (**Requires Spotify Premium**).
+1. Zeroconf: In a modern Spotify client, choose NTify under devices to authenticate.
 2. OAuth: Log into Spotify in the auto-opened browser window, confirm NTify connection, then close it. (needs a HTML5 supported browser)
 
 ## Compiling
