@@ -6,11 +6,8 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.Resources;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.function.BiConsumer;
 
 @SuppressWarnings("Convert2Lambda")
 public class libLanguage {
@@ -292,7 +289,7 @@ public class libLanguage {
         return builder.toString();
     }
 
-    String jsoncache = "";
+    JsonObject jsoncache = null;
 
     public String translateHTML(String htmlfile) {
         StringBuilder cache = new StringBuilder();
@@ -311,35 +308,25 @@ public class libLanguage {
 
     public String translate(String key) {
         final String[] ret = {key};
-        if(jsoncache.isEmpty()) {
+        if(jsoncache == null) {
             try {
-                JsonObject object = new Gson().fromJson(removeComment(new Resources().readToString(clazz, lf + "/" + languageCode + ".json")), JsonObject.class);
-                object.asMap().forEach((BiConsumer<String, Object>) (s, o) -> {
-                    if(s.equals(key)) {
-                        ret[0] = o.toString();
-                    }
-                });
-                jsoncache = object.toString();
+                jsoncache = new Gson().fromJson(removeComment(new Resources().readToString(clazz, lf + "/" + languageCode + ".json")), JsonObject.class);
             } catch (Exception e) {
-                ConsoleLogging.error("Failed to get translation for: " + languageCode);
+                ConsoleLogging.error("Failed to get translation for: " + key);
                 ConsoleLogging.Throwable(e);
+                return ret[0];
             }
         }
         try {
-            JsonObject object = new Gson().fromJson(jsoncache, JsonObject.class);
-            object.asMap().forEach((BiConsumer<String, Object>) (s, o) -> {
-                if(s.equals(key)) {
-                    ret[0] = o.toString();
-                }
-            });
+            if(!jsoncache.has(key)) {
+                ConsoleLogging.error("Failed to get translation for: " + key);
+                return ret[0];
+            }
+            ret[0] = jsoncache.get(key).getAsString();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            ConsoleLogging.Throwable(e);
         }
-        String input = ret[0];
-        if (input.length() >= 2 && input.charAt(0) == '\"' && input.charAt(input.length() - 1) == '\"') {
-            input = input.substring(1, input.length() - 1);
-        }
-        return input.replaceAll("%APPNAME%", ApplicationUtils.getName());
+        return ret[0].replaceAll("%APPNAME%", ApplicationUtils.getName());
     }
 
     public ArrayList<String> getAvailableLanguages() {

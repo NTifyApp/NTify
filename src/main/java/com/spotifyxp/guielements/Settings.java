@@ -92,7 +92,7 @@ public class Settings extends JFrame {
             tabs.put(category, panel);
             categories.add(category);
             custom_settings.put(category, new ArrayList<>());
-            tabbedPane.addTab(PublicValues.language.translate(category), new JScrollPane(panel));
+            tabbedPane.addTab(category, new JScrollPane(panel));
         }
         JPanel panel = tabs.get(category);
         JLabel label = new JLabel(name, SwingConstants.RIGHT);

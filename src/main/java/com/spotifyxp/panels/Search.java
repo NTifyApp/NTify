@@ -72,12 +72,12 @@ public class Search extends JPanel implements View {
         searchfieldspanel.setForeground(PublicValues.globalFontColor);
         searchartistlabel = new JLabel(PublicValues.language.translate("ui.search.searchfield.artist"));
         searchartistlabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        searchartistlabel.setBounds(30, 25, 46, 14);
+        searchartistlabel.setBounds(5, 25, 101, searchartistlabel.getFontMetrics(searchartistlabel.getFont()).getHeight());
         searchfieldspanel.add(searchartistlabel);
         searchartistlabel.setForeground(PublicValues.globalFontColor);
         searchsongtitlelabel = new JLabel(PublicValues.language.translate("ui.search.searchfield.title"));
         searchsongtitlelabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        searchsongtitlelabel.setBounds(10, 62, 66, 14);
+        searchsongtitlelabel.setBounds(10, 62, 66, searchsongtitlelabel.getFontMetrics(searchsongtitlelabel.getFont()).getHeight());
         searchfieldspanel.add(searchsongtitlelabel);
         searchsongtitlelabel.setForeground(PublicValues.globalFontColor);
         searchclearfieldsbutton = new JButton(PublicValues.language.translate("ui.search.searchfield.button.clear"));
@@ -93,7 +93,7 @@ public class Search extends JPanel implements View {
         searchfieldspanel.add(searchfinditbutton);
         searchfinditbutton.setForeground(PublicValues.globalFontColor);
         searchartistfield = new JTextField();
-        searchartistfield.setBounds(86, 22, 356, 25);
+        searchartistfield.setBounds(116, 22, 326, 25);
         searchfieldspanel.add(searchartistfield);
         searchartistfield.addKeyListener(new KeyAdapter() {
             @Override
@@ -197,6 +197,8 @@ public class Search extends JPanel implements View {
                 ((DefaultTableModel) searchsonglist.getModel()).setRowCount(0);
                 if (searchtitle.isEmpty() && searchartist.isEmpty()) {
                     return; // User didn't type anything in so we just return
+                }else if(searchtitle.isEmpty()) {
+                    return;
                 }
                 try {
                     if (track) {
@@ -219,9 +221,6 @@ public class Search extends JPanel implements View {
                         }
                     }
                     if (artist) {
-                        if (searchtitle.isEmpty()) {
-                            searchtitle = searchartist;
-                        }
                         for (Artist a : InstanceManager.getSpotifyApi().searchArtists(searchtitle).build().execute().getItems()) {
                             searchsonglistcache.add(a.getUri());
                             InstanceManager.getSpotifyAPI().addArtistToList(a, searchsonglist);

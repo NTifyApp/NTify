@@ -4,6 +4,7 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.utils.ConnectionUtils;
 
 import javax.swing.*;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -64,8 +65,11 @@ public class Feedback extends JPanel implements View {
         StyledDocument doc = thankYouText.getStyledDocument();
         SimpleAttributeSet center = new SimpleAttributeSet();
         StyleConstants.setAlignment(center, StyleConstants.ALIGN_CENTER);
-        doc.setParagraphAttributes(0, doc.getLength(), center, false);
-        thankYouText.setText(PublicValues.language.translate("ui.feedback.thankyoutext"));
+        try {
+            doc.insertString(doc.getLength(), PublicValues.language.translate("ui.feedback.thankyoutext"), null);
+            doc.setParagraphAttributes(0, doc.getLength(), center, false);
+        } catch (BadLocationException ignored) {
+        }
         thankYouTextConstraints = new GridBagConstraints();
         thankYouTextConstraints.anchor = GridBagConstraints.CENTER;
         thankYouTextConstraints.fill = GridBagConstraints.HORIZONTAL;
