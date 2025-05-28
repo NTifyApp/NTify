@@ -107,6 +107,17 @@ Then, enjoy streaming.
 
 Clone repo with '--recursive', run init.py, build.py, find executable at target/NTify.jar.
 
+## Contributing
+
+Just make your desired changes and open a pull request
+
+### Creating A Pull Request
+
+1. Fork the Project
+2. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+3. Push to the Branch (`git push origin main`)
+4. Open a Pull Request
+
 ## License
 
 Copyright [2025] [Gianluca Beil & Davenport Media]
