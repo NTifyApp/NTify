@@ -23,8 +23,11 @@ import com.spotifyxp.utils.*;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -56,6 +59,24 @@ public class ContentPanel extends JPanel {
         PublicValues.contentPanel = this;
         ConsoleLogging.info(PublicValues.language.translate("debug.buildcontentpanelbegin"));
         Events.subscribe(SpotifyXPEvents.trackLoadFinished.getName(), (Object... data) -> PublicValues.blockLoading = false);
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                PublicValues.userFocusedInputField = evt.getNewValue() instanceof JTextField;
+            }
+        });
+        Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
+            @Override
+            public void eventDispatched(AWTEvent event) {
+                if(event.getID() == KeyEvent.KEY_PRESSED) {
+                    if(((KeyEvent) event).getKeyCode() == KeyEvent.VK_SPACE
+                            && !PublicValues.userFocusedInputField
+                            && !(KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() instanceof AbstractButton)) {
+                        InstanceManager.getSpotifyPlayer().playPause();
+                    }
+                }
+            }
+        }, AWTEvent.KEY_EVENT_MASK);
         SplashPanel.linfo.setText("Creating context menu items...");
         createContextMenuItems();
         SplashPanel.linfo.setText("Creating menu bar...");

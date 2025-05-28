@@ -82,6 +82,7 @@ public class PublicValues {
     public static VLCPlayer vlcPlayer = new DummyVLCPlayer();
     public static boolean updaterDisabled = false;
     public static LogPrintStream logPrintStream;
+    public static boolean userFocusedInputField = false;
     //Devstuff
     public static boolean locationFinderActive = false;
     //----
