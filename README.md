@@ -15,8 +15,6 @@
 
 ![Contributors](https://img.shields.io/github/contributors/NTifyApp/NTify?color=dark-green) ![Issues](https://img.shields.io/github/issues/NTifyApp/NTify) ![Downloads](https://img.shields.io/github/downloads/NTifyApp/NTify/total)
 
-<h3>Info: Free accounts are not supported
-
 ## Table Of Contents
 
 * [About the Project](#about-the-project)
@@ -100,8 +98,8 @@ See **New Login Methods*.
 Then, enjoy streaming.
 
 ## New login methods
-1. Zeroconf: In a modern Spotify client, choose NTify under devices to authenticate.
-2. OAuth: Log into Spotify in the auto-opened browser window, confirm NTify connection, then close it. (needs a HTML5 supported browser)
+1. Zeroconf: In a modern Spotify client, choose NTify under devices to authenticate. Works only with Premium accounts.
+2. OAuth: Log into Spotify in the auto-opened browser window, confirm NTify connection, then close it. (needs a HTML5 supported browser) Works with Free accounts as well.
 
 ## Compiling
 
