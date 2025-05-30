@@ -54,16 +54,16 @@ If not existing, we'll resolve it 😊
 <h4>Recommended</h4>
 
 * OS: Windows XP & above
-* Processor: Anything that can handle SNES Emulation
+* Processor: Intel Pentium 4
 * RAM: 512MB
 * Storage (Without cache): 70MB
 * Storage (With cache): 700MB
 
 <h4>Minimum</h4>
 
-* OS: Windows 98 (KernelEx)
-* Processor: Anything that can handle SNES Emulation
-* RAM: 256MB
+* OS: Windows 2000
+* Processor: Intel Pentium II 366Mhz
+* RAM: 192MB
 * Storage (Without cache): 70MB
 * Storage (With cache): 700MB
 
