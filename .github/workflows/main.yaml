@@ -5,6 +5,7 @@ on:
     branches:
       - developer
     paths:
+      - '.github/workflows/main.yaml'
       - 'src/**'
       - 'deps/**'
       - 'pom.xml'
@@ -71,7 +72,7 @@ jobs:
         run: echo ${{ env.title }} > public/commit_title.txt
       - name: Copy release message to public directory
         working-directory: ./NTify
-        run: echo ${{ env.message }} > public/commit_message.txt
+        run: echo '${{ env.message }}' > public/commit_message.txt
       - name: Upload to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
