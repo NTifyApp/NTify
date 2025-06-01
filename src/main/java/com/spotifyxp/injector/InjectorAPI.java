@@ -36,7 +36,7 @@ public class InjectorAPI {
     public static ArrayList<InjectorAPI.InjectorRepository> injectorRepos = new ArrayList<>();
 
     public InjectorAPI() {
-        injectorRepos.add(new InjectorAPI.InjectorRepository("https://ntifyapp.github.io/Extensions-Repository/repo/"));
+        injectorRepos.add(new InjectorAPI.InjectorRepository("https://ntifyapp.werwolf2303.de/Extensions-Repository/repo/"));
     }
 
     @FunctionalInterface

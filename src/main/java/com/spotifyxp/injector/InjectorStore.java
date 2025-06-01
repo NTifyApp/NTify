@@ -216,6 +216,11 @@ public class InjectorStore extends JFrame {
                 }
             })) {
                 InjectorAPI.JarExtension jarext = InjectorAPI.getPluginJson(ext);
+                if (jarext.getIdentifier() == null) {
+                    // Extension uses an outdated plugin.json format
+                    ConsoleLogging.warning("Extension " + ext.getName() + " uses an outdated plugin.json format");
+                    continue;
+                }
                 installedExtensions.put(jarext.getIdentifier(), jarext);
             }
             GridBagConstraints gbc = new GridBagConstraints();
@@ -329,6 +334,11 @@ public class InjectorStore extends JFrame {
                     }
                 })) {
                     InjectorAPI.JarExtension jarext = InjectorAPI.getPluginJson(ext);
+                    if (jarext.getIdentifier() == null) {
+                        // Extension uses an outdated plugin.json format
+                        ConsoleLogging.warning("Extension " + ext.getName() + " uses an outdated plugin.json format");
+                        continue;
+                    }
                     installedExtensions.put(jarext.getIdentifier(), jarext);
                 }
                 refreshExtensionsAll();
