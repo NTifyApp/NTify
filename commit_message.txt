@@ -1,2 +1,4 @@
-Hopefully fixed multiline commit messages
-Test
+Fixed some nullpointers in right click menus
+Fixed table layout not working correctly in browse tab
+Hopefully translated everything now
+Auto select on right click
