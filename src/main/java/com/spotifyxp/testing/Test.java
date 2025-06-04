@@ -20,47 +20,137 @@ import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.configuration.Config;
+import com.spotifyxp.deps.xyz.gianlu.librespot.audio.AbsChunkedInputStream;
+import com.spotifyxp.deps.xyz.gianlu.librespot.audio.DecodedAudioStream;
+import com.spotifyxp.deps.xyz.gianlu.librespot.audio.decoders.VorbisDecoder;
+import com.spotifyxp.deps.xyz.gianlu.librespot.audio.format.SuperAudioFormat;
+import com.spotifyxp.deps.xyz.gianlu.librespot.audio.storage.AudioFileStreaming;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.NameThreadFactory;
+import com.spotifyxp.deps.xyz.gianlu.librespot.player.PlayerConfiguration;
+import com.spotifyxp.deps.xyz.gianlu.librespot.player.decoders.Decoder;
+import com.spotifyxp.deps.xyz.gianlu.librespot.player.decoders.SeekableInputStream;
+import com.spotifyxp.deps.xyz.gianlu.librespot.player.metrics.PlaybackMetrics;
+import com.spotifyxp.deps.xyz.gianlu.librespot.player.mixing.AudioSink;
+import com.spotifyxp.deps.xyz.gianlu.librespot.player.mixing.MixingLine;
+import com.spotifyxp.deps.xyz.gianlu.librespot.player.mixing.output.OutputAudioFormat;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.ArtistEventView;
 import com.spotifyxp.lib.libLanguage;
+import com.spotifyxp.logging.ConsoleLoggingModules;
 import com.spotifyxp.protogens.Concert;
 import com.spotifyxp.support.LinuxSupportModule;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.theming.themes.DarkGreen;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static com.spotifyxp.deps.xyz.gianlu.librespot.audio.storage.ChannelManager.CHUNK_SIZE;
 
 public class Test {
-    public static void main(String[] args) throws InstantiationException, IllegalAccessException, IOException, InterruptedException, URISyntaxException, ClassNotFoundException {
-        //new CustomSaveDir().runArgument(new File("data").getAbsolutePath()).run();
+    private static class FileAudioStream implements DecodedAudioStream {
+        private final File file;
+        private final RandomAccessFile raf;
+        private final byte[][] buffer;
+        private final int chunks;
+        private final int size;
+        private final boolean[] available;
+        private final boolean[] requested;
+        private final ExecutorService executorService = Executors.newCachedThreadPool(new NameThreadFactory((r) -> "file-async-" + r.hashCode()));
 
-        /*for(SpotifyXPEvents events : SpotifyXPEvents.values()) {
-            Events.register(events.getName(), true);
+        FileAudioStream(File file) throws IOException {
+            this.file = file;
+            this.raf = new RandomAccessFile(file, "r");
+
+            this.size = (int) raf.length();
+            this.chunks = (size + CHUNK_SIZE - 1) / CHUNK_SIZE;
+            this.buffer = new byte[chunks][];
+            this.available = new boolean[chunks];
+            this.requested = new boolean[chunks];
         }
 
-        new LinuxSupportModule().run();
+        @Override
+        public @NotNull AbsChunkedInputStream stream() {
+            return new AbsChunkedInputStream(false) {
+                @Override
+                protected byte[][] buffer() {
+                    return buffer;
+                }
 
-        PublicValues.config = new Config();
-        PublicValues.language = new libLanguage(Initiator.class);
-        PublicValues.language.setNoAutoFindLanguage("en");
-        PublicValues.language.setLanguageFolder("lang");*/
+                @Override
+                public int size() {
+                    return size;
+                }
 
-        PublicValues.theme = new DarkGreen();
-        PublicValues.theme.initTheme();
-        //PublicValues.defaultHttpClient = new OkHttpClient();
+                @Override
+                protected boolean[] requestedChunks() {
+                    return requested;
+                }
 
-        UnofficialSpotifyAPI.SpotifyBrowse browse = UnofficialSpotifyAPI.SpotifyBrowse.fromJSON(
-                IOUtils.toString(new FileInputStream("homedump.json"))
-        );
+                @Override
+                protected boolean[] availableChunks() {
+                    return available;
+                }
+
+                @Override
+                protected int chunks() {
+                    return chunks;
+                }
+
+                @Override
+                protected void requestChunkFromStream(int index) {
+                    executorService.submit(() -> {
+                        try {
+                            raf.seek((long) index * CHUNK_SIZE);
+                            raf.read(buffer[index]);
+                            notifyChunkAvailable(index);
+                        } catch (IOException ex) {
+                            notifyChunkError(index, new ChunkException(ex));
+                        }
+                    });
+                }
+
+                @Override
+                public void streamReadHalted(int chunk, long time) {
+                    ConsoleLoggingModules.warning("Not dispatching stream read halted event {chunk: {}}", chunk);
+                }
+
+                @Override
+                public void streamReadResumed(int chunk, long time) {
+                    ConsoleLoggingModules.warning("Not dispatching stream read resumed event {chunk: {}}", chunk);
+                }
+            };
+        }
+
+        @Override
+        public @NotNull SuperAudioFormat codec() {
+            return SuperAudioFormat.MP3; // FIXME: Detect codec
+        }
+
+        @Override
+        public @NotNull String describe() {
+            return "{file: " + file.getAbsolutePath() + "}";
+        }
+
+        @Override
+        public int decryptTimeMs() {
+            return 0;
+        }
+    }
+
+    public static void main(String[] args) throws InstantiationException, IllegalAccessException, IOException, InterruptedException, URISyntaxException, ClassNotFoundException, Decoder.DecoderException {
+
     }
 }

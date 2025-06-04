@@ -156,10 +156,6 @@ public final class Mp3Decoder extends Decoder {
                     throw new IOException(ex);
                 }
 
-                if (PublicValues.visualizer.isVisible()) {
-                    PublicValues.visualizer.update(buffer.array(), buffer.array().length);
-                }
-
                 bitstream.closeFrame();
                 int bytesRead = outputBuffer.reset();
                 buffer.put(outputBuffer.getBuffer(), 0, bytesRead);

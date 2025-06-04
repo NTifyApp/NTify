@@ -199,10 +199,6 @@ public final class VorbisDecoder extends Decoder {
                 PublicValues.lyricsDialog.triggerRefresh();
             }
 
-            if (PublicValues.visualizer.isVisible()) {
-                PublicValues.visualizer.update(convertedBuffer, convertedBuffer.length);
-            }
-
             for (int i = 0; i < jorbisInfo.channels; i++) {
                 int sampleIndex = i * 2;
                 for (int j = 0; j < range; j++) {
@@ -223,6 +219,11 @@ public final class VorbisDecoder extends Decoder {
             int c = 2 * jorbisInfo.channels * range;
             out.write(convertedBuffer, 0, c);
             out.flush();
+
+            if (PublicValues.visualizer.isVisible()) {
+                PublicValues.visualizer.setBuffer(convertedBuffer);
+            }
+
             written += c;
             jorbisDspState.synthesis_read(range);
 

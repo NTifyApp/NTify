@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2024] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,150 +15,120 @@
  */
 package com.spotifyxp.visuals;
 
-import com.spotifyxp.PublicValues;
-import com.spotifyxp.panels.PlayerArea;
-import com.spotifyxp.swingextension.JFrame;
-import com.spotifyxp.utils.FpsCounter;
+import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.SpectrumAnalyzer;
-
 import javax.swing.*;
+import com.spotifyxp.swingextension.JFrame;
 import java.awt.*;
-import java.text.DecimalFormat;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.List;
 
 public class AudioVisualizer extends JPanel {
-    byte[] converted = null;
-    JFrame frame = null;
-    final ArrayList<Color> colors = new ArrayList<>();
-    int buffersize = 0;
-    int gain = 0;
+    private byte[] currentBuffer;
+    private final SpectrumAnalyzer analyzer = new SpectrumAnalyzer();
+    private final List<Color> palette = new ArrayList<>();
+    private JFrame frame;
+    private BufferedImage bufferImage;
+    private final Timer renderTimer;
+
+    public AudioVisualizer() {
+        initColorPalette();
+        renderTimer = new Timer(1000 / 75, e -> {
+            resizeBufferImageIfNeeded();
+            renderToBuffer();
+            repaint();
+        });
+    }
+
+    private void initColorPalette() {
+        palette.clear();
+        for (int i = 0; i < 64; i++) {
+            float hue = i / 64f;
+            int rgb = Color.HSBtoRGB(hue, 1f, 1f);
+            String hex = String.format("#%06X", (0xFFFFFF & rgb));
+            palette.add(Color.decode(hex));
+        }
+    }
+
+    public void setBuffer(byte[] audioData) {
+        this.currentBuffer = audioData;
+    }
 
     public void open() {
-        counter.start();
-        frame = new JFrame(PublicValues.language.translate("ui.audiovisualizer.title"));
-        setPreferredSize(new Dimension(800, 400));
-        setBackground(Color.black);
-        frame.getContentPane().add(this);
-        frame.pack();
-        frame.setVisible(true);
-        colors.add(Color.decode("#078D70"));
-        colors.add(Color.decode("#26CEAA"));
-        colors.add(Color.decode("#90E8C1"));
-        colors.add(Color.decode("#FFFFFF"));
-        colors.add(Color.decode("#7BADE2"));
-        colors.add(Color.decode("#5049CC"));
-        colors.add(Color.decode("#3D1A78"));
-    }
-
-    public void close() {
-        counter.stop();
-        frame.dispose();
-    }
-
-    public boolean isVisible() {
-        converted = null;
         if (frame == null) {
-            return false;
+            frame = new JFrame(ApplicationUtils.getName() + " Audio Visualizer");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setLayout(new BorderLayout());
+            frame.add(this, BorderLayout.CENTER);
+            frame.setSize(300, 300);
+            frame.setLocationRelativeTo(null);
         }
-        return frame.isVisible();
-    }
-
-    double[] lastspectrumdata = null;
-
-    final boolean rainbow = false;
-
-    final FpsCounter counter = new FpsCounter();
-
-    void drawFPS(Graphics g) {
-        g.setColor(Color.cyan);
-        g.drawString("FPS " + new DecimalFormat("#").format(counter.getAverageFps()),
-                getWidth() - 10 - SwingUtilities.computeStringWidth(getFontMetrics(getFont()),
-                        "FPS " + new DecimalFormat("#").format(counter.getAverageFps())),
-                10);
-        g.setColor(Color.black);
-        counter.nextFrame();
+        frame.setVisible(true);
+        renderTimer.start();
     }
 
     @Override
-    public void paint(Graphics gr) {
-        super.paint(gr);
-        if (rainbow) {
-            if (converted != null) {
-                try {
-                    gr.setColor(Color.decode("#2596be"));
-                    gr.fillRect(0, 0, getWidth(), getHeight());
-                    SpectrumAnalyzer analyzer = new SpectrumAnalyzer();
-                    double[] spectrumData = analyzer.analyzeAudio(converted);
-                    colors.clear();
-                    for (int r = 0; r < 100; r++) colors.add(new Color(r * 255 / 100, 255, 0));
-                    for (int g = 100; g > 0; g--) colors.add(new Color(255, g * 255 / 100, 0));
-                    for (int b = 0; b < 100; b++) colors.add(new Color(255, 0, b * 255 / 100));
-                    for (int r = 100; r > 0; r--) colors.add(new Color(r * 255 / 100, 0, 255));
-                    for (int g = 0; g < 100; g++) colors.add(new Color(0, g * 255 / 100, 255));
-                    for (int b = 100; b > 0; b--) colors.add(new Color(0, 255, b * 255 / 100));
-                    colors.add(new Color(0, 255, 0));
-                    int c = 0;
-                    if (spectrumData == null || spectrumData.length == 0) {
-                        if (lastspectrumdata == null || lastspectrumdata.length == 0) {
-                            return;
-                        }
-                        spectrumData = lastspectrumdata;
-                    }
-                    for (int i = 0; i < spectrumData.length; i++) {
-                        try {
-                            gr.setColor(colors.get(c));
-                        } catch (IndexOutOfBoundsException e) {
-                            c = 0;
-                            gr.setColor(colors.get(c));
-                        }
-                        double amp = spectrumData[i];
-                        gr.drawLine(i, getHeight(), i, (int) (Math.round(getHeight() - amp * Integer.parseInt(PlayerArea.playerAreaVolumeCurrent.getText()))));
-                        c++;
-                    }
-                    drawFPS(gr);
-                    lastspectrumdata = spectrumData;
-                } catch (IllegalArgumentException ignored) {
-                }
-            }
-        } else {
-            if (converted != null) {
-                try {
-                    gr.setColor(Color.black);
-                    gr.fillRect(0, 0, getWidth(), getHeight());
-                    SpectrumAnalyzer analyzer = new SpectrumAnalyzer();
-                    double[] spectrumData = analyzer.analyzeAudio(converted);
-                    int c = 0;
-                    int a = 0;
-                    if (spectrumData == null) {
-                        if (lastspectrumdata == null) {
-                            return;
-                        }
-                        spectrumData = lastspectrumdata;
-                    }
-                    for (int i = 0; i < spectrumData.length; i++) {
-                        if (c > colors.size() - 1) {
-                            c = 0;
-                        }
-                        double amp = spectrumData[i];
-                        gr.setColor(colors.get(c));
-                        gr.drawLine(i, getHeight(), i, (int) (Math.round(getHeight() - amp * Integer.parseInt(PlayerArea.playerAreaVolumeCurrent.getText()))));
-                        if (a == 5) {
-                            c++;
-                            a = 0;
-                        }
-                        a++;
-                    }
-                    drawFPS(gr);
-                    lastspectrumdata = spectrumData;
-                } catch (IllegalArgumentException ignored) {
-                }
-            }
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (bufferImage != null) {
+            g.drawImage(bufferImage, 0, 0, null);
         }
     }
 
-    public void update(byte[] converted, int buffersize) {
-        this.buffersize = buffersize;
-        this.converted = converted;
-        repaint();
+    private void resizeBufferImageIfNeeded() {
+        int width = getWidth();
+        int height = getHeight();
+        if (width <= 0 || height <= 0) return;
+        if (bufferImage == null || bufferImage.getWidth() != width || bufferImage.getHeight() != height) {
+            bufferImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        }
+    }
+
+    private void renderToBuffer() {
+        if (currentBuffer == null || bufferImage == null) return;
+        Graphics2D g = bufferImage.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        int width = bufferImage.getWidth();
+        int height = bufferImage.getHeight();
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, width, height);
+        double[][] spectrum = analyzer.analyzeStereoAudio(currentBuffer, false);
+        drawCircularSpectrum(g, spectrum, width, height);
+        g.dispose();
+    }
+
+    private void drawCircularSpectrum(Graphics2D g, double[][] stereoData, int width, int height) {
+        int cx = width / 2;
+        int cy = height / 2;
+        int innerRadius = Math.min(width, height) / 4;
+        int maxBarLength = Math.min(width, height) / 4 - 10;
+        int totalBars = 64;
+        int halfBars = totalBars / 2;
+        g.setStroke(new BasicStroke(2f));
+        for (int i = 0; i < halfBars; i++) {
+            double theta = Math.PI + (Math.PI / halfBars) * i;
+            int dataIndex = (int) ((double) i / halfBars * stereoData[0].length);
+            double amp = Math.min(1.0, stereoData[0][dataIndex]);
+            int length = (int) (amp * maxBarLength);
+            int x1 = (int) (cx + Math.cos(theta) * innerRadius);
+            int y1 = (int) (cy + Math.sin(theta) * innerRadius);
+            int x2 = (int) (cx + Math.cos(theta) * (innerRadius + length));
+            int y2 = (int) (cy + Math.sin(theta) * (innerRadius + length));
+            g.setColor(palette.get(i % palette.size()));
+            g.drawLine(x1, y1, x2, y2);
+        }
+        for (int i = 0; i < halfBars; i++) {
+            double theta = (Math.PI / halfBars) * i;
+            int dataIndex = (int) ((double) i / halfBars * stereoData[1].length);
+            double amp = Math.min(1.0, stereoData[1][dataIndex]);
+            int length = (int) (amp * maxBarLength);
+            int x1 = (int) (cx + Math.cos(theta) * innerRadius);
+            int y1 = (int) (cy + Math.sin(theta) * innerRadius);
+            int x2 = (int) (cx + Math.cos(theta) * (innerRadius + length));
+            int y2 = (int) (cy + Math.sin(theta) * (innerRadius + length));
+            g.setColor(palette.get((i + halfBars) % palette.size()));
+            g.drawLine(x1, y1, x2, y2);
+        }
     }
 }
