@@ -1,4 +1,1 @@
-Fixed some nullpointers in right click menus
-Fixed table layout not working correctly in browse tab
-Hopefully translated everything now
-Auto select on right click
+Made the audio visualizer actually work (with some delay)
