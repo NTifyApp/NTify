@@ -45,7 +45,7 @@ public class SpotifyBrowseSection extends JScrollPane {
                 new Object[][]{
                 },
                 new String[]{
-                        "Name", "Description", ""
+                        PublicValues.language.translate("ui.general.name"), PublicValues.language.translate("ui.general.description"), ""
                 }
         ));
         table.setForeground(PublicValues.globalFontColor);
@@ -114,7 +114,7 @@ public class SpotifyBrowseSection extends JScrollPane {
                 new Object[][]{
                 },
                 new String[]{
-                        "Name", ""
+                        PublicValues.language.translate("ui.general.name"), ""
                 }
         ));
         table.setForeground(PublicValues.globalFontColor);

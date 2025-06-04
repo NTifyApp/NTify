@@ -153,7 +153,7 @@ public class HomePanel extends JScrollPane implements View {
                 new Object[][]{
                 },
                 new String[]{
-                        "Name", "Artist"
+                        PublicValues.language.translate( "ui.general.name"), PublicValues.language.translate("ui.general.artist")
                 }
         ));
 

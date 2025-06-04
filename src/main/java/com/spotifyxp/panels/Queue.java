@@ -27,6 +27,7 @@ import com.spotifyxp.swingextension.DDReorderList;
 import com.spotifyxp.utils.TrackUtils;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -39,7 +40,6 @@ public class Queue extends JScrollPane implements View {
     public static ContextMenu contextMenu;
 
 
-    //ToDo: Implement the reordering of the queue after dragging
     public Queue() throws IOException {
         setVisible(false);
 
@@ -92,7 +92,7 @@ public class Queue extends JScrollPane implements View {
                     String a = TrackUtils.getArtists(track.getArtists());
                     queueListModel.addElement(track.getName() + " - " + a);
                 } catch (ArrayIndexOutOfBoundsException e) {
-                    // This happens when (psst... i dont know)
+                    // This happens when (psst... I don't know)
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to list tracks in queue");
                 }
@@ -111,7 +111,7 @@ public class Queue extends JScrollPane implements View {
                         queueListModel.addElement(track.getName() + " - " + a);
                     }
                 } catch (ArrayIndexOutOfBoundsException e) {
-                    // This happens when (psst... i dont know)
+                    // This happens when (psst... I don't know)
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to list tracks in queue", e);
                 }
@@ -138,7 +138,7 @@ public class Queue extends JScrollPane implements View {
                     queueListModel.addElement(track.getName() + " - " + a);
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
-                // This happens when (psst... i dont know)
+                // This happens when (psst... I don't know)
             } catch (Exception e) {
                 throw new RuntimeException("Failed to list tracks in queue");
             }
@@ -164,7 +164,7 @@ public class Queue extends JScrollPane implements View {
                     queueListModel.addElement(track.getName() + " - " + a);
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
-                // This happens when (psst... i dont know)
+                // This happens when (psst... I don't know)
             } catch (Exception e) {
                 throw new RuntimeException("Failed to list tracks in queue");
             }

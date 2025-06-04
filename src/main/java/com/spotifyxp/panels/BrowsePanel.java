@@ -83,8 +83,8 @@ public class BrowsePanel extends JScrollPane implements View {
         thread.start();
 
         popupMenu = new JPopupMenu();
-        metroLayout = new JCheckBoxMenuItem("Metro layout"); //ToDo: Translate
-        tableLayout = new JCheckBoxMenuItem("Table layout"); //ToDo: Translate
+        metroLayout = new JCheckBoxMenuItem(PublicValues.language.translate("ui.browse.ctxmenu.metro"));
+        tableLayout = new JCheckBoxMenuItem(PublicValues.language.translate("ui.browse.ctxmenu.table"));
         metroLayout.setSelected(PublicValues.config.getInt(ConfigValues.browse_view_style.name) == 0);
         tableLayout.setSelected(!metroLayout.isSelected());
         metroLayout.addActionListener(e -> {
@@ -131,7 +131,7 @@ public class BrowsePanel extends JScrollPane implements View {
                 new Object[][]{
                 },
                 new String[]{
-                        "Name"
+                        PublicValues.language.translate("ui.general.name")
                 }
         ));
         table.setForeground(PublicValues.globalFontColor);
@@ -144,13 +144,17 @@ public class BrowsePanel extends JScrollPane implements View {
                     return;
                 }
                 if(e.getClickCount() == 2) {
-                    idRunnable.run(genreIds.get(table.getSelectedRow()).split(":")[2]);
+                    try {
+                        idRunnable.run(genreIds.get(table.getSelectedRow()).split(":")[2]);
+                    }catch (ArrayIndexOutOfBoundsException ex) {
+                        idRunnable.run(genreIds.get(table.getSelectedRow()));
+                    }
                 }
             }
         });
 
         tableScrollPane = new JScrollPane(table);
-        tableScrollPane.setBounds(10, 10, getWidth() - 30, getHeight() - 40);
+        tableScrollPane.setBounds(10, 10, 774,  461);
 
         for(UnofficialSpotifyAPI.SpotifyBrowseEntry entry : spotifyBrowse.getBody()) {
             if(entry.getMetadata().isPresent()) {
@@ -160,8 +164,9 @@ public class BrowsePanel extends JScrollPane implements View {
                         && entry.getCustom().isPresent()
                         && entry.getCustom().get().getBackgroundColor().isPresent()) {
                     table.addModifyAction(() -> ((DefaultTableModel) table.getModel()).addRow(new Object[] {entry.getText().getTitle()}));
-                    if(!entry.getEvents().isPresent()
-                            || entry.getEvents().get().getEvents().get(0).getData_uri().isPresent()
+                    if (!entry.getImages().isPresent()
+                            || !entry.getEvents().isPresent()
+                            || !entry.getEvents().get().getEvents().get(0).getData_uri().isPresent()
                     ) throw new NoSuchElementException();
                     genreIds.add(entry.getEvents().get().getEvents().get(0).getData_uri().get().getUri());
                 }
@@ -170,6 +175,8 @@ public class BrowsePanel extends JScrollPane implements View {
 
         contentPanel.add(tableScrollPane);
         contentPanel.setPreferredSize(new Dimension(782, 405));
+        revalidate();
+        repaint();
     }
 
     void displayBrowseMetro() throws NoSuchElementException {
@@ -309,7 +316,7 @@ public class BrowsePanel extends JScrollPane implements View {
             eventsListTableScrollPane.setVisible(false);
 
             eventsTable.setModel(new DefaultTableModel(new Object[][]{}, new Object[]{
-                    "Artist",
+                    PublicValues.language.translate("ui.general.artist"),
                     ""
             }));
 
@@ -374,8 +381,8 @@ public class BrowsePanel extends JScrollPane implements View {
             });
 
             eventsListTable.setModel(new DefaultTableModel(new Object[][]{}, new Object[]{
-                    "Location",
-                    "Date"
+                    PublicValues.language.translate("ui.general.location"),
+                    PublicValues.language.translate("ui.general.date")
             }));
 
             eventsListTable.setForeground(PublicValues.globalFontColor);
@@ -416,7 +423,7 @@ public class BrowsePanel extends JScrollPane implements View {
                             public void run() {
                                 ((DefaultTableModel) eventsTable.getModel()).addRow(new Object[]{
                                         artist.getName(),
-                                        artist.getArtistConcerts().getConcertsList().size() + " Events"
+                                        artist.getArtistConcerts().getConcertsList().size() + " " + PublicValues.language.translate("ui.browse.events.events")
                                 });
                             }
                         });

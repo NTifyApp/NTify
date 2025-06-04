@@ -327,19 +327,21 @@ public class libLanguage {
             try {
                 jsoncache = new Gson().fromJson(removeComment(new Resources().readToString(clazz, lf + "/" + languageCode + ".json")), JsonObject.class);
             } catch (Exception e) {
+                // Can be too early in init. So no ConsoleLogging.Throwable
                 ConsoleLogging.error("Failed to get translation for: " + key);
-                ConsoleLogging.Throwable(e);
-                return ret[0];
+                e.printStackTrace();
+                return key;
             }
         }
         try {
             if(!jsoncache.has(key)) {
                 ConsoleLogging.error("Failed to get translation for: " + key);
-                return ret[0];
+                return key;
             }
             ret[0] = jsoncache.get(key).getAsString();
         } catch (Exception e) {
-            ConsoleLogging.Throwable(e);
+            // Can be too early in init. So no ConsoleLogging.Throwable
+            e.printStackTrace();
         }
         return ret[0].replaceAll("%APPNAME%", ApplicationUtils.getName());
     }

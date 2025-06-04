@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -89,9 +91,31 @@ public class ContextMenu {
     public ContextMenu(JComponent component, @Nullable ArrayList<String> uris, Class<?> containingClass) {
         component.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+                showPopup(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
+                showPopup(e);
+            }
+
+            private void showPopup(MouseEvent e) {
+                if(!e.isPopupTrigger()) return;
                 if (SwingUtilities.isRightMouseButton(e)) {
+                    if(component instanceof JTable) {
+                        JTable table = (JTable) component;
+                        int rowToSelect = table.rowAtPoint(e.getPoint());
+                        table.clearSelection();
+                        table.setRowSelectionInterval(rowToSelect, rowToSelect);
+                    }else if(component instanceof JList) {
+                        JList<?> list = (JList<?>) component;
+                        int rowToSelect = list.locationToIndex(e.getPoint());
+                        list.clearSelection();
+                        list.setSelectionInterval(rowToSelect, rowToSelect);
+                    }
                     if(uris == null) {} else if(uris.isEmpty()) return;
                     holder.show(component, e.getX(), e.getY(), uris);
                 }

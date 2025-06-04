@@ -153,6 +153,8 @@
  "ui.history.removeall": "Remove all",
  "ui.theme.menu": "Theme",
  "ui.theme.change": "Change Color",
+ "ui.browse.ctxmenu.metro": "Metro layout",
+ "ui.browse.ctxmenu.table": "Table layout",
  "ui.login.message": "Click on 'Devices' in the normal Spotify client and click on '%APPNAME%'",
  "theme.bgfield": "Background Color",
  "theme.button": "Select Color",
@@ -201,6 +203,9 @@
  "ui.login.openproxysettings": "Open proxy settings",
  "ui.general.addalltoqueue": "Add all to queue",
  "ui.general.addtoqueue": "Add to queue",
+ "ui.general.artist": "Artist",
+ "ui.general.name": "Name",
+ "ui.general.description": "Description",
  "pip.ctxmenu.item1": "Change button height",
  "pip.ctxmenu.item1.message": "Change button height",
  "updater.menubar.title": "Check for update",
@@ -235,5 +240,13 @@
  "logsviewer.info": "Double click an entry to view it",
  "logsviewer.tab1": "Logs",
  "logsviewer.tab2": "Log",
- "logsviewer.open": "Open log viewer"
+ "logsviewer.open": "Open log viewer",
+ "ui.artist.popular": "Popular",
+ "ui.artist.albums": "Albums",
+ "ui.artist.discoveredon": "Discovered On",
+ "ui.artist.relatedartists": "Related Artists",
+ "ui.artist.followers": "Followers",
+ "ui.general.location": "Location",
+ "ui.general.date": "Date",
+ "ui.browse.events.events": "Events"
 }

@@ -39,26 +39,7 @@ public class LibraryTracks extends JScrollPane implements View {
     private static boolean libraryLoadingInProgress = false;
     public static ContextMenu contextMenu;
     public static int totalTracks = 0;
-    public static final Thread libraryThread = new Thread(new Runnable() {
-        public void run() {
-            try {
-                libraryLoadingInProgress = true;
-                int limit = 50;
-                Paging<SavedTrack> libraryTracks = InstanceManager.getSpotifyApi().getUsersSavedTracks().limit(limit).build().execute();
-                totalTracks = libraryTracks.getTotal();
-                for(SavedTrack track : libraryTracks.getItems()) {
-                    libraryUriCache.add(track.getTrack().getUri());
-                    String a = TrackUtils.getArtists(track.getTrack().getArtists());
-                    librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).addRow(new Object[]{track.getTrack().getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getTrack()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getTrack().getDurationMs())}));
-                }
-                libraryLoadingInProgress = false;
-            } catch (Exception e) {
-                ConsoleLogging.error("Error loading users library! Library now locked");
-                libraryLoadingInProgress = true;
-                throw new RuntimeException(e);
-            }
-        }
-    }, "Library thread");
+    public static Thread libraryThread;
 
     public LibraryTracks() {
         setVisible(false);
@@ -104,12 +85,36 @@ public class LibraryTracks extends JScrollPane implements View {
         createcontextMenu();
     }
 
+    public void loadLibrary() {
+        libraryThread = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    libraryLoadingInProgress = true;
+                    int limit = 50;
+                    Paging<SavedTrack> libraryTracks = InstanceManager.getSpotifyApi().getUsersSavedTracks().limit(limit).build().execute();
+                    totalTracks = libraryTracks.getTotal();
+                    for(SavedTrack track : libraryTracks.getItems()) {
+                        libraryUriCache.add(track.getTrack().getUri());
+                        String a = TrackUtils.getArtists(track.getTrack().getArtists());
+                        librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).addRow(new Object[]{track.getTrack().getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getTrack()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getTrack().getDurationMs())}));
+                    }
+                    libraryLoadingInProgress = false;
+                } catch (Exception e) {
+                    ConsoleLogging.error("Error loading users library! Library now locked");
+                    libraryLoadingInProgress = true;
+                    throw new RuntimeException(e);
+                }
+            }
+        }, "Library thread");
+        libraryThread.start();
+    }
+
     void createcontextMenu() {
         contextMenu = new ContextMenu(librarySongList, libraryUriCache, getClass());
         contextMenu.addItem(PublicValues.language.translate("ui.general.refresh"), () -> {
             libraryUriCache.clear();
-            librarySongList.removeAll();
-            libraryThread.start();
+            ((DefaultTableModel) librarySongList.getModel()).setRowCount(0);
+            loadLibrary();
         });
         contextMenu.addItem("Add to queue", () -> {
             if(librarySongList.getSelectedRow() == -1) return;

@@ -68,8 +68,6 @@ public class ArtistPanel extends JScrollPane implements View {
     public static ArrayList<String> relatedArtistsUriCache = new ArrayList<>();
     public static ArrayList<String> discoveredOnUriCache = new ArrayList<>();
 
-    private boolean trackPanelOpen = false;
-
     public ArtistPanel() {
         contentPanel = new JPanel();
         contentPanel.setLayout(null);
@@ -99,7 +97,7 @@ public class ArtistPanel extends JScrollPane implements View {
         backButton.addActionListener(new AsyncActionListener(e -> ContentPanel.switchView(ContentPanel.lastView)));
         contentPanel.add(backButton);
 
-        artistPopularLabel = new JLabel("Popular"); //ToDo: Translate
+        artistPopularLabel = new JLabel(PublicValues.language.translate("ui.artist.popular"));
         artistPopularLabel.setBounds(5, 291, 137, 27);
         artistPopularLabel.setForeground(PublicValues.globalFontColor);
         contentPanel.add(artistPopularLabel);
@@ -171,12 +169,12 @@ public class ArtistPanel extends JScrollPane implements View {
         artistAlbumScrollPane.setViewportView(artistAlbumTable);
         contentPanel.add(artistAlbumScrollPane);
 
-        artistAlbumLabel = new JLabel("Albums"); //ToDo: Translate
+        artistAlbumLabel = new JLabel(PublicValues.language.translate("ui.artist.album"));
         artistAlbumLabel.setBounds(5, 642, 102, 14);
         artistAlbumLabel.setForeground(PublicValues.globalFontColor);
         contentPanel.add(artistAlbumLabel);
 
-        relatedArtistsLabel = new JLabel("Related Artists");
+        relatedArtistsLabel = new JLabel(PublicValues.language.translate("ui.artist.relatedartists"));
         relatedArtistsLabel.setBounds(5, 1372, 102, 14);
         relatedArtistsLabel.setForeground(PublicValues.globalFontColor);
         contentPanel.add(relatedArtistsLabel);
@@ -188,7 +186,7 @@ public class ArtistPanel extends JScrollPane implements View {
                 new Object[][]{
                 },
                 new String[]{
-                        "Artist"
+                        PublicValues.language.translate("ui.general.artist")
                 }
         ));
         relatedArtistsTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
@@ -210,7 +208,7 @@ public class ArtistPanel extends JScrollPane implements View {
         relatedArtistsScrollPane.setBounds(5, 1397, 760, 295);
         contentPanel.add(relatedArtistsScrollPane);
 
-        discoveredOnLabel = new JLabel("Discovered On");
+        discoveredOnLabel = new JLabel(PublicValues.language.translate("ui.artist.discoveredon"));
         discoveredOnLabel.setForeground(PublicValues.globalFontColor);
         discoveredOnLabel.setBounds(5, 1007, 102, 14);
         contentPanel.add(discoveredOnLabel);
@@ -222,7 +220,7 @@ public class ArtistPanel extends JScrollPane implements View {
                 new Object[][]{
                 },
                 new String[]{
-                        "Name", "Description"
+                        PublicValues.language.translate("ui.general.name"), PublicValues.language.translate("ui.general.description")
                 }
         ));
         discoveredOnTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
@@ -256,7 +254,6 @@ public class ArtistPanel extends JScrollPane implements View {
                             setVisible(true);
                             ContentPanel.tabPanel.revalidate();
                             ContentPanel.tabPanel.repaint();
-                            trackPanelOpen = false;
                         }
                     });
                 }
@@ -297,7 +294,7 @@ public class ArtistPanel extends JScrollPane implements View {
                     artistTitle.getStyledDocument().getLength(),
                     artist.getName() + "\n",
                     style);
-            artistTitle.getStyledDocument().insertString(artistTitle.getStyledDocument().getLength(), artist.getFollowers().getTotal().toString() + " Followers", null);
+            artistTitle.getStyledDocument().insertString(artistTitle.getStyledDocument().getLength(), artist.getFollowers().getTotal().toString() + " " + PublicValues.language.translate("ui.artist.followers"), null);
         } catch (BadLocationException e) {
             ConsoleLogging.Throwable(e);
         }

@@ -323,7 +323,7 @@ public class ContentPanel extends JPanel {
                 case 2:
                     currentView = Views.LIBRARY;
                     if (Library.libraryTracks.librarySongList.getModel().getRowCount() == 0) {
-                        Library.libraryTracks.libraryThread.start();
+                        Library.libraryTracks.loadLibrary();
                     }
                     preventBuglegacySwitch();
                     legacySwitch.setComponentAt(legacySwitch.getSelectedIndex(), tabPanel);
