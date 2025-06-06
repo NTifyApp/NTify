@@ -127,17 +127,13 @@ public class ContentPanel extends JPanel {
         createTrackPanel();
         SplashPanel.linfo.setText("Creating settingsPanel...");
         createSettings();
-        SplashPanel.linfo.setText("Creating injectorStore...");
-        injectorStore = new InjectorStore();
         SplashPanel.linfo.setText("Adding window mouse listener...");
         SplashPanel.linfo.setText("Deciding population of hotlist...");
         SplashPanel.linfo.setText("Making window interactive...");
         createLegacy();
         try {
-            if (!(InstanceManager.getSpotifyApi().getCurrentUsersProfile() == null)) {
-                PublicValues.countryCode = InstanceManager.getSpotifyApi().getCurrentUsersProfile().build().execute().getCountry();
-            }
-        } catch (IOException | NullPointerException e) {
+            PublicValues.countryCode = CountryCode.getByCode(PublicValues.session.countryCode());
+        } catch (NullPointerException e) {
             ConsoleLogging.Throwable(e);
             // Defaulting to United States
             PublicValues.countryCode = CountryCode.US;
@@ -422,6 +418,13 @@ public class ContentPanel extends JPanel {
         });
         audioVisualizer.addActionListener(e -> PublicValues.visualizer.open());
         extensions.addActionListener(e -> {
+            if(injectorStore == null) {
+                try {
+                    injectorStore = new InjectorStore();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
             injectorStore.open();
         });
         settingsItem.addActionListener(new AsyncActionListener(e -> settings.open()));

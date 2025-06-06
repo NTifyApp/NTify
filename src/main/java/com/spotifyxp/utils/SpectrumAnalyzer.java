@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2024] [Gianluca Beil]
+ * Copyright [2023-2025] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

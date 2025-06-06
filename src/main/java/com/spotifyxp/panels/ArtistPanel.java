@@ -169,7 +169,7 @@ public class ArtistPanel extends JScrollPane implements View {
         artistAlbumScrollPane.setViewportView(artistAlbumTable);
         contentPanel.add(artistAlbumScrollPane);
 
-        artistAlbumLabel = new JLabel(PublicValues.language.translate("ui.artist.album"));
+        artistAlbumLabel = new JLabel(PublicValues.language.translate("ui.artist.albums"));
         artistAlbumLabel.setBounds(5, 642, 102, 14);
         artistAlbumLabel.setForeground(PublicValues.globalFontColor);
         contentPanel.add(artistAlbumLabel);

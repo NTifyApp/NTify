@@ -50,8 +50,19 @@ public class BrowsePanel extends JScrollPane implements View {
     public static JCheckBoxMenuItem metroLayout;
     public static JCheckBoxMenuItem tableLayout;
     public static JScrollPane tableScrollPane;
+    public static JProgressBar loader;
+    public static JPanel container;
+    public static JPanel loaderPanel;
 
     public BrowsePanel() {
+        container = new JPanel();
+        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+
+        loaderPanel = new JPanel();
+        loaderPanel.setLayout(null);
+        loaderPanel.setVisible(false);
+        container.add(loaderPanel);
+
         contentPanel = new JPanel();
         contentPanel.setLayout(null);
         contentPanel.addMouseListener(new MouseAdapter() {
@@ -62,25 +73,12 @@ public class BrowsePanel extends JScrollPane implements View {
                 }
             }
         });
+        container.add(contentPanel);
 
         setVisible(false);
-        setViewportView(contentPanel);
+        setViewportView(container);
         setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         getVerticalScrollBar().setUnitIncrement(32);
-
-        Thread thread = new Thread(() -> {
-            try {
-                spotifyBrowse = UnofficialSpotifyAPI.getSpotifyBrowse();
-            }catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            if(PublicValues.config.getInt(ConfigValues.browse_view_style.name) == 1) {
-                displayBrowseTable();
-            } else {
-                displayBrowseMetro();
-            }
-        });
-        thread.start();
 
         popupMenu = new JPopupMenu();
         metroLayout = new JCheckBoxMenuItem(PublicValues.language.translate("ui.browse.ctxmenu.metro"));
@@ -111,6 +109,12 @@ public class BrowsePanel extends JScrollPane implements View {
         });
         popupMenu.add(metroLayout);
         popupMenu.add(tableLayout);
+
+        loader = new JProgressBar();
+        loader.setIndeterminate(true);
+        loader.setForeground(PublicValues.globalFontColor);
+        loader.setBounds(156, 230, 472, 15);
+        loaderPanel.add(loader);
     }
 
     @FunctionalInterface
@@ -124,6 +128,10 @@ public class BrowsePanel extends JScrollPane implements View {
     }
 
     void displayBrowseTable() throws NoSuchElementException {
+        SwingUtilities.invokeLater(() -> {
+            loaderPanel.setVisible(true);
+            contentPanel.setVisible(false);
+        });
         genreIds = new ArrayList<>();
 
         table = new DefTable();
@@ -177,9 +185,17 @@ public class BrowsePanel extends JScrollPane implements View {
         contentPanel.setPreferredSize(new Dimension(782, 405));
         revalidate();
         repaint();
+        SwingUtilities.invokeLater(() -> {
+            loaderPanel.setVisible(false);
+            contentPanel.setVisible(true);
+        });
     }
 
     void displayBrowseMetro() throws NoSuchElementException {
+        SwingUtilities.invokeLater(() -> {
+            loaderPanel.setVisible(true);
+            contentPanel.setVisible(false);
+        });
         int yCache = 10;
         int xCache = 10;
         int xCount = 0;
@@ -226,6 +242,10 @@ public class BrowsePanel extends JScrollPane implements View {
         contentPanel.setPreferredSize(new Dimension(784, yCache));
         revalidate();
         repaint();
+        SwingUtilities.invokeLater(() -> {
+            loaderPanel.setVisible(false);
+            contentPanel.setVisible(true);
+        });
     }
 
     XYRunnable xyRunnable = new XYRunnable() {
@@ -524,6 +544,28 @@ public class BrowsePanel extends JScrollPane implements View {
     @Override
     public void makeVisible() {
         setVisible(true);
+
+        if(spotifyBrowse == null) {
+            Thread thread = new Thread(() -> {
+                SwingUtilities.invokeLater(() -> {
+                    loaderPanel.setVisible(true);
+                });
+                try {
+                    spotifyBrowse = UnofficialSpotifyAPI.getSpotifyBrowse();
+                }catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                if(PublicValues.config.getInt(ConfigValues.browse_view_style.name) == 1) {
+                    displayBrowseTable();
+                } else {
+                    displayBrowseMetro();
+                }
+                SwingUtilities.invokeLater(() -> {
+                    loaderPanel.setVisible(false);
+                });
+            });
+            thread.start();
+        }
     }
 
     @Override
