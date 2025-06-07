@@ -190,7 +190,7 @@ public class LoginDialog {
         if (frame != null) {
             return;
         }
-        frame = new JFrame(ApplicationUtils.getName() + " - Login");
+        frame = new JFrame(PublicValues.language.translate("ui.login.title").replace("%APPNAME%", ApplicationUtils.getName()));
         frame.setIconImage(Toolkit.getDefaultToolkit().getImage(LoginDialog.class.getResource("/ntify.png")));
         frame.setContentPane(new LoginDialog(onZeroconfCancel, onZeroconfExecute, onOauthCancel, onOauthExecute).contentPanel);
         frame.setResizable(false);

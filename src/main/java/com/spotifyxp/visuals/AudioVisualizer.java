@@ -15,6 +15,7 @@
  */
 package com.spotifyxp.visuals;
 
+import com.spotifyxp.PublicValues;
 import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.SpectrumAnalyzer;
 import javax.swing.*;
@@ -57,7 +58,7 @@ public class AudioVisualizer extends JPanel {
 
     public void open() {
         if (frame == null) {
-            frame = new JFrame(ApplicationUtils.getName() + " Audio Visualizer");
+            frame = new JFrame(PublicValues.language.translate("ui.audiovisualizer.title").replace("%APPNAME%", ApplicationUtils.getName()));
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLayout(new BorderLayout());
             frame.add(this, BorderLayout.CENTER);

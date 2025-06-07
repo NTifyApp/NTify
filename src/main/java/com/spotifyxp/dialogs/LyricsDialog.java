@@ -51,7 +51,7 @@ public class LyricsDialog extends JDialog {
 
     public LyricsDialog() {
         $$$setupUI$$$();
-        setTitle(ApplicationUtils.getName() + " - Song Lyrics"); //ToDo: Translate
+        setTitle(PublicValues.language.translate("ui.lyrics.title").replace("%APPNAME%", ApplicationUtils.getName()));
         setContentPane(contentPanel);
     }
 

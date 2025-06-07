@@ -156,6 +156,7 @@
  "ui.browse.ctxmenu.metro": "Metro layout",
  "ui.browse.ctxmenu.table": "Table layout",
  "ui.login.message": "Click on 'Devices' in the normal Spotify client and click on '%APPNAME%'",
+ "ui.login.title": "%APPNAME% - Login",
  "theme.bgfield": "Background Color",
  "theme.button": "Select Color",
  "theme.borderfield": "Border Color",
@@ -248,5 +249,15 @@
  "ui.artist.followers": "Followers",
  "ui.general.location": "Location",
  "ui.general.date": "Date",
- "ui.browse.events.events": "Events"
+ "ui.browse.events.events": "Events",
+ "ui.artisteventview.error.noticketinfo": "No ticket info found",
+ "ui.general.error": "Error",
+ "ui.artisteventview.error.novenueinfo": "No venue info found",
+ "ui.general.warning": "Warning",
+ "ui.artisteventview.genres": "Genres",
+ "ui.artisteventview.viewevent": "View event",
+ "ui.artisteventview.viewonamaps": "View on Apple Maps",
+ "ui.artisteventview.viewongmaps": "View on Google Maps",
+ "ui.lyrics.title": "%APPNAME% - Song Lyrics",
+ "ui.canvasplayer.title": "%APPNAME% - Canvas"
 }

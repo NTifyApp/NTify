@@ -43,7 +43,7 @@ public class CanvasPlayer extends JFrame {
     private boolean videoLoaded = false;
 
     public CanvasPlayer() {
-        setTitle(ApplicationUtils.getName() + " - Canvas"); // ToDo: Translate
+        setTitle(PublicValues.language.translate("ui.canvasplayer.title").replace("%APPNAME%", ApplicationUtils.getName()));
         setPreferredSize(new Dimension(290, 460));
         if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
             cachePath = new File(PublicValues.appLocation, "cvnscache");

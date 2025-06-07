@@ -65,15 +65,21 @@ public class ArtistEventView extends JPanel {
         }
 
         if(ticketInfo == null) {
-            JOptionPane.showMessageDialog(ContentPanel.frame, "No ticket info found", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(ContentPanel.frame,
+                    PublicValues.language.translate("ui.artisteventview.error.noticketinfo"),
+                    PublicValues.language.translate("ui.general.error"),
+                    JOptionPane.ERROR_MESSAGE);
             throw new IllegalArgumentException("No ticket info found");
         }
 
         if(venueInfo == null) {
-            JOptionPane.showMessageDialog(ContentPanel.frame, "No venue info found", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(ContentPanel.frame,
+                    PublicValues.language.translate("ui.artisteventview.error.novenueinfo"),
+                    PublicValues.language.translate("ui.general.warning"),
+                    JOptionPane.WARNING_MESSAGE);
         }
 
-        genresLabel = new JLabel("Genres");
+        genresLabel = new JLabel(PublicValues.language.translate("ui.artisteventview.genres"));
         genresLabel.setBounds(12, 12, 60, 17);
         add(genresLabel);
 
@@ -107,7 +113,7 @@ public class ArtistEventView extends JPanel {
         companyName.setText(ticketInfo.getTicketServiceInfo().getCompanyName());
         companyName.setForeground(PublicValues.globalFontColor);
 
-        viewEvent = new JButton("View event");
+        viewEvent = new JButton(PublicValues.language.translate("ui.artisteventview.viewevent"));
         viewEvent.setBounds(282, 86, 106, 27);
         add(viewEvent);
 
@@ -132,7 +138,7 @@ public class ArtistEventView extends JPanel {
         add(time);
 
         time.setForeground(PublicValues.globalFontColor);
-        if(venueInfo != null) time.setText("Date: " + parseDate(venueInfo.getDateInfo().getDate().getTime()).format(formatter));
+        if(venueInfo != null) time.setText(PublicValues.language.translate("ui.general.date") + ": " + parseDate(venueInfo.getDateInfo().getDate().getTime()).format(formatter));
 
         location = new JLabel("");
         location.setBounds(500, 91, 209, 17);
@@ -140,7 +146,7 @@ public class ArtistEventView extends JPanel {
 
         location.setHorizontalAlignment(SwingConstants.CENTER);
         location.setForeground(PublicValues.globalFontColor);
-        if(venueInfo != null) location.setText("Location: " + venueInfo.getVenue().getVenueName());
+        if(venueInfo != null) location.setText(PublicValues.language.translate("ui.general.location") + ": " + venueInfo.getVenue().getVenueName());
 
         if(venueInfo != null) {
             for(Concert.ConcertResponse.VenueMapService service : venueInfo.getVenue().getMapServicesList()) {
@@ -153,7 +159,7 @@ public class ArtistEventView extends JPanel {
             }
         }
 
-        viewOnAMaps = new JButton("View on Apple Maps");
+        viewOnAMaps = new JButton(PublicValues.language.translate("ui.artisteventview.viewonamaps"));
         viewOnAMaps.setBounds(500, 121, 209, 27);
         add(viewOnAMaps);
 
@@ -169,7 +175,7 @@ public class ArtistEventView extends JPanel {
             }
         });
 
-        viewOnGMaps = new JButton("View on Google Maps");
+        viewOnGMaps = new JButton(PublicValues.language.translate("ui.artisteventview.viewongmaps"));
         viewOnGMaps.setBounds(500, 161, 209, 27);
         add(viewOnGMaps);
 
