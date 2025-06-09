@@ -16,8 +16,8 @@
 package com.spotifyxp.support;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.org.mpris.MPRISMP2None;
-import com.spotifyxp.deps.org.mpris.MPRISMediaPlayer;
+import com.spotifyxp.deps.org.mpris.MPRIS;
+import com.spotifyxp.deps.org.mpris.MPRISBuilder;
 import com.spotifyxp.deps.org.mpris.Metadata;
 import com.spotifyxp.deps.org.mpris.TypeRunnable;
 import com.spotifyxp.deps.org.mpris.mpris.PlaybackStatus;
@@ -33,7 +33,6 @@ import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.utils.ApplicationUtils;
 import org.freedesktop.dbus.DBusPath;
-import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +41,6 @@ import org.jetbrains.annotations.Range;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  * !!Warning!! This class will be stripped from the final executable if the flag linuxSupport is false
  */
 public class LinuxSupportModule implements SupportModule {
-    public static MPRISMP2None mpris;
+    public static MPRIS mpris;
 
     @Override
     public String getOSName() {
@@ -68,80 +66,69 @@ public class LinuxSupportModule implements SupportModule {
             PublicValues.tempPath = System.getProperty("java.io.tmpdir");
         }
         try {
-            MPRISMediaPlayer mediaPlayer = new MPRISMediaPlayer(
-                    DBusConnection.newConnection(DBusConnection.DBusBusType.SESSION),
-                    ApplicationUtils.getName().toLowerCase(Locale.ENGLISH)
-            );
-            mpris = mediaPlayer.buildMPRISMediaPlayer2None(
-                    new MPRISMediaPlayer.MediaPlayer2Builder()
-                            .setOnQuit(new TypeRunnable<Object>() {
-                                @Override
-                                public void run(Object value) {
-                                    System.exit(0);
-                                }
-                            })
-                            .setOnRaise(new TypeRunnable<Object>() {
-                                @Override
-                                public void run(Object value) {
-                                    ContentPanel.frame.toFront();
-                                }
-                            })
-                            .setSupportedUriSchemes("spotify:")
-                            .setCanQuit(true)
-                            .setCanRaise(true)
-                            .setIdentity(ApplicationUtils.getName())
-                            .setDesktopEntry("/home/werwolf2303/.local/share/applications/" + ApplicationUtils.getName() + ".desktop"),
-                    new MPRISMediaPlayer.PlayerBuilder()
-                            .setOnOpenURI(new TypeRunnable<String>() {
-                                @Override
-                                public void run(String value) {
-                                    if(value.split(":").length == 2) {
-                                        // URI
-                                        InstanceManager.getSpotifyPlayer().load(value, true, PublicValues.shuffle);
-                                    }
-                                }
-                            })
-                            .setCanControl(true)
-                            .setCanPlay(true)
-                            .setCanPause(true)
-                            .setCanGoNext(true)
-                            .setCanGoPrevious(true)
-                            .setOnPlayPause(new TypeRunnable<Object>() {
-                                @Override
-                                public void run(Object value) {
-                                    InstanceManager.getPlayer().getPlayer().playPause();
-                                }
-                            })
-                            .setOnPlay(new TypeRunnable<Object>() {
-                                @Override
-                                public void run(Object value) {
-                                    InstanceManager.getPlayer().getPlayer().play();
-                                }
-                            })
-                            .setOnPause(new TypeRunnable<Object>() {
-                                @Override
-                                public void run(Object value) {
-                                    InstanceManager.getPlayer().getPlayer().pause();
-                                }
-                            })
-                            .setOnNext(new TypeRunnable<Object>() {
-                                @Override
-                                public void run(Object value) {
-                                    InstanceManager.getPlayer().getPlayer().next();
-                                }
-                            })
-                            .setOnPrevious(new TypeRunnable<Object>() {
-                                @Override
-                                public void run(Object value) {
-                                    InstanceManager.getPlayer().getPlayer().previous();
-                                }
-                            })
-                            .setMetadata(new Metadata.Builder()
-                                    .setLength(0)
-                                    .setTrackID(new DBusPath("/"))
-                                    .build())
-            );
-            mediaPlayer.create();
+            mpris = new MPRISBuilder()
+                    .setOnQuit(new Runnable() {
+                        @Override
+                        public void run() {
+                            System.exit(0);
+                        }
+                    })
+                    .setOnRaise(new Runnable() {
+                        @Override
+                        public void run() {
+                            ContentPanel.frame.toFront();
+                        }
+                    })
+                    .setSupportedUriSchemes("spotify:")
+                    .setCanQuit(true)
+                    .setCanRaise(true)
+                    .setIdentity(ApplicationUtils.getName())
+                    .setDesktopEntry(ApplicationUtils.getName())
+                    .setOnOpenURI(new TypeRunnable<String>() {
+                        @Override
+                        public void run(String value) {
+                            if(value.split(":").length == 2) {
+                                // URI
+                                InstanceManager.getSpotifyPlayer().load(value, true, PublicValues.shuffle);
+                            }
+                        }
+                    })
+                    .setCanControl(true)
+                    .setCanPlay(true)
+                    .setCanPause(true)
+                    .setCanGoNext(true)
+                    .setCanGoPrevious(true)
+                    .setOnPlayPause(new Runnable() {
+                        @Override
+                        public void run() {
+                            InstanceManager.getPlayer().getPlayer().playPause();
+                        }
+                    })
+                    .setOnPlay(new Runnable() {
+                        @Override
+                        public void run() {
+                            InstanceManager.getPlayer().getPlayer().play();
+                        }
+                    })
+                    .setOnPause(new Runnable() {
+                        @Override
+                        public void run() {
+                            InstanceManager.getPlayer().getPlayer().pause();
+                        }
+                    })
+                    .setOnNext(new Runnable() {
+                        @Override
+                        public void run() {
+                            InstanceManager.getPlayer().getPlayer().next();
+                        }
+                    })
+                    .setOnPrevious(new Runnable() {
+                        @Override
+                        public void run() {
+                            InstanceManager.getPlayer().getPlayer().previous();
+                        }
+                    })
+                    .build(ApplicationUtils.getName());
         } catch (DBusException e) {
             ConsoleLogging.warning("Failed to initialize MPRIS support");
         }
@@ -207,7 +194,11 @@ public class LinuxSupportModule implements SupportModule {
 
                     @Override
                     public void onTrackSeeked(@NotNull Player player, long trackTime) {
-
+                        try {
+                            mpris.emitSeeked((int) TimeUnit.MILLISECONDS.toMicros(trackTime));
+                        } catch (DBusException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
 
                     @Override
