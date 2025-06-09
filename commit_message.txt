@@ -1,9 +1,1 @@
-Updated copyright in AudioVisualizer.java and SpectrumAnalyzer.java
-Fixed translation in ArtistPanel
-Get country code without making an extra request
-Removed Facebook auth support
-Removed FileConfiguration.java
-Removed outdated cdn workaround
-Create instance of InjectorStore only when needed
-Made browse tab only load when clicked
-Added loading bar to browse tab
+
