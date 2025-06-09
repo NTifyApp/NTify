@@ -1,1 +1,4 @@
-
+Implemented albums in library
+Fixed some context menus
+Added event for user library changes
+NTify will now sync user library changes across the entire application

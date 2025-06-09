@@ -1,1 +1,1 @@
-Update mpris implementation
+Bug fixes and implementations
