@@ -24,6 +24,10 @@ import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.P
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 import com.spotifyxp.dialogs.AddPlaylistDialog;
 import com.spotifyxp.dialogs.ChangePlaylistDialog;
+import com.spotifyxp.events.EventSubscriber;
+import com.spotifyxp.events.Events;
+import com.spotifyxp.events.LibraryChange;
+import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -41,6 +45,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class LibraryPlaylists extends JSplitPane {
     public static JScrollPane playlistsPlaylistsScrollPane;
@@ -246,8 +251,11 @@ public class LibraryPlaylists extends JSplitPane {
         playlistsPlaylistsTableContextMenu = new ContextMenu(playlistsPlaylistsTable, playlistsUriCache, getClass());
         playlistsPlaylistsTableContextMenu.addItem(PublicValues.language.translate("ui.general.remove.playlist"), () -> {
             InstanceManager.getSpotifyApi().unfollowPlaylist(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2]);
-            playlistsUriCache.remove(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()));
-            ((DefaultTableModel) playlistsPlaylistsTable.getModel()).removeRow(playlistsPlaylistsTable.getSelectedRow());
+            Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                    playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()),
+                    LibraryChange.Type.PLAYLIST,
+                    LibraryChange.Action.REMOVE
+            ));
         });
         playlistsPlaylistsTableContextMenu.addItem(PublicValues.language.translate("ui.general.refresh"), () -> {
             new Thread(this::fetchPlaylists, "Fetch playlists").start();
@@ -314,6 +322,37 @@ public class LibraryPlaylists extends JSplitPane {
                 }, dialog::dispose);
             }catch (IOException e) {
                 ConsoleLogging.Throwable(e);
+            }
+        });
+
+        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
+            @Override
+            public void run(Object... data) {
+                LibraryChange change = (LibraryChange) data[0];
+                if(playlistsUriCache.isEmpty()) return;
+                if(change.getType() != LibraryChange.Type.PLAYLIST) return;
+                if(change.getAction() == LibraryChange.Action.ADD) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Playlist playlist = InstanceManager.getSpotifyApi().getPlaylist(change.getUri().split(":")[2]).build().execute();
+                                playlistsUriCache.add(0, playlist.getUri());
+                                ((DefaultTableModel) playlistsPlaylistsTable.getModel()).insertRow(0, new Object[]{playlist.getName()});
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }, "Library add playlist").start();
+                }else {
+                    for(int uri = 0; uri < playlistsUriCache.size(); uri++) {
+                        if(playlistsUriCache.get(uri).equals(change.getUri())) {
+                            playlistsUriCache.remove(uri);
+                            ((DefaultTableModel) playlistsPlaylistsTable.getModel()).removeRow(uri);
+                            return;
+                        }
+                    }
+                }
             }
         });
     }

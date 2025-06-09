@@ -21,6 +21,7 @@ import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
 import com.spotifyxp.dialogs.LyricsDialog;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
+import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.graphics.Graphics;
 import com.spotifyxp.history.PlaybackHistory;
@@ -329,6 +330,11 @@ public class PlayerArea extends JPanel {
                 if (heart.isFilled) {
                     try {
                         InstanceManager.getSpotifyApi().removeUsersSavedTracks(Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri().split(":")[2]).build().execute();
+                        Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                                Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
+                                LibraryChange.Type.TRACK,
+                                LibraryChange.Action.REMOVE
+                        ));
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -337,6 +343,11 @@ public class PlayerArea extends JPanel {
                 } else {
                     try {
                         InstanceManager.getSpotifyApi().saveTracksForUser(Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri().split(":")[2]).build().execute();
+                        Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                                Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
+                                LibraryChange.Type.TRACK,
+                                LibraryChange.Action.ADD
+                        ));
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }

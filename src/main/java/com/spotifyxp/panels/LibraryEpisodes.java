@@ -20,6 +20,10 @@ import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Episode;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.EpisodeWrapped;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
+import com.spotifyxp.events.EventSubscriber;
+import com.spotifyxp.events.Events;
+import com.spotifyxp.events.LibraryChange;
+import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -82,8 +86,11 @@ public class LibraryEpisodes extends JScrollPane {
                         InstanceManager.getSpotifyApi().removeUsersSavedEpisodes(
                                 episodesUris.get(episodesTable.getSelectedRow()).split(":")[2]
                         ).build().execute();
-                        ((DefaultTableModel) episodesTable.getModel()).removeRow(episodesTable.getSelectedRow());
-                        episodesUris.remove(episodesTable.getSelectedRow());
+                        Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                                episodesUris.get(episodesTable.getSelectedRow()),
+                                LibraryChange.Type.EPISODE,
+                                LibraryChange.Action.REMOVE
+                        ));
                     }catch (IOException e) {
                         ConsoleLogging.Throwable(e);
                     }
@@ -124,6 +131,47 @@ public class LibraryEpisodes extends JScrollPane {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
+            }
+        });
+
+        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
+            @Override
+            public void run(Object... data) {
+                LibraryChange change = (LibraryChange) data[0];
+                if(episodesUris.isEmpty()) return;
+                if(change.getType() != LibraryChange.Type.EPISODE) return;
+                if(change.getAction() == LibraryChange.Action.ADD) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Episode episode = InstanceManager.getSpotifyApi().getEpisode(change.getUri().split(":")[2]).build().execute();
+                                episodesUris.add(0, episode.getUri());
+                                episodesTable.addModifyAction(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ((DefaultTableModel) episodesTable.getModel()).insertRow(0, new Object[]{
+                                                episode.getName(),
+                                                episode.getShow().getName(),
+                                                TrackUtils.calculateFileSizeKb(episode),
+                                                TrackUtils.getHHMMSSOfTrack(episode.getDurationMs())
+                                        });
+                                    }
+                                });
+                            }catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }, "Library add episode").start();
+                }else {
+                    for(int uri = 0; uri < episodesUris.size(); uri++) {
+                        if(episodesUris.get(uri).equals(change.getUri())) {
+                            episodesUris.remove(uri);
+                            ((DefaultTableModel) episodesTable.getModel()).removeRow(uri);
+                            return;
+                        }
+                    }
+                }
             }
         });
 

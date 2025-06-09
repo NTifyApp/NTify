@@ -19,7 +19,10 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.SavedTrack;
+import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
+import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
+import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -31,6 +34,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class LibraryTracks extends JScrollPane implements View {
@@ -82,6 +86,35 @@ public class LibraryTracks extends JScrollPane implements View {
         }));
         setViewportView(librarySongList);
 
+        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
+            @Override
+            public void run(Object... data) {
+                LibraryChange change = (LibraryChange) data[0];
+                if(libraryUriCache.isEmpty()) return;
+                if(change.getType() != LibraryChange.Type.TRACK) return;
+                if(change.getAction() == LibraryChange.Action.ADD) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Track track = InstanceManager.getSpotifyApi().getTrack(change.getUri().split(":")[2]).build().execute();
+                                libraryUriCache.add(0, track.getUri());
+                                String a = TrackUtils.getArtists(track.getArtists());
+                                librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).insertRow(0, new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDurationMs())}));
+                            }catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }, "Library add track").start();
+                }else {
+                    for(int uri = 0; uri < libraryUriCache.size(); uri++) {
+                        libraryUriCache.remove(uri);
+                        ((DefaultTableModel) librarySongList.getModel()).removeRow(uri);
+                    }
+                }
+            }
+        });
+
         createcontextMenu();
     }
 
@@ -122,8 +155,11 @@ public class LibraryTracks extends JScrollPane implements View {
         });
         contextMenu.addItem(PublicValues.language.translate("ui.general.remove"), () -> {
             InstanceManager.getSpotifyApi().removeUsersSavedTracks(libraryUriCache.get(librarySongList.getSelectedRow()).split(":")[2]);
-            libraryUriCache.remove(librarySongList.getSelectedRow());
-            ((DefaultTableModel) librarySongList.getModel()).removeRow(librarySongList.getSelectedRow());
+            Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                    libraryUriCache.get(librarySongList.getSelectedRow()),
+                    LibraryChange.Type.TRACK,
+                    LibraryChange.Action.REMOVE
+            ));
         });
     }
 

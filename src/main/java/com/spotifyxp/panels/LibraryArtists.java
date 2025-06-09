@@ -20,6 +20,10 @@ import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.se.michaelthelin.spotify.enums.ModelObjectType;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Artist;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.PagingCursorbased;
+import com.spotifyxp.events.EventSubscriber;
+import com.spotifyxp.events.Events;
+import com.spotifyxp.events.LibraryChange;
+import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -76,6 +80,11 @@ public class LibraryArtists extends JScrollPane {
                                         artistsUris.get(artistsTable.getSelectedRow()).split(":")[2]
                                 }
                         ).build().execute();
+                        Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                                artistsUris.get(artistsTable.getSelectedRow()),
+                                LibraryChange.Type.ARTIST,
+                                LibraryChange.Action.REMOVE
+                        ));
                     } catch (IOException e) {
                         ConsoleLogging.Throwable(e);
                     }
@@ -83,8 +92,53 @@ public class LibraryArtists extends JScrollPane {
             }
         });
 
+        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
+            @Override
+            public void run(Object... data) {
+                LibraryChange change = (LibraryChange) data[0];
+                if(artistsUris.isEmpty()) return;
+                if(change.getType() != LibraryChange.Type.ARTIST) return;
+                if(change.getAction() == LibraryChange.Action.ADD) {
+                    new Thread(() -> {
+                        try {
+                            Artist artist = InstanceManager.getSpotifyApi().getArtist(change.getUri().split(":")[2]).build().execute();
+                            artistsUris.add(0, artist.getUri());
+                            artistsTable.addModifyAction(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((DefaultTableModel) artistsTable.getModel()).insertRow(0, new Object[]{
+                                            artist.getName(),
+                                            artist.getFollowers().getTotal(),
+                                            String.join(", ", artist.getGenres())
+                                    });
+                                }
+                            });
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, "Library add artist").start();
+                }else{
+                    for(int uri = 0; uri < artistsUris.size(); uri++) {
+                        if(artistsUris.get(uri).equals(change.getUri())) {
+                            artistsUris.remove(uri);
+                            int finalUri = uri;
+                            artistsTable.addModifyAction(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((DefaultTableModel) artistsTable.getModel()).removeRow(finalUri);
+                                }
+                            });
+                            return;
+                        }
+                    }
+                }
+            }
+        });
+
         setViewportView(artistsTable);
     }
+
+
 
     private void fetch() {
         try {

@@ -20,6 +20,10 @@ import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.SavedShow;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Show;
+import com.spotifyxp.events.EventSubscriber;
+import com.spotifyxp.events.Events;
+import com.spotifyxp.events.LibraryChange;
+import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -30,6 +34,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOError;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -79,6 +84,11 @@ public class LibraryShows extends JScrollPane {
                         InstanceManager.getSpotifyApi().removeUsersSavedShows(
                                 showsUris.get(showsTable.getSelectedRow()).split(":")[2]
                         ).build().execute();
+                        Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                                showsUris.get(showsTable.getSelectedRow()),
+                                LibraryChange.Type.SHOW,
+                                LibraryChange.Action.REMOVE
+                        ));
                     }catch (IOException e) {
                         ConsoleLogging.Throwable(e);
                     }
@@ -102,6 +112,44 @@ public class LibraryShows extends JScrollPane {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
+            }
+        });
+
+        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
+            @Override
+            public void run(Object... data) {
+                LibraryChange change = (LibraryChange) data[0];
+                if(showsUris.isEmpty()) return;
+                if(change.getType() != LibraryChange.Type.SHOW) return;
+                if(change.getAction() == LibraryChange.Action.ADD) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Show show = InstanceManager.getSpotifyApi().getShow(change.getUri().split(":")[2]).build().execute();
+                                showsUris.add(0, show.getUri());
+                                showsTable.addModifyAction(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ((DefaultTableModel) showsTable.getModel()).insertRow(0, new Object[]{
+                                                show.getName(),
+                                                show.getPublisher()
+                                        });
+                                    }
+                                });
+                            }catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }, "Library add show").start();
+                }else{
+                    for(int uri = 0; uri < showsUris.size(); uri++) {
+                        if(showsUris.get(uri).equals(change.getUri())) {
+                            showsUris.remove(uri);
+                            ((DefaultTableModel) showsTable.getModel()).removeRow(uri);
+                        }
+                    }
+                }
             }
         });
 

@@ -29,6 +29,7 @@ public class Library extends JScrollPane implements View {
     public static JPanel contentPanel;
     public static LibraryPlaylists libraryPlaylists;
     public static LibraryArtists libraryArtists;
+    public static LibraryAlbums libraryAlbums;
     public static LibraryEpisodes libraryEpisodes;
     public static LibraryShows libraryShows;
 
@@ -49,20 +50,25 @@ public class Library extends JScrollPane implements View {
             public void stateChanged(ChangeEvent e) {
                 switch (tabbedPane.getSelectedIndex()) {
                     case 1:
+                        if (LibraryAlbums.albumsTable.getModel().getRowCount() == 0) {
+                            libraryAlbums.fill();
+                        }
+                        break;
+                    case 2:
                         if (LibraryPlaylists.playlistsPlaylistsTable.getModel().getRowCount() == 0) {
                             libraryPlaylists.fill();
                         }
                         break;
-                    case 2:
+                    case 3:
                         if (LibraryArtists.artistsTable.getModel().getRowCount() == 0) {
                             libraryArtists.fill();
                         }
                         break;
-                    case 3:
+                    case 4:
                         if (LibraryEpisodes.episodesTable.getModel().getRowCount() == 0) {
                             libraryEpisodes.fill();
                         }
-                    case 4:
+                    case 5:
                         if (LibraryShows.showsTable.getModel().getRowCount() == 0) {
                             libraryShows.fill();
                         }
@@ -72,6 +78,9 @@ public class Library extends JScrollPane implements View {
 
         libraryTracks = new LibraryTracks();
         tabbedPane.addTab(PublicValues.language.translate("ui.library.tabs.tracks"), libraryTracks);
+
+        libraryAlbums = new LibraryAlbums();
+        tabbedPane.addTab(PublicValues.language.translate("ui.library.tabs.albums"), libraryAlbums);
 
         libraryPlaylists = new LibraryPlaylists();
         tabbedPane.addTab(PublicValues.language.translate("ui.library.tabs.playlists"), libraryPlaylists);

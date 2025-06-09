@@ -74,6 +74,7 @@
  "ui.navigation.browse": "Browse",
  "ui.library.tabs.artists": "Artists",
  "ui.library.tabs.episodes": "Episodes",
+ "ui.library.tabs.albums": "Albums",
  "ui.navigation.library.artists.table.column1": "Artist name",
  "ui.navigation.library.artists.table.column2": "Followers",
  "ui.navigation.library.artists.table.column3": "Genres",

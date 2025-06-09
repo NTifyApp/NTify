@@ -23,6 +23,7 @@ import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.T
 import com.spotifyxp.dialogs.FollowPlaylist;
 import com.spotifyxp.dialogs.SelectPlaylist;
 import com.spotifyxp.events.Events;
+import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -73,6 +74,7 @@ public enum GlobalContextMenus {
                 public void run() {
                     JTable table = (JTable) component;
                     if(table.getSelectedRow() == -1) return;
+                    LibraryChange.Type libraryChangeType = LibraryChange.Type.TRACK;
                     switch (uris.get(table.getSelectedRow()).toLowerCase(Locale.ENGLISH).split(":")[1]) {
                         case "playlist":
                             try {
@@ -92,6 +94,7 @@ public enum GlobalContextMenus {
                                     }
                                 });
                                 playlist.open();
+                                libraryChangeType = LibraryChange.Type.PLAYLIST;
                             }catch (IOException e) {
                                 ConsoleLogging.Throwable(e);
                             }
@@ -106,6 +109,7 @@ public enum GlobalContextMenus {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save album").start();
+                            libraryChangeType = LibraryChange.Type.SHOW;
                             break;
                         case "artist":
                             new Thread(() -> {
@@ -118,6 +122,7 @@ public enum GlobalContextMenus {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save Artist").start();
+                            libraryChangeType = LibraryChange.Type.ARTIST;
                             break;
                         case "track":
                             new Thread(() -> {
@@ -129,6 +134,7 @@ public enum GlobalContextMenus {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save track").start();
+                            libraryChangeType = LibraryChange.Type.TRACK;
                             break;
                         case "episode":
                             new Thread(() -> {
@@ -140,6 +146,7 @@ public enum GlobalContextMenus {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save episode").start();
+                            libraryChangeType = LibraryChange.Type.EPISODE;
                             break;
                         case "album":
                             new Thread(() -> {
@@ -151,8 +158,14 @@ public enum GlobalContextMenus {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save album").start();
+                            libraryChangeType = LibraryChange.Type.ALBUM;
                             break;
                     }
+                    Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                            uris.get(table.getSelectedRow()).toLowerCase(Locale.ENGLISH),
+                            libraryChangeType,
+                            LibraryChange.Action.ADD
+                    ));
                 }
             };
         }
@@ -164,12 +177,12 @@ public enum GlobalContextMenus {
 
         @Override
         public boolean shouldBeAdded(JComponent component, Class<?> containingClass) {
-            return component instanceof JTable;
+            return component instanceof JTable && !containingClass.getSimpleName().startsWith("Library");
         }
 
         @Override
         public boolean showItem(JComponent component, ArrayList<String> uris) {
-            return !uris.get(((JTable) component).getSelectedRow()).split(":")[1].equalsIgnoreCase("artist");
+            return true;
         }
     }),
     ADDTOPLAYLIST(new ContextMenu.GlobalContextMenuItem() {
@@ -180,11 +193,6 @@ public enum GlobalContextMenus {
                 public void run() {
                     JTable table = (JTable) component;
                     if (table.getSelectedRow() == -1) return;
-                    if(uris.get(table.getSelectedRow()).split(":")[1].equalsIgnoreCase("artist")
-                            || uris.get(table.getSelectedRow()).split(":")[1].equalsIgnoreCase("show")) {
-                        JOptionPane.showMessageDialog(ContentPanel.frame, "Artists can't be added to a playlist");
-                        return;
-                    }
                     try {
                         SelectPlaylist playlist = new SelectPlaylist(new SelectPlaylist.onPlaylistSelected() {
                             @Override
@@ -195,24 +203,6 @@ public enum GlobalContextMenus {
                                 try {
                                     ArrayList<String> urisToBeAdded = new ArrayList<>();
                                     switch (uris.get(table.getSelectedRow()).toLowerCase(Locale.ENGLISH).split(":")[1]) {
-                                        case "playlist":
-                                            limit = 50;
-                                            Paging<PlaylistTrack> playlistTracks = InstanceManager.getSpotifyApi().getPlaylistsItems(uri.split(":")[2])
-                                                    .limit(limit)
-                                                    .build().execute();
-                                            total = playlistTracks.getTotal();
-                                            offset = 0;
-                                            while(offset < total) {
-                                                for(PlaylistTrack playlistTrack : playlistTracks.getItems()) {
-                                                    urisToBeAdded.add(playlistTrack.getTrack().getUri());
-                                                    offset++;
-                                                }
-                                                playlistTracks = InstanceManager.getSpotifyApi().getPlaylistsItems(uri.split(":")[2])
-                                                        .limit(limit)
-                                                        .offset(offset)
-                                                        .build().execute();
-                                            }
-                                            break;
                                         case "episode":
                                         case "track":
                                             urisToBeAdded.add(uris.get(table.getSelectedRow()));
@@ -267,7 +257,7 @@ public enum GlobalContextMenus {
         @Override
         public boolean showItem(JComponent component, ArrayList<String> uris) {
             String idType = uris.get(((JTable) component).getSelectedRow()).split(":")[1];
-            return idType.equalsIgnoreCase("playlist") || idType.equalsIgnoreCase("episode")
+            return idType.equalsIgnoreCase("episode")
                     || idType.equalsIgnoreCase("track") || idType.equalsIgnoreCase("album");
         }
     }),
