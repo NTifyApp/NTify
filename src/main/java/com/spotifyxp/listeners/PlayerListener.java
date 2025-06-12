@@ -128,24 +128,7 @@ public class PlayerListener implements Player.EventsListener {
                     }
                     break;
                 default:
-                    ConsoleLogging.warning(PublicValues.language.translate("playerlistener.playableid.unknowntype"));
-                    Track t = InstanceManager.getSpotifyApi().getTrack(playableId.toSpotifyUri().split(":")[2]).build().execute();
-                    Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), t);
-                    PlayerArea.playerPlayTimeTotal.setText(String.valueOf(t.getDurationMs()));
-                    PlayerArea.playerTitle.setText(t.getName());
-                    for (ArtistSimplified artist : t.getArtists()) {
-                        if (artists.toString().isEmpty()) {
-                            artists.append(artist.getName());
-                        } else {
-                            artists.append(", ").append(artist.getName());
-                        }
-                    }
-                    try {
-                        PlayerArea.playerImage.setImage(new URL(SpotifyUtils.getImageForSystem(t.getAlbum().getImages()).getUrl()).openStream());
-                    } catch (Exception e) {
-                        ConsoleLogging.warning("Failed to load cover for track");
-                        PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
-                    }
+                    ConsoleLogging.Throwable(new RuntimeException("Unhandled/Unknown uri type: " + playableId.toSpotifyUri().split(":")[1]));
             }
             PlayerArea.playerDescription.setText(artists.toString());
         } catch (IOException | JSONException e) {

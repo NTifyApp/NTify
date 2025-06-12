@@ -18,6 +18,7 @@ package com.spotifyxp.panels;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
+import com.spotifyxp.dialogs.FullscreenPlayerDialog;
 import com.spotifyxp.dialogs.LyricsDialog;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
@@ -424,6 +425,12 @@ public class PlayerArea extends JPanel {
             @Override
             public void run() {
                 pipPlayer.open();
+            }
+        });
+        contextMenu.addItem(PublicValues.language.translate("ui.playerarea.ctxmenu.item2"), new Runnable() {
+            @Override
+            public void run() {
+                new FullscreenPlayerDialog().open();
             }
         });
 

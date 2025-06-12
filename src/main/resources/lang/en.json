@@ -101,6 +101,7 @@
  "ui.search.songlist.length": "Length",
  "ui.search.songlist.songname": "Name",
  "ui.playerarea.ctxmenu.item1": "Open in PiP",
+ "ui.playerarea.ctxmenu.item2": "Switch to Fullscreen Mode",
  "ui.settings.browser": "Browser",
  "settings.mypal.path": "Mypal executable path",
  "ui.settings.playback.label": "Playback",
