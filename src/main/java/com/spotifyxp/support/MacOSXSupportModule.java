@@ -32,6 +32,7 @@ public class MacOSXSupportModule implements SupportModule {
 
     @Override
     public void run() {
+        PublicValues.updaterDisabled = true;
         if (!PublicValues.customSaveDir) {
             PublicValues.fileslocation = System.getProperty("user.home") + "/Library/Application Support/" + ApplicationUtils.getName();
             PublicValues.appLocation = PublicValues.fileslocation;
