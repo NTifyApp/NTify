@@ -125,7 +125,7 @@ except when stated otherwise.
 <br>
 Copyright to the following images goes to [Anthony](https://twitter.com/intent/user?screen_name=anthonydavenpod):
 - The NTify logo
-- - The NTify name
+- The NTify name
 - The setup image
 
 
