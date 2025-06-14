@@ -287,7 +287,11 @@ public class UnofficialSpotifyAPI {
         public static HomeTab fromJSON(JSONObject json) {
             ArrayList<HomeTabSection> sections = new ArrayList<>();
             for(Object sectionObject : json.getJSONObject("sectionContainer").getJSONObject("sections").getJSONArray("items")) {
-                sections.add(HomeTabSection.fromJSON(new JSONObject(sectionObject.toString())));
+                try {
+                    sections.add(HomeTabSection.fromJSON(new JSONObject(sectionObject.toString())));
+                }catch (JSONException e) {
+                    ConsoleLogging.warning("[HomeTab] Got section item with unknown/unsupported data");
+                }
             }
             return new HomeTab(
                     json.getJSONObject("greeting").getString("text"),
