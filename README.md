@@ -123,7 +123,7 @@ Just make your desired changes and open a pull request
 All files within this repo are licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt) 
 except when stated otherwise. 
 <br>
-Copyright to the following images goes to [Anthony Davenport](https://github.com/theanthonydavenport/):
+Copyright to the following images goes to [Anthony](https://twitter.com/intent/user?screen_name=anthonydavenpod):
 - The NTify logo
 - The setup image
 
