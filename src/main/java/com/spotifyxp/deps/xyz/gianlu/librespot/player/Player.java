@@ -310,13 +310,6 @@ public class Player implements Closeable {
         return future;
     }
 
-    public void waitReady() throws InterruptedException {
-        try {
-            ready().get();
-        } catch (ExecutionException ignored) {
-        }
-    }
-
 
     // ================================ //
     // ======== Internal state ======== //

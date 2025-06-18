@@ -25,6 +25,7 @@ import javax.swing.event.PopupMenuListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+@Deprecated
 public class DropDownMenu {
     final JPopupMenu popupMenu = new JPopupMenu();
 

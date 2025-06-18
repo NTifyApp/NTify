@@ -122,7 +122,9 @@ public class TrackUtils {
     }
 
     public static Integer roundVolumeToNormal(float volume) {
-        return Integer.parseInt(String.valueOf(Math.round(volume * 10)));
+        int vol = (Math.round(volume * 10)) * 6754;
+        if(vol > 65536) vol = 65536;
+        return vol;
     }
 
     public static int getSecondsFromMS(long milliseconds) {

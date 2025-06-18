@@ -37,7 +37,7 @@ import java.awt.event.*;
 import java.io.File;
 import java.util.ArrayList;
 
-public class PiPPlayer extends JFrame {
+public class PiPPlayer {
     public static JImagePanel songImage;
     private int pX, pY;
     private boolean isResizing = false, isMoving = false;
@@ -68,13 +68,15 @@ public class PiPPlayer extends JFrame {
 
     public static JPanel controlsContainer;
 
+    private JFrame frame;
+
     void resizeComponents() {
         for(Component component : container.getComponents()) {
             if(component.getName() != null && component.getName().equals("ResizeRect")) {
                 component.setBounds(resizingRect);
                 continue;
             }
-            component.setBounds(0, 0, getWidth(), getHeight());
+            component.setBounds(0, 0, frame.getWidth(), frame.getHeight());
         }
         closeButton.setBounds(resizingRect.width - buttonSize, 0, buttonSize, buttonSize);
         previousButton.setBounds(0, resizingRect.height - buttonSize, buttonSize, buttonSize);
@@ -113,7 +115,7 @@ public class PiPPlayer extends JFrame {
                 resizeDirection = Cursor.SE_RESIZE_CURSOR;
             } else if (resizingRect.contains(me.getPoint())) {
                 isMoving = true;
-                setCursor(Cursor.MOVE_CURSOR);
+                frame.setCursor(Cursor.MOVE_CURSOR);
             }
         }
 
@@ -122,26 +124,26 @@ public class PiPPlayer extends JFrame {
             isResizing = false;
             isMoving = false;
             resizeDirection = Cursor.DEFAULT_CURSOR;
-            setCursor(Cursor.DEFAULT_CURSOR);
+            frame.setCursor(Cursor.DEFAULT_CURSOR);
             recalculateRects(false);
             resizeComponents();
-            revalidate();
-            repaint();
+            frame.revalidate();
+            frame.repaint();
         }
 
         @Override
         public void mouseEntered(MouseEvent e) {
             controlsContainer.setVisible(true);
-            revalidate();
-            repaint();
+            frame.revalidate();
+            frame.repaint();
         }
 
         @Override
         public void mouseExited(MouseEvent e) {
-            if(contains(e.getPoint())) return;
+            if(frame.contains(e.getPoint())) return;
             controlsContainer.setVisible(false);
-            revalidate();
-            repaint();
+            frame.revalidate();
+            frame.repaint();
         }
     };
 
@@ -152,10 +154,10 @@ public class PiPPlayer extends JFrame {
             int dy = me.getY() - pY;
 
             if (isResizing) {
-                int newX = getX();
-                int newY = getY();
-                int newWidth = getWidth();
-                int newHeight = getHeight();
+                int newX = frame.getX();
+                int newY = frame.getY();
+                int newWidth = frame.getWidth();
+                int newHeight = frame.getHeight();
 
                 switch (resizeDirection) {
                     case Cursor.NW_RESIZE_CURSOR:
@@ -181,12 +183,12 @@ public class PiPPlayer extends JFrame {
                 }
 
                 if (newWidth > 100 && newHeight > 100) {
-                    setBounds(newX, newY, newWidth, newHeight);
+                    frame.setBounds(newX, newY, newWidth, newHeight);
                     pX = me.getX();
                     pY = me.getY();
                 }
             } else if (isMoving) {
-                setLocation(getLocation().x + dx, getLocation().y + dy);
+                frame.setLocation(frame.getLocation().x + dx, frame.getLocation().y + dy);
             }
         }
 
@@ -194,59 +196,26 @@ public class PiPPlayer extends JFrame {
         public void mouseMoved(MouseEvent me) {
             for(JImageButton button : controlButtons) {
                 if(button.contains(me.getPoint())) {
-                    setCursor(Cursor.DEFAULT_CURSOR);
+                    frame.setCursor(Cursor.DEFAULT_CURSOR);
                 }
             }
             if (northWestRect.contains(me.getPoint())) {
-                setCursor(new Cursor(Cursor.NW_RESIZE_CURSOR));
+                frame.setCursor(new Cursor(Cursor.NW_RESIZE_CURSOR));
             } else if (northEastRect.contains(me.getPoint())) {
-                setCursor(new Cursor(Cursor.NE_RESIZE_CURSOR));
+                frame.setCursor(new Cursor(Cursor.NE_RESIZE_CURSOR));
             } else if (southWestRect.contains(me.getPoint())) {
-                setCursor(new Cursor(Cursor.SW_RESIZE_CURSOR));
+                frame.setCursor(new Cursor(Cursor.SW_RESIZE_CURSOR));
             } else if (southEastRect.contains(me.getPoint())) {
-                setCursor(new Cursor(Cursor.SE_RESIZE_CURSOR));
+                frame.setCursor(new Cursor(Cursor.SE_RESIZE_CURSOR));
             } else if (resizingRect.contains(me.getPoint())) {
-                setCursor(Cursor.MOVE_CURSOR);
+                frame.setCursor(Cursor.MOVE_CURSOR);
             } else {
-                setCursor(Cursor.DEFAULT_CURSOR);
+                frame.setCursor(Cursor.DEFAULT_CURSOR);
             }
         }
     };
 
     public PiPPlayer() {
-        recalculateRects(true);
-
-        controlButtons = new ArrayList<>();
-
-        setBackground(Color.BLACK);
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                dispose();
-            }
-        });
-        setAlwaysOnTop(true);
-        setUndecorated(true);
-        setPreferredSize(new Dimension(initialWindowSize, initialWindowSize));
-        addMouseListener(mouseAdapter);
-        addMouseMotionListener(mouseMotionListener);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-
-        if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
-            cachePath = new File(PublicValues.appLocation, "cvnscache");
-            if(!cachePath.exists()) {
-                if(!cachePath.mkdir()) {
-                    ConsoleLogging.error("Failed to create cvnscache directory");
-                    PublicValues.contentPanel.remove(PlayerArea.canvasPlayerButton.getJComponent());
-                }
-            }
-        }
-
-        container = new JLayeredPane();
-        container.setBackground(Color.BLACK);
-        setContentPane(container);
-
         ctxMenu = new ContextMenu();
         ctxMenu.addItem(PublicValues.language.translate("pip.ctxmenu.item1"), new Runnable() {
             @Override
@@ -264,6 +233,83 @@ public class PiPPlayer extends JFrame {
             }
         });
 
+        Events.subscribe(SpotifyXPEvents.playerresume.getName(), new EventSubscriber() {
+            @Override
+            public void run(Object... data) {
+                if(frame != null) {
+                    playPause.setImage(new Resources().readToInputStream(pausePath));
+                }
+            }
+        });
+
+        Events.subscribe(SpotifyXPEvents.playerpause.getName(), new EventSubscriber() {
+            @Override
+            public void run(Object... data) {
+                if(frame != null) {
+                    playPause.setImage(new Resources().readToInputStream(playPath));
+                }
+            }
+        });
+
+        Events.subscribe(SpotifyXPEvents.playerLockRelease.getName(), new EventSubscriber() {
+            @Override
+            public void run(Object... data) {
+                if(frame != null) {
+                    songImage.setImage(PlayerArea.playerImage.getImageStream());
+                }
+            }
+        });
+    }
+
+    private void recalculateRects(boolean preInit) {
+        int windowWidth = frame.getWidth();
+        int windowHeight = frame.getHeight();
+        if(preInit) {
+            windowWidth = initialWindowSize;
+            windowHeight = initialWindowSize;
+        }
+        resizingRect = new Rectangle(resizingRectSpacing, resizingRectSpacing, windowWidth - (resizingRectSpacing * 2), windowHeight - (resizingRectSpacing * 2));
+        northWestRect = new Rectangle(0, 0, resizingRectSpacing, resizingRectSpacing);
+        northEastRect = new Rectangle(windowWidth - resizingRectSpacing, 0, resizingRectSpacing, resizingRectSpacing);
+        southWestRect = new Rectangle(0, windowHeight - resizingRectSpacing, resizingRectSpacing, resizingRectSpacing);
+        southEastRect = new Rectangle(windowWidth - resizingRectSpacing, windowHeight - resizingRectSpacing, resizingRectSpacing, resizingRectSpacing);
+    }
+
+    public void open() {
+        frame = new JFrame();
+
+        recalculateRects(true);
+
+        controlButtons = new ArrayList<>();
+
+        frame.setBackground(Color.BLACK);
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                close();
+            }
+        });
+        frame.setAlwaysOnTop(true);
+        frame.setUndecorated(true);
+        frame.setPreferredSize(new Dimension(initialWindowSize, initialWindowSize));
+        frame.addMouseListener(mouseAdapter);
+        frame.addMouseMotionListener(mouseMotionListener);
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
+            cachePath = new File(PublicValues.appLocation, "cvnscache");
+            if(!cachePath.exists()) {
+                if(!cachePath.mkdir()) {
+                    ConsoleLogging.error("Failed to create cvnscache directory");
+                    PublicValues.contentPanel.remove(PlayerArea.canvasPlayerButton.getJComponent());
+                }
+            }
+        }
+
+        container = new JLayeredPane();
+        container.setBackground(Color.BLACK);
+        frame.setContentPane(container);
 
         songImage = new JImagePanel();
         songImage.setBackground(Color.BLACK);
@@ -277,7 +323,7 @@ public class PiPPlayer extends JFrame {
         closeButton.addActionListener(new AsyncActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                dispose();
+                close();
             }
         }));
         closeButton.setBounds(resizingRect.width / 2 - buttonSize / 2, 0, buttonSize, buttonSize);
@@ -341,58 +387,26 @@ public class PiPPlayer extends JFrame {
         controlsContainer.add(nextButton);
         container.add(controlsContainer, JLayeredPane.PALETTE_LAYER);
 
-        Events.subscribe(SpotifyXPEvents.playerresume.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                if(isVisible()) {
-                    playPause.setImage(new Resources().readToInputStream(pausePath));
-                }
-            }
-        });
+        frame.open();
 
-        Events.subscribe(SpotifyXPEvents.playerpause.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                if(isVisible()) {
-                    playPause.setImage(new Resources().readToInputStream(playPath));
-                }
-            }
-        });
-
-        Events.subscribe(SpotifyXPEvents.playerLockRelease.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                if(isVisible()) {
-                    songImage.setImage(PlayerArea.playerImage.getImageStream());
-                }
-            }
-        });
-    }
-
-    private void recalculateRects(boolean preInit) {
-        int windowWidth = getWidth();
-        int windowHeight = getHeight();
-        if(preInit) {
-            windowWidth = initialWindowSize;
-            windowHeight = initialWindowSize;
-        }
-        resizingRect = new Rectangle(resizingRectSpacing, resizingRectSpacing, windowWidth - (resizingRectSpacing * 2), windowHeight - (resizingRectSpacing * 2));
-        northWestRect = new Rectangle(0, 0, resizingRectSpacing, resizingRectSpacing);
-        northEastRect = new Rectangle(windowWidth - resizingRectSpacing, 0, resizingRectSpacing, resizingRectSpacing);
-        southWestRect = new Rectangle(0, windowHeight - resizingRectSpacing, resizingRectSpacing, resizingRectSpacing);
-        southEastRect = new Rectangle(windowWidth - resizingRectSpacing, windowHeight - resizingRectSpacing, resizingRectSpacing, resizingRectSpacing);
-    }
-
-    @Override
-    public void open() {
-        super.open();
         resizeComponents();
-        setLocation(ContentPanel.frame.getLocation());
+        frame.setLocation(ContentPanel.frame.getLocation());
         if(InstanceManager.getSpotifyPlayer().isPaused()) {
             playPause.setImage(new Resources().readToInputStream(playPath));
         }else{
             playPause.setImage(new Resources().readToInputStream(pausePath));
         }
         songImage.setImage(PlayerArea.playerImage.getImageStream());
+    }
+
+    public void close() {
+        frame.dispose();
+        frame = null;
+        container = null;
+        playPause = null;
+        closeButton = null;
+        previousButton = null;
+        controlsContainer = null;
+        controlButtons = null;
     }
 }

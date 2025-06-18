@@ -16,6 +16,7 @@
 package com.spotifyxp.panels;
 
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
 import com.spotifyxp.dialogs.FullscreenPlayerDialog;
@@ -193,56 +194,58 @@ public class PlayerArea extends JPanel {
         playerAreaVolumeSlider.setForeground(PublicValues.globalFontColor);
         playerAreaVolumeCurrent.setText("10");
         playerAreaVolumeSlider.setMinimum(0);
-        playerAreaVolumeSlider.setMaximum(10);
-        playerAreaVolumeSlider.setValue(10);
+        playerAreaVolumeSlider.setMaximum(65536);
+        playerAreaVolumeSlider.setValue(65536);
         InstanceManager.getPlayer().getPlayer().setVolume(65536);
         playerAreaVolumeSlider.addChangeListener(e -> {
-            playerAreaVolumeCurrent.setText(String.valueOf(playerAreaVolumeSlider.getValue()));
-            switch (playerAreaVolumeSlider.getValue()) {
-                case 0:
-                    InstanceManager.getPlayer().getPlayer().setVolume(0);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEMUTE.getPath());
-                    break;
-                case 1:
-                    InstanceManager.getPlayer().getPlayer().setVolume(6553);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
-                    break;
-                case 2:
-                    InstanceManager.getPlayer().getPlayer().setVolume(13107);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
-                    break;
-                case 3:
-                    InstanceManager.getPlayer().getPlayer().setVolume(19660);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
-                    break;
-                case 4:
-                    InstanceManager.getPlayer().getPlayer().setVolume(26214);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
-                    break;
-                case 5:
-                    InstanceManager.getPlayer().getPlayer().setVolume(32768);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
-                    break;
-                case 6:
-                    InstanceManager.getPlayer().getPlayer().setVolume(39321);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
-                    break;
-                case 7:
-                    InstanceManager.getPlayer().getPlayer().setVolume(45875);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
-                    break;
-                case 8:
-                    InstanceManager.getPlayer().getPlayer().setVolume(52428);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
-                    break;
-                case 9:
-                    InstanceManager.getPlayer().getPlayer().setVolume(58982);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
-                    break;
-                case 10:
-                    InstanceManager.getPlayer().getPlayer().setVolume(65536);
-                    playerAreaVolumeIcon.setImage(Graphics.VOLUMEFULL.getPath());
-                    break;
+            if (playerAreaVolumeSlider.getValue() == 0) {
+                // Mute
+                playerAreaVolumeCurrent.setText("0");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEMUTE.getPath());
+            } else if (playerAreaVolumeSlider.getValue() > 0 && playerAreaVolumeSlider.getValue() <= 6554) {
+                // 1
+                playerAreaVolumeCurrent.setText("1");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
+            } else if (playerAreaVolumeSlider.getValue() > 6554 && playerAreaVolumeSlider.getValue() <= 13308) {
+                // 2
+                playerAreaVolumeCurrent.setText("2");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
+            } else if (playerAreaVolumeSlider.getValue() > 13308 && playerAreaVolumeSlider.getValue() <= 19862) {
+                // 3
+                playerAreaVolumeCurrent.setText("3");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
+            } else if (playerAreaVolumeSlider.getValue() > 19862 && playerAreaVolumeSlider.getValue() <= 26416) {
+                // 4
+                playerAreaVolumeCurrent.setText("4");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
+            } else if (playerAreaVolumeSlider.getValue() > 26416 && playerAreaVolumeSlider.getValue() <= 32970) {
+                // 5
+                playerAreaVolumeCurrent.setText("5");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
+            } else if (playerAreaVolumeSlider.getValue() > 32970 && playerAreaVolumeSlider.getValue() <= 39524) {
+                // 6
+                playerAreaVolumeCurrent.setText("6");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
+            } else if (playerAreaVolumeSlider.getValue() > 39524 && playerAreaVolumeSlider.getValue() <= 46078) {
+                // 7
+                playerAreaVolumeCurrent.setText("7");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
+            } else if (playerAreaVolumeSlider.getValue() > 46078 && playerAreaVolumeSlider.getValue() <= 52632) {
+                // 8
+                playerAreaVolumeCurrent.setText("8");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
+            } else if (playerAreaVolumeSlider.getValue() > 52632 && playerAreaVolumeSlider.getValue() < 59536) {
+                // 9
+                playerAreaVolumeCurrent.setText("9");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEHALF.getPath());
+            } else if (playerAreaVolumeSlider.getValue() <= 65536) {
+                // 10
+                playerAreaVolumeCurrent.setText("10");
+                playerAreaVolumeIcon.setImage(Graphics.VOLUMEFULL.getPath());
+            }
+            if(!playerAreaVolumeSlider.getValueIsAdjusting()) {
+                System.out.println("Adjusting");
+                InstanceManager.getPlayer().getPlayer().setVolume(playerAreaVolumeSlider.getValue());
             }
         });
 
@@ -452,7 +455,6 @@ public class PlayerArea extends JPanel {
                         if (!lastPlayState.uri.isEmpty()) {
                             playerPlayTime.setText(lastPlayState.playtime);
                             playerPlayTimeTotal.setText(lastPlayState.playtimetotal);
-                            playerCurrentTime.setMaximum(lastPlayState.playerslidermax);
                             InstanceManager.getSpotifyPlayer().load(lastPlayState.uri, false, PublicValues.shuffle);
                             if (!TrackUtils.isTrackLiked(lastPlayState.uri.split(":")[2])) {
                                 heart.isFilled = false;
@@ -529,7 +531,7 @@ public class PlayerArea extends JPanel {
                     .setCurrentTimeSliderMax(PlayerArea.playerCurrentTime.getMaximum())
                     .setCurrentTimeString(PlayerArea.playerPlayTime.getText())
                     .setDurationString(PlayerArea.playerPlayTimeTotal.getText())
-                    .setCurrentVolumeString(PlayerArea.playerAreaVolumeCurrent.getText())
+                    .setCurrentVolumeString(String.valueOf(PlayerArea.playerAreaVolumeSlider.getValue()))
                     .addAllPlayableHistory(playableHistory)
                     .addAllPlayableQueue(playableQueue)
                     .build();

@@ -30,15 +30,19 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
-public class ErrorDisplay extends JFrame {
+public class ErrorDisplay {
     public static ArrayList<ExceptionDialog> errorQueue;
     public static ErrorDisplayPanel errorDisplayPanel;
     public static JScrollPane errorDisplayScrollPane;
     public static DefTable errorDisplayTable;
     public static ContextMenu errorDisplayContextMenu;
     public static JButton removeButton;
+
+    private JFrame frame;
 
     public ErrorDisplay() {
         errorDisplayPanel = new ErrorDisplayPanel();
@@ -84,12 +88,25 @@ public class ErrorDisplay extends JFrame {
         for (ExceptionDialog exd : errorQueue) {
             ((DefaultTableModel) errorDisplayTable.getModel()).addRow(new Object[]{exd.getPreview()});
         }
-        setTitle(PublicValues.language.translate("ui.errorqueue.title"));
-        add(removeButton, BorderLayout.SOUTH);
-        setPreferredSize(new Dimension(ContentPanel.frame.getWidth() / 2, ContentPanel.frame.getHeight() / 2));
-        add(errorDisplayTable, BorderLayout.CENTER);
-        pack();
-        setVisible(true);
+        frame = new JFrame();
+        frame.setTitle(PublicValues.language.translate("ui.errorqueue.title"));
+        frame.add(removeButton, BorderLayout.SOUTH);
+        frame.setPreferredSize(new Dimension(ContentPanel.frame.getWidth() / 2, ContentPanel.frame.getHeight() / 2));
+        frame.add(errorDisplayTable, BorderLayout.CENTER);
+        frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                close();
+            }
+        });
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    public void close() {
+        frame.dispose();
+        frame = null;
     }
 
     public static class ErrorDisplayPanel extends JButton {

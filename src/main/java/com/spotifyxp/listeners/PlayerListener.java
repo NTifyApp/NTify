@@ -71,7 +71,7 @@ public class PlayerListener implements Player.EventsListener {
 
     public PlayerListener(com.spotifyxp.api.Player p) {
         pl = p;
-        timer.schedule(new PlayerThread(), 0, 1000);
+        timer.schedule(new PlayerThread(), 0, 500);
     }
 
     @Override
@@ -204,9 +204,7 @@ public class PlayerListener implements Player.EventsListener {
     @Override
     public void onVolumeChanged(@NotNull Player player, @Range(from = 0L, to = 1L) float v) {
         try {
-            if (!PlayerArea.playerAreaVolumeSlider.getValueIsAdjusting()) {
-                PlayerArea.playerAreaVolumeSlider.setValue(TrackUtils.roundVolumeToNormal(v));
-            }
+            PlayerArea.playerAreaVolumeSlider.setValue(TrackUtils.roundVolumeToNormal(v));
         } catch (NullPointerException ex) {
             //ContentPanel is not visible yet
         }

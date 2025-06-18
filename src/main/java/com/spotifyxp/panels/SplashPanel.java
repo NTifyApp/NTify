@@ -89,6 +89,6 @@ public class SplashPanel {
     }
 
     public static void hide() {
-        frame.setVisible(false);
+        frame.dispose();
     }
 }

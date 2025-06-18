@@ -18,6 +18,7 @@ package com.spotifyxp;
 
 import com.spotifyxp.audio.Quality;
 import com.spotifyxp.background.BackgroundService;
+import com.spotifyxp.cache.Cache;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.events.Events;
@@ -71,6 +72,11 @@ public class Initiator {
         checkSetup();
         initLanguageSupport(); //Initializing the language support
         initConfig(); //Initializing the configuration
+        try {
+            PublicValues.cache = new Cache(); //Initialize cache
+        } catch (IOException e) {
+            GraphicalMessage.sorryErrorExit("Failed to create cache: " + e.getMessage());
+        }
         checkLogPrintStream(); //Checking some stuff after config is available
         setLanguage(); //Set the language to the one specified in the config
         creatingLock(); //Creating the 'LOCK' file

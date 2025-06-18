@@ -21,6 +21,8 @@ import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.swingextension.JFrame;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -51,6 +53,18 @@ public class Utils {
         }
 
         return -1;
+    }
+
+    public static BufferedImage imageToBufferedImage(Image image) {
+        BufferedImage bufferedImage = new BufferedImage(
+                image.getWidth(null),
+                image.getHeight(null),
+                BufferedImage.TYPE_INT_ARGB
+        );
+        Graphics2D g2 = bufferedImage.createGraphics();
+        g2.drawImage(image, 0, 0, null);
+        g2.dispose();
+        return bufferedImage;
     }
 
     public static void moveToScreen(Window window, int targetDisplayNumber) {

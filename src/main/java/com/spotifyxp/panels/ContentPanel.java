@@ -43,6 +43,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -127,8 +128,6 @@ public class ContentPanel extends JPanel {
         createTrackPanel();
         SplashPanel.linfo.setText("Creating settingsPanel...");
         createSettings();
-        SplashPanel.linfo.setText("Adding window mouse listener...");
-        SplashPanel.linfo.setText("Deciding population of hotlist...");
         SplashPanel.linfo.setText("Making window interactive...");
         createLegacy();
         try {
@@ -430,6 +429,7 @@ public class ContentPanel extends JPanel {
         settingsItem.addActionListener(new AsyncActionListener(e -> settings.open()));
         logout.addActionListener(new AsyncActionListener(e -> {
             JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("ui.logout.text"), PublicValues.language.translate("ui.logout.title"), JOptionPane.OK_CANCEL_OPTION);
+            new File(PublicValues.fileslocation, "credentials.json").delete();
             System.exit(0);
         }));
         about.addActionListener(new AsyncActionListener(e -> openAbout()));

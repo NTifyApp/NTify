@@ -19,7 +19,9 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.swingextension.JFrame;
+import com.spotifyxp.utils.GraphicalMessage;
 import com.spotifyxp.utils.SVGUtils;
+import com.spotifyxp.utils.Utils;
 import org.apache.commons.io.IOUtils;
 
 import javax.imageio.ImageIO;
@@ -29,10 +31,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -47,6 +46,9 @@ public class InjectorStore extends JFrame {
     private boolean wasInRefresh = false;
 
     private Map<String, InjectorAPI.JarExtension> installedExtensions;
+
+    private final String cacheID = "8a17048c";
+    private int cacheState = 0;
 
     public InjectorStore() throws IOException {
         $$$setupUI$$$();
@@ -95,7 +97,12 @@ public class InjectorStore extends JFrame {
             }
         });
 
-        refreshImageBytes = IOUtils.toByteArray(com.spotifyxp.graphics.Graphics.REFRESH.getInputStream());
+        if (!PublicValues.cache.has(cacheID)) {
+            refreshImageBytes = IOUtils.toByteArray(com.spotifyxp.graphics.Graphics.REFRESH.getInputStream());
+        } else {
+            refreshImageBytes = PublicValues.cache.getBytes(cacheID);
+            cacheState = 1;
+        }
 
         installedTab.setLayout(new BoxLayout(installedTab, BoxLayout.Y_AXIS));
         availableTab.setLayout(new BoxLayout(availableTab, BoxLayout.Y_AXIS));
@@ -313,9 +320,19 @@ public class InjectorStore extends JFrame {
                         imageSize
                 );
                 try {
-                    g.drawImage(ImageIO.read(SVGUtils.svgToImageInputStreamSameSize(new ByteArrayInputStream(refreshImageBytes), new Dimension(
-                            imageSize, imageSize
-                    ))).getScaledInstance(imageSize, imageSize, Image.SCALE_SMOOTH), x, y, null);
+                    if (cacheState == 1) {
+                        g.drawImage(ImageIO.read(new ByteArrayInputStream(refreshImageBytes)), x, y, null);
+                    } else {
+                        Image image = ImageIO.read(SVGUtils.svgToImageInputStreamSameSize(new ByteArrayInputStream(refreshImageBytes), new Dimension(
+                                imageSize, imageSize
+                        ))).getScaledInstance(imageSize, imageSize, Image.SCALE_SMOOTH);
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        ImageIO.write(Utils.imageToBufferedImage(image), "png", bos);
+                        refreshImageBytes = bos.toByteArray();
+                        PublicValues.cache.addBytes(cacheID, bos.toByteArray());
+                        cacheState = 1;
+                        g.drawImage(image, x, y, null);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

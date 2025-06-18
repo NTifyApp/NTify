@@ -19,6 +19,7 @@ package com.spotifyxp;
 import com.neovisionaries.i18n.CountryCode;
 import com.spotifyxp.args.ArgParser;
 import com.spotifyxp.audio.Quality;
+import com.spotifyxp.cache.Cache;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
@@ -98,6 +99,7 @@ public class PublicValues {
     public static boolean updaterDisabled = false;
     public static LogPrintStream logPrintStream;
     public static boolean userFocusedInputField = false;
+    public static Cache cache;
     //Devstuff
     public static boolean locationFinderActive = false;
     //----
