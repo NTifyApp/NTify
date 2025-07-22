@@ -136,7 +136,7 @@ Copyright to the following images goes to [Anthony](https://twitter.com/intent/u
 
 * [Werwolf2303](https://github.com/Werwolf2303/) - For working brilliantly on NTify
 * [Anthony](https://twitter.com/intent/user?screen_name=anthonydavenpod) - For heavily improving the readme, creating the logo, name & rebranding the setup image.
-* [Jri-creator](https://github.com/Jri-creator) - For the base setup image
+* [Jri-creator](https://github.com/Jri-creator) - ~~For the base setup image (Old era)~~ For basic README contributions/fixes.
 <br>
 <br>
   <h3>This site/app is not affiliated with Spotify.</h3>
