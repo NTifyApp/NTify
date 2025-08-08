@@ -31,12 +31,13 @@ public class Cache {
     private boolean cacheEnabled = true;
 
     public Cache() throws IOException {
-        cacheDir = new File(PublicValues.fileslocation, "progcache");
-
         if(PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
             cacheDir = null;
             cacheEnabled = false;
+            return;
         }
+
+        cacheDir = new File(PublicValues.fileslocation, "progcache");
 
         if(!cacheDir.exists()) {
             if(!cacheDir.mkdir()) {
