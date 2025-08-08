@@ -261,5 +261,7 @@
  "ui.artisteventview.viewonamaps": "View on Apple Maps",
  "ui.artisteventview.viewongmaps": "View on Google Maps",
  "ui.lyrics.title": "%APPNAME% - Song Lyrics",
- "ui.canvasplayer.title": "%APPNAME% - Canvas"
+ "ui.canvasplayer.title": "%APPNAME% - Canvas",
+ "ui.truststore.title": "TrustStore outdated",
+ "ui.truststore.message": "Please update your TrustStore. Click ok to open github.com/JohnTHaller/RootCertificateUpdatesForLegacyWindows"
 }

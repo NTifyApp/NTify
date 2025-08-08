@@ -46,6 +46,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.swing.*;
@@ -54,6 +55,7 @@ import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -92,6 +94,7 @@ public class Initiator {
                 })
                 .build(); //Creating the default http client
         initProxy();
+        checkTrustStore();
         checkUpdate();
         if(Flags.videoPlaybackSupport) initializeVideoPlayback();
         loadExtensions(); //Loading extensions if there are any
@@ -111,6 +114,28 @@ public class Initiator {
             GraphicalMessage.sorryError("Critical exception in GUI initialization");
         }
         SplashPanel.hide(); //Hiding the splash panel
+    }
+
+    static void checkTrustStore() {
+        try {
+            Request request = new Request.Builder()
+                    .url("https://spclient.wg.spotify.com/live-events-view/spotify.liveeventsview.v2.LiveEventsFeedService/GetPage")
+                    .build();
+
+            PublicValues.defaultHttpClient.newCall(request).execute();
+        }catch (SSLHandshakeException e) {
+            // TrustStore outdated
+            int response = JOptionPane.showConfirmDialog(null, "", "", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE);
+            if (response == JOptionPane.OK_OPTION) {
+                try {
+                    ConnectionUtils.openBrowser("https://github.com/JohnTHaller/RootCertificateUpdatesForLegacyWindows");
+                } catch (URISyntaxException | IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static void initProxy() {
