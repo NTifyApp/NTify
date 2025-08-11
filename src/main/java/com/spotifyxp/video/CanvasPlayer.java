@@ -18,9 +18,13 @@ package com.spotifyxp.video;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.deps.com.spotify.canvaz.CanvazOuterClass;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Episode;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
@@ -141,10 +145,10 @@ public class CanvasPlayer extends JFrame {
         public void run(Object... data) {
             PublicValues.vlcPlayer.stop();
             String uri = "";
-            if (data[0] instanceof Track) {
-                uri = ((Track) data[0]).getUri();
-            } else if (data[0] instanceof Episode) {
-                uri = ((Episode) data[0]).getUri();
+            if (data[0] instanceof Metadata.Track) {
+                uri = TrackId.fromHex(Utils.bytesToHex(((Metadata.Track) data[0]).getGid()).toLowerCase()).toSpotifyUri();
+            } else if (data[0] instanceof Metadata.Episode) {
+                uri = EpisodeId.fromHex(Utils.bytesToHex(((Metadata.Episode) data[0]).getGid()).toLowerCase()).toSpotifyUri();
             } else {
                 ConsoleLogging.error("Invalid object type in next track: " + data[0].getClass().getSimpleName());
             }

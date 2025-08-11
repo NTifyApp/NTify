@@ -19,6 +19,7 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.dialogs.FullscreenPlayerDialog;
 import com.spotifyxp.dialogs.LyricsDialog;
 import com.spotifyxp.events.EventSubscriber;
@@ -368,10 +369,14 @@ public class PlayerArea extends JPanel {
             if (InstanceManager.getSpotifyPlayer().currentPlayable() == null) return;
             if (!doneLastParsing) return;
             if (Objects.requireNonNull(InstanceManager.getSpotifyPlayer().currentPlayable()).toSpotifyUri().split(":")[1].equals("track")) {
-                try {
-                    PublicValues.history.addSong(InstanceManager.getSpotifyApi().getTrack(Objects.requireNonNull(InstanceManager.getSpotifyPlayer().currentPlayable()).toSpotifyUri().split(":")[2]).build().execute());
-                } catch (SQLException | IOException e) {
-                    ConsoleLogging.Throwable(e);
+                if (data[0] instanceof Metadata.Track) {
+                    Metadata.Track track = (Metadata.Track) data[0];
+                    try {
+                        PublicValues.history.addSong(track);
+                    }catch (SQLException e) {
+                        ConsoleLogging.warning("Failed adding track to history");
+                        ConsoleLogging.Throwable(e);
+                    }
                 }
             }
         });

@@ -20,11 +20,13 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Episode;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
+import com.spotifyxp.graphics.Graphics;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
@@ -32,10 +34,7 @@ import com.spotifyxp.panels.PlayerArea;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.swingextension.JImagePanel;
 import com.spotifyxp.theming.themes.DarkGreen;
-import com.spotifyxp.utils.ApplicationUtils;
-import com.spotifyxp.utils.SpotifyUtils;
-import com.spotifyxp.utils.TrackUtils;
-import com.spotifyxp.utils.Utils;
+import com.spotifyxp.utils.*;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
@@ -97,19 +96,39 @@ public class FullscreenPlayerDialog {
         Events.subscribe(SpotifyXPEvents.trackNext.getName(), new EventSubscriber() {
             @Override
             public void run(Object... data) {
-                if (data[0] instanceof Track) {
-                    playerTitleDesc.setText(((Track) data[0]).getName() + " - " + TrackUtils.getArtists(((Track) data[0]).getArtists()));
-                    try {
-                        image.setImage(new URL(SpotifyUtils.getImageForSystem(((Track) data[0]).getAlbum().getImages()).getUrl()));
-                    } catch (MalformedURLException e) {
-                        ConsoleLogging.Throwable(e);
+                if (data[0] instanceof Metadata.Track) {
+                    Metadata.Track track = (Metadata.Track) data[0];
+                    StringBuilder artists = new StringBuilder();
+                    for (Metadata.Artist artist : track.getArtistList()) {
+                        if (artists.toString().isEmpty()) {
+                            artists.append(artist.getName());
+                        } else {
+                            artists.append(", ").append(artist.getName());
+                        }
                     }
-                } else if (data[0] instanceof Episode) {
-                    playerTitleDesc.setText(((Episode) data[0]).getShow().getName() + " - " + ((Episode) data[0]).getName());
+                    playerTitleDesc.setText(track.getName() + " - " + artists);
                     try {
-                        image.setImage(new URL(SpotifyUtils.getImageForSystem(((Episode) data[0]).getImages()).getUrl()));
-                    } catch (MalformedURLException e) {
-                        ConsoleLogging.Throwable(e);
+                       image.setImage(new URL(
+                                "https://i.scdn.co/image/" +
+                                        com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(track.getAlbum().getCoverGroup().getImageList()).getFileId()).toLowerCase()
+                        ).openStream());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        ConsoleLogging.warning("Failed to load cover for track");
+                        PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
+                    }
+                } else if (data[0] instanceof Metadata.Episode) {
+                    Metadata.Episode episode = (Metadata.Episode) data[0];
+                    playerTitleDesc.setText(episode.getName() + " - " + episode.getShow().getName());
+                    try {
+                        image.setImage(new URL(
+                                "https://i.scdn.co/image/" +
+                                        com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(episode.getCoverImage().getImageList()).getFileId()).toLowerCase()
+                        ).openStream());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        ConsoleLogging.warning("Failed to load cover for episode");
+                        PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
                     }
                 }
             }

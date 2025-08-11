@@ -16,8 +16,13 @@
 package com.spotifyxp.history;
 
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.de.werwolf2303.sql.*;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.AlbumId;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.ArtistId;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.graphics.Graphics;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -311,13 +316,18 @@ public class PlaybackHistory extends JFrame {
         super.open();
     }
 
-    public void addSong(Track t) throws SQLException {
-        sqlTable.insertIntoTable(new SQLInsert(t.getUri(), SQLEntryTypes.STRING),
+    public void addSong(Metadata.Track t) throws SQLException {
+        String uri = TrackId.fromHex(Utils.bytesToHex(t.getGid()).toLowerCase()).toSpotifyUri();
+        String albumUri = AlbumId.fromHex(Utils.bytesToHex(t.getAlbum().getGid()).toLowerCase()).toSpotifyUri();
+        String artistUri = ArtistId.fromHex(Utils.bytesToHex(t.getArtist(0).getGid()).toLowerCase()).toSpotifyUri();
+        sqlTable.insertIntoTable(new SQLInsert(uri, SQLEntryTypes.STRING),
                 new SQLInsert(t.getName(), SQLEntryTypes.STRING),
-                new SQLInsert(t.getArtists()[0].getUri(), SQLEntryTypes.STRING),
-                new SQLInsert(t.getArtists()[0].getName(), SQLEntryTypes.STRING),
+                new SQLInsert(artistUri, SQLEntryTypes.STRING),
+                new SQLInsert(t.getArtist(0).getName(), SQLEntryTypes.STRING),
                 new SQLInsert(t.getAlbum().getName(), SQLEntryTypes.STRING),
-                new SQLInsert(t.getAlbum().getUri(), SQLEntryTypes.STRING),
+                new SQLInsert(albumUri, SQLEntryTypes.STRING),
                 new SQLInsert(sqlTable.getRowCount(), SQLEntryTypes.INTEGER));
     }
+
+
 }

@@ -16,10 +16,12 @@
 package com.spotifyxp.listeners;
 
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Episode;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlayableId;
 import com.spotifyxp.deps.xyz.gianlu.librespot.player.Player;
 import com.spotifyxp.events.Events;
@@ -38,6 +40,7 @@ import org.jetbrains.annotations.Range;
 import org.json.JSONException;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Objects;
 import java.util.Timer;
@@ -92,49 +95,6 @@ public class PlayerListener implements Player.EventsListener {
         if (PlayerArea.playerAreaLyricsButton.isFilled) {
             PublicValues.lyricsDialog.open(playableId.toSpotifyUri());
         }
-        try {
-            StringBuilder artists = new StringBuilder();
-            switch (playableId.toSpotifyUri().split(":")[1]) {
-                case "episode":
-                    Episode episode = InstanceManager.getSpotifyApi().getEpisode(playableId.toSpotifyUri().split(":")[2]).build().execute();
-                    Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), episode);
-                    PlayerArea.playerPlayTimeTotal.setText(TrackUtils.getHHMMSSOfTrack(episode.getDurationMs()));
-                    PlayerArea.playerTitle.setText(episode.getName());
-                    artists.append(episode.getShow().getPublisher());
-                    try {
-                        PlayerArea.playerImage.setImage(new URL(SpotifyUtils.getImageForSystem(episode.getImages()).getUrl()).openStream());
-                    } catch (Exception e) {
-                        ConsoleLogging.warning("Failed to load cover for track");
-                        PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
-                    }
-                    break;
-                case "track":
-                    Track track = InstanceManager.getSpotifyApi().getTrack(playableId.toSpotifyUri().split(":")[2]).build().execute();
-                    Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), track);
-                    PlayerArea.playerPlayTimeTotal.setText(TrackUtils.getHHMMSSOfTrack(track.getDurationMs()));
-                    PlayerArea.playerTitle.setText(track.getName());
-                    for (ArtistSimplified artist : track.getArtists()) {
-                        if (artists.toString().isEmpty()) {
-                            artists.append(artist.getName());
-                        } else {
-                            artists.append(", ").append(artist.getName());
-                        }
-                    }
-                    try {
-                        PlayerArea.playerImage.setImage(new URL(SpotifyUtils.getImageForSystem(track.getAlbum().getImages()).getUrl()).openStream());
-                    } catch (Exception e) {
-                        ConsoleLogging.warning("Failed to load cover for track");
-                        PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
-                    }
-                    break;
-                default:
-                    ConsoleLogging.Throwable(new RuntimeException("Unhandled/Unknown uri type: " + playableId.toSpotifyUri().split(":")[1]));
-            }
-            PlayerArea.playerDescription.setText(artists.toString());
-        } catch (IOException | JSONException e) {
-            GraphicalMessage.openException(e);
-            ConsoleLogging.Throwable(e);
-        }
         if (InstanceManager.getUnofficialSpotifyApi().getLyrics(playableId.toSpotifyUri()) == null) {
             PlayerArea.playerAreaLyricsButton.getJComponent().setToolTipText("No lyrics found");
         } else {
@@ -169,7 +129,6 @@ public class PlayerListener implements Player.EventsListener {
         }
         ConsoleLogging.error("Player failed! retry");
         ConsoleLogging.Throwable(e);
-        pl.retry();
     }
 
     @Override
@@ -188,7 +147,50 @@ public class PlayerListener implements Player.EventsListener {
 
     @Override
     public void onMetadataAvailable(@NotNull Player player, @NotNull MetadataWrapper metadataWrapper) {
-
+        if (metadataWrapper.isTrack()) {
+            Metadata.Track track = metadataWrapper.track;
+            StringBuilder artists = new StringBuilder();
+            Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), track);
+            PlayerArea.playerPlayTimeTotal.setText(TrackUtils.getHHMMSSOfTrack(track.getDuration()));
+            PlayerArea.playerTitle.setText(track.getName());
+            for (Metadata.Artist artist : track.getArtistList()) {
+                if (artists.toString().isEmpty()) {
+                    artists.append(artist.getName());
+                } else {
+                    artists.append(", ").append(artist.getName());
+                }
+            }
+            PlayerArea.playerDescription.setText(artists.toString());
+            try {
+                PlayerArea.playerImage.setImage(new URL(
+                        "https://i.scdn.co/image/" +
+                                Utils.bytesToHex(SpotifyUtils.getImageForSystem(track.getAlbum().getCoverGroup().getImageList()).getFileId()).toLowerCase()
+                ).openStream());
+            } catch (Exception e) {
+                e.printStackTrace();
+                ConsoleLogging.warning("Failed to load cover for track");
+                PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
+            }
+        } else if (metadataWrapper.isEpisode()) {
+            Metadata.Episode episode = metadataWrapper.episode;
+            Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), episode);
+            PlayerArea.playerPlayTimeTotal.setText(TrackUtils.getHHMMSSOfTrack(episode.getDuration()));
+            PlayerArea.playerTitle.setText(episode.getName());
+            PlayerArea.playerDescription.setText(episode.getShow().getPublisher());
+            try {
+                PlayerArea.playerImage.setImage(new URL(
+                        "https://i.scdn.co/image/" +
+                                Utils.bytesToHex(SpotifyUtils.getImageForSystem(episode.getCoverImage().getImageList()).getFileId()).toLowerCase()
+                ).openStream());
+            } catch (Exception e) {
+                ConsoleLogging.warning("Failed to load cover for episode");
+                PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
+            }
+        } else {
+            Events.triggerEvent(SpotifyXPEvents.trackNext.getName());
+            PlayerArea.playerTitle.setText(metadataWrapper.getName());
+            PlayerArea.playerDescription.setText(metadataWrapper.getArtist());
+        }
     }
 
     @Override

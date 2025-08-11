@@ -15,6 +15,7 @@
  */
 package com.spotifyxp.utils;
 
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.EpisodeSimplified;
 import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Image;
@@ -23,6 +24,7 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class SpotifyUtils {
     public static Image getImageForSystem(Image[] images) {
@@ -35,6 +37,18 @@ public class SpotifyUtils {
             ConsoleLogging.warning("Can't get the right image for the system ram! Using the default one");
         }
         return images[0];
+    }
+
+    public static Metadata.Image getImageForSystem(List<Metadata.Image> images) {
+        if (SystemUtils.getUsableRAMmb() < 512) {
+            for (Metadata.Image i : images) {
+                if (i.getWidth() == 64) {
+                    return i;
+                }
+            }
+            ConsoleLogging.warning("Can't get the right image for the system ram! Using the default one");
+        }
+        return images.get(0);
     }
 
     public static ArrayList<TrackSimplified> getAllTracksAlbum(String uri) {
