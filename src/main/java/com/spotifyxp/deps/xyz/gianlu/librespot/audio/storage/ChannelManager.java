@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Gianlu
  */
 public class ChannelManager implements Closeable, PacketsReceiver {
-    public static final int CHUNK_SIZE = 128 * 1024;
+    public static final int CHUNK_SIZE = 131072;
     private final Map<Short, Channel> channels = new HashMap<>();
     private final AtomicInteger seqHolder = new AtomicInteger(0);
     private final ExecutorService executorService = Executors.newCachedThreadPool(new NameThreadFactory(r -> "channel-queue-" + r.hashCode()));

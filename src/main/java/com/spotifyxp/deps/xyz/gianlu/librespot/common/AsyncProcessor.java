@@ -44,7 +44,7 @@ public class AsyncProcessor<REQ, RES> implements Closeable {
      * @param processor actual processing implementation ran on background thread
      */
     public AsyncProcessor(@NotNull String name, @NotNull Function<REQ, RES> processor) {
-        executor = Executors.newSingleThreadExecutor(new NameThreadFactory(r -> name));
+        executor = SharedSchedulers.scheduler();
         this.name = name;
         this.processor = processor;
         ConsoleLoggingModules.debug("AsyncProcessor{{}} has started", name);

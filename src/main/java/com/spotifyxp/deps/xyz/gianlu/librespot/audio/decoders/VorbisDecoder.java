@@ -190,53 +190,54 @@ public final class VorbisDecoder extends Decoder {
             jorbisDspState.synthesis_blockin(jorbisBlock);
 
         int written = 0;
-        int range;
         int samples;
+        final int channels = jorbisInfo.channels;
+        final float normFactor = normalizationFactor;
+        final byte[] convBuf = convertedBuffer;
+
         while ((samples = jorbisDspState.synthesis_pcmout(pcmInfo, pcmIndex)) > 0) {
-            range = Math.min(samples, CONVERTED_BUFFER_SIZE);
+            int maxSamples = CONVERTED_BUFFER_SIZE / (2 * channels);
+            int range = Math.min(samples, maxSamples);
 
             if (PublicValues.lyricsDialog != null) {
                 PublicValues.lyricsDialog.triggerRefresh();
             }
 
-            for (int i = 0; i < jorbisInfo.channels; i++) {
-                int sampleIndex = i * 2;
-                for (int j = 0; j < range; j++) {
-                    int value = (int) (pcmInfo[0][i][pcmIndex[i] + j] * 32767);
-                    value *= normalizationFactor;
+            int bufIndex = 0;
+            for (int j = 0; j < range; j++) {
+                for (int i = 0; i < channels; i++) {
+                    float sampleFloat = pcmInfo[0][i][pcmIndex[i] + j];
+                    int sampleValue = (int)(sampleFloat * 32767 * normFactor);
 
-                    if (value > 32767) value = 32767;
-                    else if (value < -32768) value = -32768;
-                    else if (value < 0) value = value | 32768;
+                    if (sampleValue > 32767) sampleValue = 32767;
+                    else if (sampleValue < -32768) sampleValue = -32768;
 
-                    convertedBuffer[sampleIndex] = (byte) (value);
-                    convertedBuffer[sampleIndex + 1] = (byte) (value >>> 8);
-
-                    sampleIndex += 2 * jorbisInfo.channels;
+                    convBuf[bufIndex++] = (byte)(sampleValue & 0xFF);
+                    convBuf[bufIndex++] = (byte)((sampleValue >>> 8) & 0xFF);
                 }
             }
 
-            int c = 2 * jorbisInfo.channels * range;
-            out.write(convertedBuffer, 0, c);
-            out.flush();
+            int bytesToWrite = 2 * channels * range;
+            out.write(convBuf, 0, bytesToWrite);
 
             if (PublicValues.visualizer.isVisible()) {
-                PublicValues.visualizer.setBuffer(convertedBuffer);
+                PublicValues.visualizer.setBuffer(convBuf);
             }
 
-            written += c;
+            written += bytesToWrite;
             jorbisDspState.synthesis_read(range);
 
             long granulepos = joggPacket.granulepos;
             if (granulepos != -1 && joggPacket.e_o_s == 0) {
                 granulepos -= samples;
-                granulepos -= (long) Decoder.BUFFER_SIZE * 6 * sampleSizeBytes(); // Account for buffer between the decoder and the player
+                granulepos -= (long) Decoder.BUFFER_SIZE * 6 * sampleSizeBytes();
                 pcm_offset = granulepos;
             }
         }
 
         return written;
     }
+
 
     @Override
     public void close() throws IOException {

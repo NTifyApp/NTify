@@ -19,10 +19,7 @@ package com.spotifyxp.deps.xyz.gianlu.librespot.dealer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.AsyncWorker;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.BytesArrayList;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.NameThreadFactory;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.*;
 import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.events.Events;
@@ -49,21 +46,12 @@ public class DealerClient implements Closeable {
     private final Session session;
     private final Map<String, RequestListener> reqListeners = new HashMap<>();
     private final Map<MessageListener, List<String>> msgListeners = new HashMap<>();
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(new NameThreadFactory((r) -> "dealer-scheduler-" + r.hashCode()));
+    private final ScheduledExecutorService scheduler = SharedSchedulers.scheduler();
     private volatile ConnectionHolder conn = null;
     private ScheduledFuture<?> lastScheduledReconnection;
-    private String connectionId = null;
-
-    private MessageListener timingConnectionIdListener = new MessageListener() {
-        @Override
-        public void onMessage(@NotNull String uri, @NotNull Map<String, String> headers, @NotNull byte[] payload) throws IOException {
-            connectionId = headers.get("Spotify-Connection-Id");
-        }
-    };
 
     public DealerClient(@NotNull Session session) {
         this.session = session;
-        this.addMessageListener(timingConnectionIdListener, "hm://pusher/v1/connections/");
         this.asyncWorker = new AsyncWorker<>("dealer-worker", Runnable::run);
     }
 
@@ -221,17 +209,6 @@ public class DealerClient implements Closeable {
 
             msgListeners.put(listener, Arrays.asList(uris));
             msgListeners.notifyAll();
-
-            if (uris.length > 0 && uris[0].equals("hm://pusher/v1/connections/") && connectionId != null) {
-                try {
-                    listener.onMessage("hm://pusher/v1/connections/", new HashMap<String, String>() {{
-                        put("Spotify-Connection-Id", connectionId);
-                    }}, null);
-                } catch (IOException e) {
-                    ConsoleLoggingModules.Throwable(e);
-                    ConsoleLogging.error("Failed to handle fallback connection id");
-                }
-            }
         }
     }
 

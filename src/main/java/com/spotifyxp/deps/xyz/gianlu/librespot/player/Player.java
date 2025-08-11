@@ -25,6 +25,7 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.audio.AbsChunkedInputStream;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.PlayableContentFeeder;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.NameThreadFactory;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.SharedSchedulers;
 import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
 import com.spotifyxp.deps.xyz.gianlu.librespot.dacp.DacpMetadataPipe;
 import com.spotifyxp.deps.xyz.gianlu.librespot.json.StationsWrapper;
@@ -61,7 +62,7 @@ import java.util.concurrent.*;
  */
 public class Player implements Closeable {
     public static final int VOLUME_MAX = 65536;
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(new NameThreadFactory((r) -> "release-line-scheduler-" + r.hashCode()));
+    private final ScheduledExecutorService scheduler = SharedSchedulers.scheduler();
     private final Session session;
     private final PlayerConfiguration conf;
     private final EventsDispatcher events;
@@ -981,7 +982,7 @@ public class Player implements Closeable {
     }
 
     private class EventsDispatcher {
-        private final ExecutorService executorService = Executors.newSingleThreadExecutor(new NameThreadFactory((r) -> "player-events-" + r.hashCode()));
+        private final ExecutorService executorService = SharedSchedulers.scheduler();
         private final List<EventsListener> listeners = new ArrayList<>();
 
         EventsDispatcher(@NotNull PlayerConfiguration conf) {

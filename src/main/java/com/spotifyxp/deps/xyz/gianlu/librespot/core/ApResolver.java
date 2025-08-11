@@ -38,10 +38,10 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Gianlu
  */
 public final class ApResolver {
-    private static final String BASE_URL = "http://apresolve.spotify.com/";
+    private static final String BASE_URL = "https://apresolve.spotify.com/";
 
     private final OkHttpClient client;
-    private final Map<String, List<String>> pool = new HashMap<>(3);
+    private final Map<String, List<String>> pool = new HashMap<>(2);
     private volatile boolean poolReady = false;
 
     public ApResolver(OkHttpClient client) throws IOException {
@@ -50,7 +50,7 @@ public final class ApResolver {
     }
 
     private void fillPool() throws IOException {
-        request("accesspoint", "dealer", "spclient");
+        request("accesspoint", "dealer");
     }
 
     public void refreshPool() throws IOException {

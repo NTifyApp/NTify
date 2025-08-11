@@ -143,6 +143,7 @@ public class PlayerUtils {
                 session = authenticate(configuration);
             }
             Player player = new Player(playerconfig, session);
+            session.connectionInit();
             PublicValues.session = session;
             Events.subscribe(SpotifyXPEvents.internetConnectionDropped.getName(), connectionDroppedListener());
             Events.subscribe(SpotifyXPEvents.internetConnectionReconnected.getName(), connectionReconnectedListener());

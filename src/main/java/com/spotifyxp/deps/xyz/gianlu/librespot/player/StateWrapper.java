@@ -37,6 +37,7 @@ import com.spotifyxp.deps.com.spotify.transfer.TransferStateOuterClass;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.FisherYatesShuffle;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.ProtoUtils;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.SharedSchedulers;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
 import com.spotifyxp.deps.xyz.gianlu.librespot.core.TimeProvider;
@@ -81,7 +82,7 @@ public class StateWrapper implements DeviceStateHandler.Listener, DealerClient.M
     private final PlayerState.Builder state;
     private final Session session;
     private final Player player;
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService scheduler = SharedSchedulers.scheduler();
     private final DeviceStateHandler device;
     private AbsSpotifyContext context;
     private PagesLoader pages;
@@ -95,7 +96,7 @@ public class StateWrapper implements DeviceStateHandler.Listener, DealerClient.M
         this.state = initState(PlayerState.newBuilder());
 
         device.addListener(this);
-        session.dealer().addMessageListener(this, "spotify:user:attributes:update", "hm://playlist/", "hm://collection/collection/" + session.username() + "/json");
+        session.dealer().addMessageListener(this, "spotify:user:attributes:update", "hm://playlist/", "hm://collection/collection/");
     }
 
     @NotNull

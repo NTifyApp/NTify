@@ -92,8 +92,8 @@ public final class Mp3Decoder extends Decoder {
     }
 
     private static class Mp3InputStream extends InputStream {
-        private final static int MAX_READ_SIZE = 96 * 1024;
-        private final static int MP3_BUFFER_SIZE = 128 * 1024;
+        private final static int MAX_READ_SIZE = 98304;
+        private final static int MP3_BUFFER_SIZE = 131072;
         private final InputStream in;
         private final Bitstream bitstream;
         private final ByteBuffer buffer;

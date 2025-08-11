@@ -32,6 +32,7 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.audio.cdn.CdnManager;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.storage.ChannelManager;
 import com.spotifyxp.deps.xyz.gianlu.librespot.cache.CacheManager;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.NameThreadFactory;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.SharedSchedulers;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.crypto.CipherPair;
 import com.spotifyxp.deps.xyz.gianlu.librespot.crypto.DiffieHellman;
@@ -107,7 +108,7 @@ public final class Session implements Closeable {
     private final ApResolver apResolver;
     private final DiffieHellman keys;
     private final Inner inner;
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(new NameThreadFactory(r -> "session-scheduler-" + r.hashCode()));
+    private final ScheduledExecutorService scheduler = SharedSchedulers.scheduler();
     private final AtomicBoolean authLock = new AtomicBoolean(false);
     private final OkHttpClient client;
     private final List<CloseListener> closeListeners = Collections.synchronizedList(new ArrayList<>());
@@ -138,10 +139,18 @@ public final class Session implements Closeable {
         this.keys = new DiffieHellman(inner.random);
         this.client = createClient(inner.conf);
         this.apResolver = new ApResolver(client);
+        this.dealer = new DealerClient(this);
+    }
+
+    public void connectionInit() throws IOException, SpotifyAuthenticationException, GeneralSecurityException, MercuryClient.MercuryException {
         String addr = apResolver.getRandomAccesspoint();
         this.conn = ConnectionHolder.create(addr, inner.conf);
 
         ConsoleLoggingModules.info("Created new session! {deviceId: {}, ap: {}, proxy: {}} ", inner.deviceId, addr, inner.conf.proxyEnabled);
+
+        connect();
+        authenticate(inner.loginCredentials);
+        api().setClientToken(null);
     }
 
     @NotNull
@@ -216,7 +225,7 @@ public final class Session implements Closeable {
         return client;
     }
 
-    private void connect() throws IOException, GeneralSecurityException, SpotifyAuthenticationException {
+    public void connect() throws IOException, GeneralSecurityException, SpotifyAuthenticationException {
         Accumulator acc = new Accumulator();
 
         // Send ClientHello
@@ -358,7 +367,6 @@ public final class Session implements Closeable {
             cdnManager = new CdnManager(this);
             contentFeeder = new PlayableContentFeeder(this);
             cacheManager = new CacheManager(inner.conf);
-            dealer = new DealerClient(this);
             search = new SearchManager(this);
             eventService = new EventService(this);
 
@@ -626,8 +634,6 @@ public final class Session implements Closeable {
 
     @NotNull
     public DealerClient dealer() {
-        waitAuthLock();
-        if (dealer == null) throw new IllegalStateException("Session isn't authenticated!");
         return dealer;
     }
 
@@ -821,14 +827,16 @@ public final class Session implements Closeable {
         final String deviceId;
         final Configuration conf;
         final String preferredLocale;
+        final Authentication.LoginCredentials loginCredentials;
 
-        private Inner(@NotNull Connect.DeviceType deviceType, @NotNull String deviceName, @Nullable String deviceId, @NotNull String preferredLocale, @NotNull Configuration conf) {
+        private Inner(@NotNull Connect.DeviceType deviceType, @NotNull String deviceName, @Nullable String deviceId, @NotNull String preferredLocale, @NotNull Configuration conf, @NotNull Authentication.LoginCredentials loginCredentials) {
             this.random = new SecureRandom();
             this.preferredLocale = preferredLocale;
             this.conf = conf;
             this.deviceType = deviceType;
             this.deviceName = deviceName;
             this.deviceId = (deviceId == null || deviceId.isEmpty()) ? Utils.randomHexString(random, 40).toLowerCase() : deviceId;
+            this.loginCredentials = loginCredentials;
         }
     }
 
@@ -836,7 +844,6 @@ public final class Session implements Closeable {
     public static abstract class AbsBuilder<T extends AbsBuilder> {
         protected final Configuration conf;
         protected String deviceId = null;
-        protected String clientToken = null;
         protected String deviceName = "librespot-java";
         protected Connect.DeviceType deviceType = Connect.DeviceType.COMPUTER;
         protected String preferredLocale = "en";
@@ -882,16 +889,6 @@ public final class Session implements Closeable {
                 throw new IllegalArgumentException("Device ID must be 40 chars long.");
 
             this.deviceId = deviceId;
-            return (T) this;
-        }
-
-        /**
-         * Sets the client token. If empty, it will be retrieved.
-         *
-         * @param token A 168 bytes Base64 encoded string
-         */
-        public T setClientToken(@Nullable String token) {
-            this.clientToken = token;
             return (T) this;
         }
 
@@ -1064,10 +1061,7 @@ public final class Session implements Closeable {
 
             TimeProvider.init(conf);
 
-            Session session = new Session(new Inner(deviceType, deviceName, deviceId, preferredLocale, conf));
-            session.connect();
-            session.authenticate(loginCredentials);
-            session.api().setClientToken(clientToken);
+            Session session = new Session(new Inner(deviceType, deviceName, deviceId, preferredLocale, conf, loginCredentials));
             return session;
         }
     }
@@ -1451,7 +1445,7 @@ public final class Session implements Closeable {
                         scheduledReconnect = scheduler.schedule(() -> {
                             ConsoleLoggingModules.warning("Socket timed out. Reconnecting...");
                             reconnect();
-                        }, 2 * 60 + configuration().connectionTimeout, TimeUnit.SECONDS);
+                        }, 120 + configuration().connectionTimeout, TimeUnit.SECONDS);
 
                         TimeProvider.updateWithPing(packet.payload);
 
