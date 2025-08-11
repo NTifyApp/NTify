@@ -1,1 +1,4 @@
-Changed spclient to spclient.wg.spotify.com:443
+Fixed illegal state in DeviceStateHandler
+Optimized executor services
+Pre calculated math operations
+Removed support for spclient apresolve (Experimental)
