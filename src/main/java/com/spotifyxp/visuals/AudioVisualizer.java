@@ -59,7 +59,6 @@ public class AudioVisualizer extends JPanel {
     public void open() {
         if (frame == null) {
             frame = new JFrame(PublicValues.language.translate("ui.audiovisualizer.title").replace("%APPNAME%", ApplicationUtils.getName()));
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLayout(new BorderLayout());
             frame.add(this, BorderLayout.CENTER);
             frame.setSize(300, 300);
