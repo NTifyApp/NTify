@@ -133,8 +133,7 @@ public class Initiator {
                     throw new RuntimeException(ex);
                 }
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (IOException ignored) {
         }
     }
 

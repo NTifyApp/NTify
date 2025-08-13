@@ -18,15 +18,16 @@ package com.spotifyxp.deps.xyz.gianlu.librespot.core;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.protobuf.ByteString;
+import com.spotifyxp.deps.com.spotify.login5v3.Credentials;
+import com.spotifyxp.deps.com.spotify.login5v3.Login5;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.json.GenericJson;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryRequests;
 import com.spotifyxp.logging.ConsoleLoggingModules;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -64,8 +65,38 @@ public final class TokenProvider {
         }
 
         ConsoleLoggingModules.debug("Token expired or not suitable, requesting again. {scopes: {}, oldToken: {}}", Arrays.asList(scopes), token);
-        GenericJson resp = session.mercury().sendSync(MercuryRequests.requestToken(session.deviceId(), String.join(",", scopes)));
-        token = new StoredToken(resp.obj);
+        /*GenericJson resp = session.mercury().sendSync(MercuryRequests.requestToken(session.deviceId(), String.join(",", scopes)));
+        token = new StoredToken(resp.obj);*/
+
+        //ToDo: Change MercuryException to NoSuchAlgorithmException when an official fix is available
+        try {
+            Login5Api api = new Login5Api(session);
+            Login5.LoginResponse resp = api.login5(
+                    Login5.LoginRequest.newBuilder()
+                            .setStoredCredential(Credentials.StoredCredential.newBuilder()
+                                    .setUsername(session.username())
+                                    .setData(ByteString.copyFrom(session.apWelcome().getReusableAuthCredentials().toByteArray()))
+                                    .build())
+                            .build()
+            );
+            if (!resp.hasOk()) throw new IOException("Login5 returned an error: " + resp.getError());
+            Login5.LoginOk okResponse = resp.getOk();
+
+            JsonObject tokenBuilder = new JsonObject();
+            tokenBuilder.addProperty("accessToken", okResponse.getAccessToken());
+            tokenBuilder.addProperty("expiresIn", okResponse.getAccessTokenExpiresIn());
+            tokenBuilder.addProperty("tokenType", "Bearer");
+
+            JsonArray scopesArray = new JsonArray();
+            for (String scope : scopes)
+                scopesArray.add(scope);
+
+            tokenBuilder.add("scope", scopesArray);
+
+            token = new StoredToken(tokenBuilder);
+        }catch (NoSuchAlgorithmException e) {
+            throw new IOException(e);
+        }
 
         ConsoleLoggingModules.debug("Updated token successfully! {scopes: {}, newToken: {}}", Arrays.asList(scopes), token);
         tokens.add(token);
