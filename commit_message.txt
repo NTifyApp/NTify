@@ -1,4 +1,1 @@
-Fixed illegal state in DeviceStateHandler
-Optimized executor services
-Pre calculated math operations
-Removed support for spclient apresolve (Experimental)
+Mercury responds with 403 instead of the token. Fixed via login5
