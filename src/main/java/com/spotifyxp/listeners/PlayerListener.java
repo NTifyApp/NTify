@@ -84,24 +84,23 @@ public class PlayerListener implements Player.EventsListener {
 
     @Override
     public void onTrackChanged(@NotNull Player player, @NotNull PlayableId playableId, @Nullable MetadataWrapper metadataWrapper, boolean b) {
-        Events.triggerEvent(SpotifyXPEvents.queueUpdate.getName(), playableId.toSpotifyUri());
-        if (!TrackUtils.isTrackLiked(playableId.toSpotifyUri().split(":")[2])) {
-            PlayerArea.heart.isFilled = false;
-            PlayerArea.heart.setImage(Graphics.HEART.getPath());
-        } else {
-            PlayerArea.heart.isFilled = true;
-            PlayerArea.heart.setImage(Graphics.HEARTFILLED.getPath());
+        try {
+            Events.triggerEvent(SpotifyXPEvents.queueUpdate.getName(), playableId.toSpotifyUri());
+            if (!TrackUtils.isTrackLiked(playableId.toSpotifyUri().split(":")[2])) {
+                PlayerArea.heart.isFilled = false;
+                PlayerArea.heart.setImage(Graphics.HEART.getPath());
+            } else {
+                PlayerArea.heart.isFilled = true;
+                PlayerArea.heart.setImage(Graphics.HEARTFILLED.getPath());
+            }
+            if (PlayerArea.playerAreaLyricsButton.isFilled) {
+                PublicValues.lyricsDialog.open(playableId.toSpotifyUri());
+            }
+            locked = false;
+            Events.triggerEvent(SpotifyXPEvents.playerLockRelease.getName());
+        }catch (Exception e) {
+            ConsoleLogging.Throwable(e);
         }
-        if (PlayerArea.playerAreaLyricsButton.isFilled) {
-            PublicValues.lyricsDialog.open(playableId.toSpotifyUri());
-        }
-        if (InstanceManager.getUnofficialSpotifyApi().getLyrics(playableId.toSpotifyUri()) == null) {
-            PlayerArea.playerAreaLyricsButton.getJComponent().setToolTipText("No lyrics found");
-        } else {
-            PlayerArea.playerAreaLyricsButton.getJComponent().setToolTipText(null);
-        }
-        locked = false;
-        Events.triggerEvent(SpotifyXPEvents.playerLockRelease.getName());
     }
 
     @Override

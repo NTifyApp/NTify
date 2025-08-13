@@ -126,6 +126,7 @@ public class PlayerUtils {
                 .setLocalFilesPath(new File(PublicValues.fileslocation))
                 .build();
         Session.Configuration.Builder configurationBuilder = new Session.Configuration.Builder()
+                .setConnectionTimeout(2)
                 .setCacheDir(new File(PublicValues.fileslocation, "cache"))
                 .setStoredCredentialsFile(new File(PublicValues.fileslocation, "credentials.json"));
         if(PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {

@@ -101,6 +101,7 @@ public class PlayerArea extends JPanel {
                         for (String s : Shuffle.before) {
                             InstanceManager.getSpotifyPlayer().addToQueue(s);
                         }
+                        InstanceManager.getSpotifyPlayer().updated();
                     } catch (Exception e2) {
                         ConsoleLogging.Throwable(e2);
                         GraphicalMessage.openException(e2);
@@ -461,13 +462,6 @@ public class PlayerArea extends JPanel {
                             playerPlayTime.setText(lastPlayState.playtime);
                             playerPlayTimeTotal.setText(lastPlayState.playtimetotal);
                             InstanceManager.getSpotifyPlayer().load(lastPlayState.uri, false, PublicValues.shuffle);
-                            if (!TrackUtils.isTrackLiked(lastPlayState.uri.split(":")[2])) {
-                                heart.isFilled = false;
-                                heart.setImage(Graphics.HEART.getPath());
-                            } else {
-                                heart.isFilled = true;
-                                heart.setImage(Graphics.HEARTFILLED.getPath());
-                            }
                             InstanceManager.getSpotifyPlayer().seek(lastPlayState.playerslider * 1000);
                             playerAreaVolumeSlider.setValue(Integer.parseInt(lastPlayState.playervolume));
                             doneLastParsing = true;
@@ -478,6 +472,7 @@ public class PlayerArea extends JPanel {
                                 for (String s : lastPlayState.history) {
                                     InstanceManager.getSpotifyPlayer().addToQueue(s);
                                 }
+                                InstanceManager.getSpotifyPlayer().updated();
                             } catch (Exception ignored) {
                                 ConsoleLogging.warning("Failed to restore player history");
                             }
@@ -488,6 +483,7 @@ public class PlayerArea extends JPanel {
                                 for (String s : lastPlayState.queue) {
                                     InstanceManager.getSpotifyPlayer().addToQueue(s);
                                 }
+                                InstanceManager.getSpotifyPlayer().updated();
                             } catch (Exception ignored) {
                                 ConsoleLogging.warning("Failed to restore player queue");
                             }

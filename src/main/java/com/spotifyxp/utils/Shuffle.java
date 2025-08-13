@@ -37,6 +37,7 @@ public class Shuffle {
             for (String s : mixed) {
                 InstanceManager.getSpotifyPlayer().addToQueue(s);
             }
+            InstanceManager.getSpotifyPlayer().updated();
         } catch (Exception e) {
             ConsoleLogging.Throwable(e);
             GraphicalMessage.openException(e);

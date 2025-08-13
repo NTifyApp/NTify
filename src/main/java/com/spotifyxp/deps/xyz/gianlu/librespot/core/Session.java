@@ -1445,7 +1445,7 @@ public final class Session implements Closeable {
                         scheduledReconnect = scheduler.schedule(() -> {
                             ConsoleLoggingModules.warning("Socket timed out. Reconnecting...");
                             reconnect();
-                        }, 120 + configuration().connectionTimeout, TimeUnit.SECONDS);
+                        }, configuration().connectionTimeout, TimeUnit.SECONDS);
 
                         TimeProvider.updateWithPing(packet.payload);
 
