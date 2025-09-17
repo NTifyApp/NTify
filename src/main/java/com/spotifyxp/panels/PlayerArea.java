@@ -246,7 +246,6 @@ public class PlayerArea extends JPanel {
                 playerAreaVolumeIcon.setImage(Graphics.VOLUMEFULL.getPath());
             }
             if(!playerAreaVolumeSlider.getValueIsAdjusting()) {
-                System.out.println("Adjusting");
                 InstanceManager.getPlayer().getPlayer().setVolume(playerAreaVolumeSlider.getValue());
             }
         });

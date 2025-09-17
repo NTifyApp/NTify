@@ -145,6 +145,7 @@ public final class Session implements Closeable {
     public void connectionInit() throws IOException, SpotifyAuthenticationException, GeneralSecurityException, MercuryClient.MercuryException {
         String addr = apResolver.getRandomAccesspoint();
         this.conn = ConnectionHolder.create(addr, inner.conf);
+        this.conn.socket.setSoTimeout(inner.conf.connectionTimeout * 1000);
 
         ConsoleLoggingModules.info("Created new session! {deviceId: {}, ap: {}, proxy: {}} ", inner.deviceId, addr, inner.conf.proxyEnabled);
 
@@ -1428,6 +1429,13 @@ public final class Session implements Closeable {
                         ConsoleLoggingModules.info("Skipping unknown command {cmd: 0x{}, payload: {}}", Integer.toHexString(packet.cmd), Utils.bytesToHex(packet.payload));
                         continue;
                     }
+                } catch (SocketTimeoutException e) {
+                    if (running && !closing) {
+                        ConsoleLoggingModules.warning("Socket timed out. Reconnecting...");
+                        reconnect();
+                    }
+
+                    break;
                 } catch (IOException | GeneralSecurityException ex) {
                     if (running && !closing) {
                         ConsoleLoggingModules.error("Failed reading packet!", ex);
@@ -1441,11 +1449,11 @@ public final class Session implements Closeable {
 
                 switch (cmd) {
                     case Ping:
-                        if (scheduledReconnect != null) scheduledReconnect.cancel(true);
+                        /*if (scheduledReconnect != null) scheduledReconnect.cancel(true);
                         scheduledReconnect = scheduler.schedule(() -> {
                             ConsoleLoggingModules.warning("Socket timed out. Reconnecting...");
                             reconnect();
-                        }, configuration().connectionTimeout, TimeUnit.SECONDS);
+                        }, configuration().connectionTimeout, TimeUnit.SECONDS);*/
 
                         TimeProvider.updateWithPing(packet.payload);
 
