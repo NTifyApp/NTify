@@ -1,1 +1,1 @@
-Mercury responds with 403 instead of the token. Fixed via login5
+Connection timeout is now detected by actual socket timeout instead of Pong
