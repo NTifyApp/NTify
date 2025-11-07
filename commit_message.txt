@@ -1,1 +1,1 @@
-Connection timeout is now detected by actual socket timeout instead of Pong
+
