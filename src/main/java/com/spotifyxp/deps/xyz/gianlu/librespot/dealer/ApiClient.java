@@ -22,10 +22,13 @@ import com.google.protobuf.Message;
 import com.spotifyxp.deps.com.spotify.clienttoken.data.v0.Connectivity;
 import com.spotifyxp.deps.com.spotify.clienttoken.http.v0.ClientToken;
 import com.spotifyxp.deps.com.spotify.connectstate.Connect;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.EntityExtensionDataOuterClass;
 import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.deps.xyz.gianlu.librespot.Version;
+import com.spotifyxp.deps.xyz.gianlu.librespot.audio.PlayableContentFeeder;
 import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
 import com.spotifyxp.deps.xyz.gianlu.librespot.json.StationsWrapper;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
@@ -141,57 +144,47 @@ public final class ApiClient {
 
     @NotNull
     public Metadata.Track getMetadata4Track(@NotNull TrackId track) throws IOException, MercuryClient.MercuryException {
-        try (Response resp = send("GET", "/metadata/4/track/" + track.hexId(), null, null)) {
-            StatusCodeException.checkStatus(resp);
+        ExtendedMetadata.BatchedExtensionResponse response = getExtendedMetadata(ExtensionKindOuterClass.ExtensionKind.TRACK_V4, track);
 
-            ResponseBody body;
-            if ((body = resp.body()) == null) throw new IOException();
-            return Metadata.Track.parseFrom(body.byteStream());
-        }
+        checkExtendedMetadataResponse(response);
+
+        return Metadata.Track.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
     }
 
     @NotNull
     public Metadata.Episode getMetadata4Episode(@NotNull EpisodeId episode) throws IOException, MercuryClient.MercuryException {
-        try (Response resp = send("GET", "/metadata/4/episode/" + episode.hexId(), null, null)) {
-            StatusCodeException.checkStatus(resp);
+        ExtendedMetadata.BatchedExtensionResponse response = getExtendedMetadata(ExtensionKindOuterClass.ExtensionKind.EPISODE_V4, episode);
 
-            ResponseBody body;
-            if ((body = resp.body()) == null) throw new IOException();
-            return Metadata.Episode.parseFrom(body.byteStream());
-        }
+        checkExtendedMetadataResponse(response);
+
+        return Metadata.Episode.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
     }
 
     @NotNull
     public Metadata.Album getMetadata4Album(@NotNull AlbumId album) throws IOException, MercuryClient.MercuryException {
-        try (Response resp = send("GET", "/metadata/4/album/" + album.hexId(), null, null)) {
-            StatusCodeException.checkStatus(resp);
+        ExtendedMetadata.BatchedExtensionResponse response = getExtendedMetadata(ExtensionKindOuterClass.ExtensionKind.ALBUM_V4, album);
 
-            ResponseBody body;
-            if ((body = resp.body()) == null) throw new IOException();
-            return Metadata.Album.parseFrom(body.byteStream());
-        }
+        checkExtendedMetadataResponse(response);
+
+        return Metadata.Album.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
     }
 
     @NotNull
     public Metadata.Artist getMetadata4Artist(@NotNull ArtistId artist) throws IOException, MercuryClient.MercuryException {
-        try (Response resp = send("GET", "/metadata/4/artist/" + artist.hexId(), null, null)) {
-            StatusCodeException.checkStatus(resp);
+        ExtendedMetadata.BatchedExtensionResponse response = getExtendedMetadata(ExtensionKindOuterClass.ExtensionKind.ARTIST_V4, artist);
 
-            ResponseBody body;
-            if ((body = resp.body()) == null) throw new IOException();
-            return Metadata.Artist.parseFrom(body.byteStream());
-        }
+        checkExtendedMetadataResponse(response);
+
+        return Metadata.Artist.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
     }
 
     @NotNull
     public Metadata.Show getMetadata4Show(@NotNull ShowId show) throws IOException, MercuryClient.MercuryException {
-        try (Response resp = send("GET", "/metadata/4/show/" + show.hexId(), null, null)) {
-            StatusCodeException.checkStatus(resp);
+        ExtendedMetadata.BatchedExtensionResponse response = getExtendedMetadata(ExtensionKindOuterClass.ExtensionKind.SHOW_V4, show);
 
-            ResponseBody body;
-            if ((body = resp.body()) == null) throw new IOException();
-            return Metadata.Show.parseFrom(body.byteStream());
-        }
+        checkExtendedMetadataResponse(response);
+
+        return Metadata.Show.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
     }
 
     @NotNull
@@ -205,9 +198,38 @@ public final class ApiClient {
         }
     }
 
+    public void checkExtendedMetadataResponse(ExtendedMetadata.BatchedExtensionResponse response) throws IOException {
+        if (response.getExtendedMetadataCount() == 0)
+            throw new IOException("No metadata in BatchedExtensionResponse");
+
+        if (response.getExtendedMetadata(0).getExtensionDataCount() == 0)
+            throw new IOException("No metadata in ExtendedMetadata in BatchedExtensionResponse");
+
+        if (response.getExtendedMetadata(0).getExtensionData(0).getHeader().getStatusCode() != 200)
+            throw new IOException("Bad status code for metadata: " + response.getExtendedMetadata(0).getExtensionData(0).getHeader().getStatusCode());
+    }
+
     @NotNull
     public ExtendedMetadata.BatchedExtensionResponse getExtendedMetadata(@NotNull ExtendedMetadata.BatchedEntityRequest req) throws IOException, MercuryClient.MercuryException {
         try (Response resp = send("POST", "/extended-metadata/v0/extended-metadata", null, protoBody(req))) {
+            StatusCodeException.checkStatus(resp);
+
+            ResponseBody body;
+            if ((body = resp.body()) == null) throw new IOException();
+            return ExtendedMetadata.BatchedExtensionResponse.parseFrom(body.byteStream());
+        }
+    }
+
+    @NotNull
+    public ExtendedMetadata.BatchedExtensionResponse getExtendedMetadata(@NotNull ExtensionKindOuterClass.ExtensionKind extensionKind, @NotNull SpotifyId spotifyId) throws IOException, MercuryClient.MercuryException {
+        try (Response resp = send("POST", "/extended-metadata/v0/extended-metadata", null, protoBody(ExtendedMetadata.BatchedEntityRequest.newBuilder()
+                .addEntityRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                        .setEntityUri(spotifyId.toSpotifyUri())
+                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                .setExtensionKind(extensionKind)
+                                .build())
+                        .build())
+                .build()))) {
             StatusCodeException.checkStatus(resp);
 
             ResponseBody body;
