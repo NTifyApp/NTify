@@ -37,76 +37,81 @@ import java.util.ArrayList;
 public class ErrorDisplay {
     public static ArrayList<ExceptionDialog> errorQueue;
     public static ErrorDisplayPanel errorDisplayPanel;
-    public static JScrollPane errorDisplayScrollPane;
-    public static DefTable errorDisplayTable;
-    public static ContextMenu errorDisplayContextMenu;
-    public static JButton removeButton;
 
-    private JFrame frame;
+    private Ui ui;
+
+    public static class Ui extends JFrame {
+        public static JScrollPane errorDisplayScrollPane;
+        public static DefTable errorDisplayTable;
+        public static ContextMenu errorDisplayContextMenu;
+        public static JButton removeButton;
+
+        public Ui() {
+            errorDisplayTable = new DefTable();
+            errorDisplayTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{""}));
+            errorDisplayTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    super.mouseClicked(e);
+                    if (SwingUtilities.isRightMouseButton(e)) return;
+                    if (e.getClickCount() == 2) {
+                        if(errorDisplayTable.getSelectedRow() == -1) return;
+                        errorQueue.get(errorDisplayTable.getSelectedRow()).openReal();
+                    }
+                }
+            }));
+
+            errorDisplayScrollPane = new JScrollPane();
+            errorDisplayScrollPane.setViewportView(errorDisplayTable);
+
+            errorDisplayContextMenu = new ContextMenu(errorDisplayTable, null, getClass());
+            errorDisplayContextMenu.addItem(PublicValues.language.translate("ui.general.copy"), () -> ClipboardUtil.set(errorQueue.get(errorDisplayTable.getSelectedRow()).getAsFormattedText()));
+            errorDisplayContextMenu.addItem(PublicValues.language.translate("ui.general.remove"), () -> {
+                errorQueue.remove(errorDisplayTable.getSelectedRow());
+                errorDisplayPanel.setText(String.valueOf(errorQueue.size()));
+                ((DefaultTableModel) errorDisplayTable.getModel()).removeRow(errorDisplayTable.getSelectedRow());
+                if (errorDisplayTable.getModel().getRowCount() == 0) {
+                    errorDisplayPanel.setVisible(false);
+                }
+            });
+
+            removeButton = new JButton(PublicValues.language.translate("ui.errorqueue.clear"));
+            removeButton.addActionListener(new AsyncActionListener(e1 -> {
+                errorQueue.clear();
+                ((DefaultTableModel) errorDisplayTable.getModel()).setRowCount(0);
+                errorDisplayPanel.setVisible(false);
+            }));
+        }
+
+        @Override
+        public void open() {
+            ((DefaultTableModel) errorDisplayTable.getModel()).setRowCount(0);
+            for (ExceptionDialog exd : errorQueue) {
+                ((DefaultTableModel) errorDisplayTable.getModel()).addRow(new Object[]{exd.getPreview()});
+            }
+
+            setTitle(PublicValues.language.translate("ui.errorqueue.title"));
+            add(removeButton, BorderLayout.SOUTH);
+            setPreferredSize(new Dimension(ContentPanel.frame.getWidth() / 2, ContentPanel.frame.getHeight() / 2));
+            add(errorDisplayTable, BorderLayout.CENTER);
+            setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    close();
+                }
+            });
+
+            super.open();
+        }
+
+        public void close() {
+            dispose();
+        }
+    }
 
     public ErrorDisplay() {
         errorDisplayPanel = new ErrorDisplayPanel();
-
-        errorDisplayTable = new DefTable();
-        errorDisplayTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{""}));
-        errorDisplayTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                if (SwingUtilities.isRightMouseButton(e)) return;
-                if (e.getClickCount() == 2) {
-                    if(errorDisplayTable.getSelectedRow() == -1) return;
-                    errorQueue.get(errorDisplayTable.getSelectedRow()).openReal();
-                }
-            }
-        }));
-
-        errorDisplayScrollPane = new JScrollPane();
-        errorDisplayScrollPane.setViewportView(errorDisplayTable);
-
-        errorDisplayContextMenu = new ContextMenu(errorDisplayTable, null, getClass());
-        errorDisplayContextMenu.addItem(PublicValues.language.translate("ui.general.copy"), () -> ClipboardUtil.set(errorQueue.get(errorDisplayTable.getSelectedRow()).getAsFormattedText()));
-        errorDisplayContextMenu.addItem(PublicValues.language.translate("ui.general.remove"), () -> {
-            errorQueue.remove(errorDisplayTable.getSelectedRow());
-            errorDisplayPanel.setText(String.valueOf(errorQueue.size()));
-            ((DefaultTableModel) errorDisplayTable.getModel()).removeRow(errorDisplayTable.getSelectedRow());
-            if (errorDisplayTable.getModel().getRowCount() == 0) {
-                errorDisplayPanel.setVisible(false);
-            }
-        });
-
-        removeButton = new JButton(PublicValues.language.translate("ui.errorqueue.clear"));
-        removeButton.addActionListener(new AsyncActionListener(e1 -> {
-            errorQueue.clear();
-            ((DefaultTableModel) errorDisplayTable.getModel()).setRowCount(0);
-            errorDisplayPanel.setVisible(false);
-        }));
-    }
-
-    public void open() {
-        ((DefaultTableModel) errorDisplayTable.getModel()).setRowCount(0);
-        for (ExceptionDialog exd : errorQueue) {
-            ((DefaultTableModel) errorDisplayTable.getModel()).addRow(new Object[]{exd.getPreview()});
-        }
-        frame = new JFrame();
-        frame.setTitle(PublicValues.language.translate("ui.errorqueue.title"));
-        frame.add(removeButton, BorderLayout.SOUTH);
-        frame.setPreferredSize(new Dimension(ContentPanel.frame.getWidth() / 2, ContentPanel.frame.getHeight() / 2));
-        frame.add(errorDisplayTable, BorderLayout.CENTER);
-        frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                close();
-            }
-        });
-        frame.pack();
-        frame.setVisible(true);
-    }
-
-    public void close() {
-        frame.dispose();
-        frame = null;
     }
 
     public static class ErrorDisplayPanel extends JButton {
@@ -147,6 +152,16 @@ public class ErrorDisplay {
             super.setText(text);
             setBounds(10, 10, getWidth(), getHeight());
         }
+    }
+
+    public void open() {
+        this.ui = new Ui();
+        this.ui.open();
+    }
+
+    public void close() {
+        this.ui.close();
+        this.ui = null;
     }
 
     public JButton getDisplayPanel() {

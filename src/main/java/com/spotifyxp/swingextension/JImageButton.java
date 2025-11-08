@@ -94,7 +94,7 @@ public class JImageButton extends JSVGCanvas {
     }
 
     public void setImage(String resourcePath) {
-        setImage(new Resources().readToInputStream(resourcePath));
+        setImage(getClass().getResourceAsStream(resourcePath.startsWith("/") ? resourcePath : "/" + resourcePath));
     }
 
     Color oldColor = ContentPanel.frame.getBackground();

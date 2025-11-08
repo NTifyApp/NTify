@@ -266,6 +266,8 @@ public class HomePanel extends JScrollPane implements View {
             addModule(section, titleHeight, xCache, yCache, yCache - titleHeight - titleSpacing, width, height);
             yCache += height + spacing;
         }
+
+        tab = Optional.empty();
     }
 
     void fill() {

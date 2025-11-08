@@ -29,6 +29,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.image.BufferedImage;
 
 public class SplashPanel {
     public static JFrame frame;
@@ -68,17 +69,18 @@ public class SplashPanel {
         });
         JImagePanel image = new JImagePanel();
         linfo = new JLabel("Please wait...");
-        image.setImage(new Resources().readToInputStream("ntify.png"));
-        frame.getContentPane().add(image);
-        frame.setPreferredSize(new Dimension(290, 300));
         try {
-            frame.setIconImage(ImageIO.read(new Resources().readToInputStream("ntify.png")));
+            BufferedImage img = ImageIO.read(getClass().getResourceAsStream("/ntify.png"));
+            image.setImage(img);
+            frame.setIconImage(img);
         } catch (Exception e) {
             ConsoleLogging.Throwable(e);
             if (PublicValues.config.getString(ConfigValues.hideExceptions.name).equals("false")) {
                 GraphicalMessage.openException(e);
             }
         }
+        frame.getContentPane().add(image);
+        frame.setPreferredSize(new Dimension(290, 300));
         frame.add(linfo, BorderLayout.SOUTH);
         frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);

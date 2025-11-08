@@ -23,7 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-
+/**
+ * @deprecated Use getClass() instead
+ */
+@Deprecated
 public class Resources {
 
     /**

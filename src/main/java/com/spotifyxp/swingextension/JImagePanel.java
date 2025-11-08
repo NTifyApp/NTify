@@ -21,24 +21,20 @@ import com.spotifyxp.utils.Resources;
 import org.apache.commons.io.IOUtils;
 
 import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 public class JImagePanel extends JPanel {
-    private BufferedImage image = null;
-    private byte[] imagebytes;
-    private SVGImageRecalculate recalculate = null;
-    public boolean keepAspectRatio = true;
-    private String rad = "";
+    private BufferedImage image;
+    private byte[] imageBytes;
+    private SVGImageRecalculate recalculate;
+    private double rotationRadians = 0;
+    private boolean keepAspectRatio = true;
 
     @FunctionalInterface
     public interface SVGImageRecalculate {
@@ -47,34 +43,47 @@ public class JImagePanel extends JPanel {
 
     public void setKeepAspectRatio(boolean keepAspectRatio) {
         this.keepAspectRatio = keepAspectRatio;
-        refresh();
+        repaint();
     }
 
-    void refresh() {
+    private void refresh() {
         try {
-            if(recalculate == null) {
-                image = ImageIO.read(new ByteArrayInputStream(imagebytes));
+            if (recalculate != null) {
+                byte[] newBytes = recalculate.svgImageRecalculate();
+                if (newBytes != null && newBytes.length > 0) {
+                    image = ImageIO.read(new ByteArrayInputStream(newBytes));
+                }
+            } else if (imageBytes != null) {
+                image = ImageIO.read(new ByteArrayInputStream(imageBytes));
             }
         } catch (IOException ex) {
             ConsoleLogging.Throwable(ex);
+            GraphicalMessage.openException(ex);
         }
-        this.repaint();
+        repaint();
     }
 
-    public void setImage(String filename) {
-        this.recalculate = null;
-        try {
-            imagebytes = IOUtils.toByteArray(new Resources().readToInputStream(filename));
+    // ---------- Image setters ----------
+    public void setImage(String resourcePath) {
+        recalculate = null;
+        try (InputStream in = new Resources().readToInputStream(resourcePath)) {
+            imageBytes = IOUtils.toByteArray(in);
         } catch (IOException ex) {
             ConsoleLogging.Throwable(ex);
         }
         refresh();
     }
 
+    public void setImage(BufferedImage image) {
+        recalculate = null;
+        this.image = image;
+        repaint();
+    }
+
     public void setImage(File file) {
-        this.recalculate = null;
+        recalculate = null;
         try {
-            imagebytes = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
+            imageBytes = Files.readAllBytes(file.toPath());
         } catch (IOException ex) {
             ConsoleLogging.Throwable(ex);
         }
@@ -82,8 +91,8 @@ public class JImagePanel extends JPanel {
     }
 
     public void setImage(byte[] bytes) {
-        this.recalculate = null;
-        imagebytes = bytes;
+        recalculate = null;
+        imageBytes = bytes;
         refresh();
     }
 
@@ -92,15 +101,10 @@ public class JImagePanel extends JPanel {
         refresh();
     }
 
-    public void setRotation(int percent) {
-        rad = String.valueOf(((float) 360 / 100 * percent) * 0.01745329252);
-        refresh();
-    }
-
     public void setImage(URL url) {
-        this.recalculate = null;
-        try {
-            imagebytes = IOUtils.toByteArray(url);
+        recalculate = null;
+        try (InputStream in = url.openStream()) {
+            imageBytes = IOUtils.toByteArray(in);
         } catch (IOException ex) {
             ConsoleLogging.Throwable(ex);
         }
@@ -108,81 +112,70 @@ public class JImagePanel extends JPanel {
     }
 
     public void setImage(InputStream inputStream) {
+        recalculate = null;
         try {
-            imagebytes = IOUtils.toByteArray(inputStream);
+            imageBytes = IOUtils.toByteArray(inputStream);
         } catch (IOException ex) {
             ConsoleLogging.Throwable(ex);
-            GraphicalMessage.openException(ex);
         }
         refresh();
     }
 
-    public void setImage(ImageInputStream imageInputStream) {
-        this.recalculate = null;
-        try {
-            imageInputStream.readFully(imagebytes);
-        } catch (IOException e) {
-            ConsoleLogging.Throwable(e);
-            GraphicalMessage.openException(e);
-        }
-        refresh();
+    public void setRotation(int percent) {
+        rotationRadians = Math.toRadians((360.0 / 100) * percent);
+        repaint();
     }
 
     public InputStream getImageStream() {
-        if (imagebytes == null || imagebytes.length == 0) {
-            return null;
-        }
-        return new ByteArrayInputStream(imagebytes);
+        return (imageBytes == null || imageBytes.length == 0)
+                ? null
+                : new ByteArrayInputStream(imageBytes);
     }
 
-    private void drawImage(Graphics graphics2D, BufferedImage image) {
-        int originalWidth = image.getWidth();
-        int originalHeight = image.getHeight();
-        int desiredWidth = this.getWidth();
-        int desiredHeight = this.getHeight();
-        double originalAspectRatio = (double) originalWidth / originalHeight;
-        double desiredAspectRatio = (double) desiredWidth / desiredHeight;
-        int newWidth, newHeight;
-        int xOffset, yOffset;
-        if (originalAspectRatio > desiredAspectRatio) {
-            newWidth = desiredWidth;
-            newHeight = (int) (desiredWidth / originalAspectRatio);
-            xOffset = 0;
-            yOffset = (desiredHeight - newHeight) / 2;
+    private void drawImage(Graphics2D g2d) {
+        if (image == null) return;
+
+        int panelWidth = getWidth();
+        int panelHeight = getHeight();
+
+        if (keepAspectRatio) {
+            int imgWidth = image.getWidth();
+            int imgHeight = image.getHeight();
+            double imgAspect = (double) imgWidth / imgHeight;
+            double panelAspect = (double) panelWidth / panelHeight;
+
+            int drawWidth, drawHeight, xOffset, yOffset;
+            if (imgAspect > panelAspect) {
+                drawWidth = panelWidth;
+                drawHeight = (int) (panelWidth / imgAspect);
+                xOffset = 0;
+                yOffset = (panelHeight - drawHeight) / 2;
+            } else {
+                drawHeight = panelHeight;
+                drawWidth = (int) (panelHeight * imgAspect);
+                xOffset = (panelWidth - drawWidth) / 2;
+                yOffset = 0;
+            }
+
+            g2d.drawImage(image, xOffset, yOffset, drawWidth, drawHeight, this);
         } else {
-            newWidth = (int) (desiredHeight * originalAspectRatio);
-            newHeight = desiredHeight;
-            xOffset = (desiredWidth - newWidth) / 2;
-            yOffset = 0;
+            g2d.drawImage(image, 0, 0, panelWidth, panelHeight, this);
         }
-        graphics2D.drawImage(image.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH), xOffset, yOffset, null);
     }
 
     @Override
-    public void paintComponent(Graphics g) {
+    protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        if (image == null && recalculate == null) {
-            return;
-        }else if(recalculate != null) {
-            try {
-                byte[] newBytes = recalculate.svgImageRecalculate();
-                if(newBytes != null && newBytes.length > 0) {
-                    image = ImageIO.read(new ByteArrayInputStream(newBytes));
-                }
-            } catch (IOException e) {
-                ConsoleLogging.Throwable(e);
-                return;
-            }
+        if (image == null && recalculate == null) return;
+
+        Graphics2D g2d = (Graphics2D) g.create();
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+        if (rotationRadians != 0) {
+            g2d.rotate(rotationRadians, getWidth() / 2.0, getHeight() / 2.0);
         }
-        if (!(rad.isEmpty())) {
-            Graphics2D graphics2D = (Graphics2D) g;
-            if(graphics2D != null) graphics2D.rotate(Double.parseDouble(rad), (float) this.getWidth() / 2, (float) this.getHeight() / 2);
-        }
-        if(this.keepAspectRatio) {
-            drawImage(g, image);
-        } else {
-            assert g != null;
-            g.drawImage(image.getScaledInstance(this.getWidth(), this.getHeight(), Image.SCALE_SMOOTH), 0, 0, null);
-        }
+
+        drawImage(g2d);
+        g2d.dispose();
     }
 }

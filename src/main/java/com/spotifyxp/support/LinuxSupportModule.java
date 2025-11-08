@@ -142,7 +142,7 @@ public class LinuxSupportModule implements SupportModule {
             }
         };
         Timer timer = new Timer();
-        Events.subscribe(SpotifyXPEvents.injectorAPIReady.getName(), new EventSubscriber() {
+        Events.subscribe(SpotifyXPEvents.onFrameReady.getName(), new EventSubscriber() {
             @Override
             public void run(Object... data) {
                 InstanceManager.getPlayer().getPlayer().addEventsListener(new Player.EventsListener() {
