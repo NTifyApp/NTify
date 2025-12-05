@@ -33,6 +33,7 @@ import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -42,6 +43,7 @@ import java.security.SecureRandom;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class PlayerUtils {
     Session authViaZeroconf(Session.Configuration configuration, EventSubscriber cancelCallback) throws InterruptedException, ExecutionException {
@@ -149,7 +151,11 @@ public class PlayerUtils {
             Events.subscribe(SpotifyXPEvents.internetConnectionDropped.getName(), connectionDroppedListener());
             Events.subscribe(SpotifyXPEvents.internetConnectionReconnected.getName(), connectionReconnectedListener());
             return player;
-        } catch (ConnectException | Session.SpotifyAuthenticationException | IllegalArgumentException e) {
+        } catch (ConnectException | Session.SpotifyAuthenticationException | IllegalArgumentException | EOFException e) {
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+            } catch (InterruptedException ignored) {
+            }
             ConsoleLogging.Throwable(e);
             return buildPlayer();
         } catch (UnknownHostException offline) {
