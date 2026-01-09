@@ -1,3 +1,6 @@
+<h2>Currently doesn't work anymore! Fix is being worked on</h2>
+<h3>Spotify now denies requests to the web api with internal auth tokens</h3>
+
 <p align="center">
   <a href="https://github.com/NTifyApp/NTify">
     <img src="https://raw.githubusercontent.com/NTifyApp/NTify/refs/heads/developer/src/main/resources/ntify.png" alt="Logo" width="80" height="80">
@@ -140,3 +143,4 @@ Copyright to the following images goes to [Anthony](https://twitter.com/intent/u
 <br>
 <br>
   <h3>This site/app is not affiliated with Spotify.</h3>
+
