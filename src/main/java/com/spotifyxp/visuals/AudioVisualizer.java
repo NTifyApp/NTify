@@ -16,12 +16,14 @@
 package com.spotifyxp.visuals;
 
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.SpectrumAnalyzer;
+
 import javax.swing.*;
-import com.spotifyxp.swingextension.JFrame;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +58,7 @@ public class AudioVisualizer extends JPanel {
         this.currentBuffer = audioData;
     }
 
-    public void open() {
+    public void open() throws IOException {
         if (frame == null) {
             frame = new JFrame(PublicValues.language.translate("ui.audiovisualizer.title").replace("%APPNAME%", ApplicationUtils.getName()));
             frame.setLayout(new BorderLayout());

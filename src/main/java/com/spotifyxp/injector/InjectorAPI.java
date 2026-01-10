@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.utils.ConnectionUtils;
+import okhttp3.Request;
 import org.apache.commons.io.IOUtils;
 
 import javax.swing.*;
@@ -27,10 +27,14 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public class InjectorAPI {
     public static ArrayList<InjectorAPI.InjectorRepository> injectorRepos = new ArrayList<>();
@@ -50,7 +54,11 @@ public class InjectorAPI {
 
         public InjectorRepository(String url) {
             this.url = url;
-            this.isAvailable = ConnectionUtils.isWebsiteReachable(this.url);
+            try {
+                this.isAvailable = InetAddress.getByName(this.url.replace("https://", "").replace("http://", "").split("/")[0]).isReachable(2000);
+            }catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             if (!this.isAvailable) {
                 ConsoleLogging.error("Repository with url '" + this.url + "' is not reachable");
             }
@@ -204,23 +212,30 @@ public class InjectorAPI {
     }
 
     public static Repository getRepository(InjectorAPI.InjectorRepository repository) throws IOException {
-        return new Gson().fromJson(ConnectionUtils.makeGet(repository.getUrl() + "/repo.json", new TreeMap<>()), Repository.class);
+        return new Gson().fromJson(get(repository.getUrl() + "/repo.json"), Repository.class);
     }
 
     public static List<Extension> getExtensions(InjectorAPI.InjectorRepository repository, Repository repo) throws IOException {
         ArrayList<Extension> extensions = new ArrayList<>();
         for(RepositoryExtensionLocation location : repo.getExtensions()) {
-            extensions.add(new Gson().fromJson(ConnectionUtils.makeGet(repository.getUrl() + location.getLocation(), new HashMap<>()), Extension.class));
+            extensions.add(new Gson().fromJson(get(repository.getUrl() + location.getLocation()), Extension.class));
         }
         return extensions;
     }
 
     public static Optional<Extension> getExtension(InjectorAPI.InjectorRepository repository, String name, String author) throws IOException {
         try {
-            return Optional.of(new Gson().fromJson(ConnectionUtils.makeGet(repository.getUrl() + "/" + name + "-" + author + ".json", new HashMap<>()), Extension.class));
+            return Optional.of(new Gson().fromJson(get(repository.getUrl() + "/" + name + "-" + author + ".json"), Extension.class));
         }catch (JsonSyntaxException e) {
             return Optional.empty();
         }
+    }
+
+    private static String get(String url) throws IOException {
+        return Objects.requireNonNull(PublicValues.defaultHttpClient.newCall(new Request.Builder()
+                .url(url)
+                .get()
+                .build()).execute().body()).string();
     }
 
     private static String getFileName(String url) {

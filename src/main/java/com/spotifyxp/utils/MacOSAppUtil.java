@@ -17,6 +17,7 @@ package com.spotifyxp.utils;
 
 import com.dd.plist.NSDictionary;
 import com.dd.plist.XMLPropertyListWriter;
+import com.spotifyxp.Initiator;
 import com.spotifyxp.logging.ConsoleLogging;
 import org.apache.commons.io.IOUtils;
 
@@ -88,7 +89,7 @@ public class MacOSAppUtil {
             File resources = new File(dp + "/Contents", "Resources");
             if (resources.mkdir()) {
                 try {
-                    Files.copy(new Resources().readToInputStream(iconpath), new File(dp + "/Contents/Resources", "AppIcon.icns").toPath());
+                    Files.copy(Initiator.class.getResourceAsStream(iconpath), new File(dp + "/Contents/Resources", "AppIcon.icns").toPath());
                 } catch (IOException e) {
                     GraphicalMessage.openException(e);
                     ConsoleLogging.Throwable(e);

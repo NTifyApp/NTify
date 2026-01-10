@@ -40,7 +40,10 @@ import com.spotifyxp.support.SupportModuleLoader;
 import com.spotifyxp.theming.ThemeLoader;
 import com.spotifyxp.updater.Updater;
 import com.spotifyxp.updater.UpdaterUI;
-import com.spotifyxp.utils.*;
+import com.spotifyxp.utils.ApplicationUtils;
+import com.spotifyxp.utils.ArchitectureDetection;
+import com.spotifyxp.utils.GraphicalMessage;
+import com.spotifyxp.utils.Utils;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,62 +67,68 @@ public class Initiator {
     static final Thread hook = new Thread(PlayerArea::saveCurrentState, "Save play state");
 
     public static void main(String[] args) {
-        PublicValues.argParser.parseArguments(args); //Parsing the arguments
-        initEvents(); //Initializing the event support
-        new SplashPanel().show(); //Initializing the splash panel
-        System.setProperty("http.agent", ApplicationUtils.getUserAgent()); //Setting the user agent string that SpotifyXP uses
-        checkDebug(); //Checking if debug is enabled
-        detectOS(); //Detecting the operating system
-        detectArchitecture();
-        checkSetup();
-        initLanguageSupport(); //Initializing the language support
-        initConfig(); //Initializing the configuration
         try {
-            PublicValues.cache = new Cache(); //Initialize cache
-        } catch (IOException e) {
-            GraphicalMessage.sorryErrorExit("Failed to create cache: " + e.getMessage());
-        }
-        checkLogPrintStream(); //Checking some stuff after config is available
-        setLanguage(); //Set the language to the one specified in the config
-        creatingLock(); //Creating the 'LOCK' file
-        PublicValues.defaultHttpClient = new OkHttpClient.Builder()
-                .addNetworkInterceptor(new Interceptor() {
-                    @Override
-                    public @NotNull Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
-                        if(chain.request().headers().get("User-Agent").contains("Spotify/")) return chain.proceed(chain.request());
-                        return chain.proceed(chain.request().newBuilder()
-                                .header("User-Agent", ApplicationUtils.getUserAgent())
-                                .build());
-                    }
-                })
-                .build(); //Creating the default http client
-        initProxy();
-        checkTrustStore();
-        checkUpdate();
-        if(Flags.videoPlaybackSupport) initializeVideoPlayback();
-        loadExtensions(); //Loading extensions if there are any
-        initGEH(); //Initializing the global exception handler
-        storeArguments(args); //Storing the program arguments in PublicValues.class
-        parseAudioQuality(); //Parsing the audio quality
-        initThemes(); //Initializing the theming support
-        addShutdownHook(); //Adding the shutdown hook
-        initAPI(); //Initializing all the apis used
-        if (PublicValues.enableMediaControl)
-            createKeyListener(); //Starting the key listener (For Play/Pause/Previous/Next)
-        initTrayIcon(); //Creating the tray icon
-        try {
-            initGUI(); //Initializing the GUI
-        } catch (IOException e) {
+            PublicValues.argParser.parseArguments(args); //Parsing the arguments
+            initEvents(); //Initializing the event support
+            new SplashPanel().show(); //Initializing the splash panel
+            System.setProperty("http.agent", ApplicationUtils.getUserAgent()); //Setting the user agent string that SpotifyXP uses
+            checkDebug(); //Checking if debug is enabled
+            detectOS(); //Detecting the operating system
+            detectArchitecture();
+            checkSetup();
+            initLanguageSupport(); //Initializing the language support
+            initConfig(); //Initializing the configuration
+            try {
+                PublicValues.cache = new Cache(); //Initialize cache
+            } catch (IOException e) {
+                GraphicalMessage.sorryErrorExit("Failed to create cache: " + e.getMessage());
+            }
+            checkLogPrintStream(); //Checking some stuff after config is available
+            setLanguage(); //Set the language to the one specified in the config
+            creatingLock(); //Creating the 'LOCK' file
+            PublicValues.defaultHttpClient = new OkHttpClient.Builder()
+                    .addNetworkInterceptor(new Interceptor() {
+                        @Override
+                        public @NotNull Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
+                            if (chain.request().headers().get("User-Agent").contains("Spotify/"))
+                                return chain.proceed(chain.request());
+                            return chain.proceed(chain.request().newBuilder()
+                                    .header("User-Agent", ApplicationUtils.getUserAgent())
+                                    .build());
+                        }
+                    })
+                    .build(); //Creating the default http client
+            initProxy();
+            checkTrustStore();
+            checkUpdate();
+            if (Flags.videoPlaybackSupport) initializeVideoPlayback();
+            loadExtensions(); //Loading extensions if there are any
+            initGEH(); //Initializing the global exception handler
+            storeArguments(args); //Storing the program arguments in PublicValues.class
+            parseAudioQuality(); //Parsing the audio quality
+            initThemes(); //Initializing the theming support
+            addShutdownHook(); //Adding the shutdown hook
+            initAPI(); //Initializing all the apis used
+            if (PublicValues.enableMediaControl)
+                createKeyListener(); //Starting the key listener (For Play/Pause/Previous/Next)
+            initTrayIcon(); //Creating the tray icon
+            try {
+                initGUI(); //Initializing the GUI
+            } catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+                GraphicalMessage.sorryError("Critical exception in GUI initialization");
+            }
+            SplashPanel.hide(); //Hiding the splash panel
+        }catch (Exception e) {
             ConsoleLogging.Throwable(e);
-            GraphicalMessage.sorryError("Critical exception in GUI initialization");
+            GraphicalMessage.openException(e);
         }
-        SplashPanel.hide(); //Hiding the splash panel
     }
 
     static void checkTrustStore() {
         try {
             Request request = new Request.Builder()
-                    .url("https://spclient.wg.spotify.com/live-events-view/spotify.liveeventsview.v2.LiveEventsFeedService/GetPage")
+                    .url("https://spclient.wg.spotify.com/reachability/check")
                     .build();
 
             PublicValues.defaultHttpClient.newCall(request).execute();
@@ -128,7 +137,7 @@ public class Initiator {
             int response = JOptionPane.showConfirmDialog(null, "", "", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE);
             if (response == JOptionPane.OK_OPTION) {
                 try {
-                    ConnectionUtils.openBrowser("https://github.com/JohnTHaller/RootCertificateUpdatesForLegacyWindows");
+                    Utils.openBrowser("https://github.com/JohnTHaller/RootCertificateUpdatesForLegacyWindows");
                 } catch (URISyntaxException | IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -214,7 +223,7 @@ public class Initiator {
         }
     }
 
-    static void detectOS() {
+    static void detectOS() throws IOException {
         SplashPanel.linfo.setText("Detecting operating system...");
         PublicValues.osType = libDetect.getDetectedOS();
         new SupportModuleLoader().loadModules();
@@ -242,7 +251,7 @@ public class Initiator {
         PublicValues.logPrintStream.checkLogFiles();
     }
 
-    static void initializeVideoPlayback() {
+    static void initializeVideoPlayback() throws IOException {
         if(Flags.videoPlaybackSupport) {
             try {
                 Class<?> util = Class.forName("com.spotifyxp.deps.uk.co.caprica.vlcj.SPXPInit");
@@ -262,7 +271,7 @@ public class Initiator {
 
     static void checkUpdate() {
         try {
-            if(new Resources().readToInputStream("commit_id.txt") == null) {
+            if (Initiator.class.getResourceAsStream("commit_id.txt") == null) {
                 PublicValues.updaterDisabled = true;
                 return;
             }
@@ -373,9 +382,7 @@ public class Initiator {
 
     static void initAPI() {
         SplashPanel.linfo.setText("Creating api...");
-        InstanceManager.getSpotifyAPI();
         InstanceManager.getPlayer();
-        InstanceManager.getPkce();
         SplashPanel.linfo.setText("Create advanced api key...");
         InstanceManager.getUnofficialSpotifyApi();
     }

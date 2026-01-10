@@ -19,7 +19,6 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.swingextension.JFrame;
-import com.spotifyxp.utils.GraphicalMessage;
 import com.spotifyxp.utils.SVGUtils;
 import com.spotifyxp.utils.Utils;
 import org.apache.commons.io.IOUtils;

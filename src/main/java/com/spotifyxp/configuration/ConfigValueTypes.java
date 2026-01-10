@@ -15,6 +15,9 @@
  */
 package com.spotifyxp.configuration;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+
 import java.util.NoSuchElementException;
 
 /**
@@ -27,14 +30,16 @@ public enum ConfigValueTypes {
     CUSTOM;
 
     public static ConfigValueTypes parse(Object object) {
-        if (object instanceof String) {
-            return ConfigValueTypes.STRING;
-        } else if (object instanceof Integer) {
-            return ConfigValueTypes.INT;
-        } else if (object instanceof Boolean) {
-            return ConfigValueTypes.BOOLEAN;
-        } else if (ICustomConfigValue.class.isAssignableFrom(object.getClass())) {
+        if (!(object instanceof JsonElement)) {
             return ConfigValueTypes.CUSTOM;
+        }
+        JsonPrimitive primitive = ((JsonElement) object).getAsJsonPrimitive();
+        if (primitive.isString()) {
+            return ConfigValueTypes.STRING;
+        } else if (primitive.isNumber()) {
+            return ConfigValueTypes.INT;
+        } else if (primitive.isBoolean()) {
+            return ConfigValueTypes.BOOLEAN;
         }
         throw new NoSuchElementException(object.toString());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package com.spotifyxp.panels;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.utils.ConnectionUtils;
+import com.spotifyxp.utils.Utils;
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
@@ -116,7 +116,7 @@ public class Feedback extends JPanel implements View {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ConnectionUtils.openBrowser("https://github.com/NTifyApp/NTify/issues/new");
+                    Utils.openBrowser("https://github.com/NTifyApp/NTify/issues/new");
                 } catch (URISyntaxException | IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -141,7 +141,7 @@ public class Feedback extends JPanel implements View {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ConnectionUtils.openBrowser("https://github.com/NTifyApp/NTify/issues");
+                    Utils.openBrowser("https://github.com/NTifyApp/NTify/issues");
                 } catch (URISyntaxException | IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -165,7 +165,7 @@ public class Feedback extends JPanel implements View {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ConnectionUtils.openBrowser("https://github.com/NTifyApp/NTify");
+                    Utils.openBrowser("https://github.com/NTifyApp/NTify");
                 } catch (URISyntaxException | IOException ex) {
                     throw new RuntimeException(ex);
                 }

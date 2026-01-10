@@ -17,6 +17,7 @@ package com.spotifyxp.args;
 
 import com.spotifyxp.utils.ApplicationUtils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class ArgParser {
@@ -100,7 +101,7 @@ public class ArgParser {
     /**
      * Prints an argument help containing a list of all commands available
      */
-    public void printHelp() {
+    public void printHelp() throws IOException {
         System.out.println(ApplicationUtils.getName() + " - " + ApplicationUtils.getVersion() + "\n");
         System.out.println("Usage java -jar NTify.jar <argument>..." + "\n\n");
         for (com.spotifyxp.args.Argument a : arguments) {
@@ -117,7 +118,7 @@ public class ArgParser {
      *
      * @param args Array of all arguments passed to SpotifyXP
      */
-    public void parseArguments(String[] args) {
+    public void parseArguments(String[] args) throws IOException {
         boolean isvalid = false;
         for (String s : args) {
             String argument = s.replace("--", "");

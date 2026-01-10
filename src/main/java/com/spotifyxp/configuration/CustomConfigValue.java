@@ -15,6 +15,7 @@
  */
 package com.spotifyxp.configuration;
 
+import com.google.gson.JsonPrimitive;
 import com.spotifyxp.PublicValues;
 
 import javax.swing.*;
@@ -81,10 +82,14 @@ public class CustomConfigValue<T> implements ICustomConfigValue<T>{
     }
 
     @Override
-    @SuppressWarnings("SuspiciousMethodCalls")
     public boolean check() {
         if(!fromSpotifyXP) throw new UnsupportedOperationException("check() is only available for SpotifyXP settings");
-        return possibleValues.contains(PublicValues.config.getObject(name));
+        for (T val : possibleValues) {
+            if (new JsonPrimitive(val.toString()).getAsString().equals(PublicValues.config.getElement(name).getAsJsonPrimitive().getAsString())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -94,9 +99,20 @@ public class CustomConfigValue<T> implements ICustomConfigValue<T>{
                 this.component = new JComboBox<>(displayValues.toArray(new String[0]));
                 this.component.setRenderer(new ColoredComboBoxRenderer());
                 if(possibleValues != null) {
-                    this.component.setSelectedIndex(possibleValues.indexOf(PublicValues.config.getObject(name)));
+                    for (T val : possibleValues) {
+                        if (new JsonPrimitive(val.toString()).getAsString().equals(PublicValues.config.getElement(name).getAsJsonPrimitive().getAsString())) {
+                            this.component.setSelectedItem(displayValues.get(possibleValues.indexOf(val)));
+                            break;
+                        }
+                    }
                 }else {
-                    this.component.setSelectedItem(PublicValues.config.getObject(name));
+                    for (String val : displayValues) {
+                        if (val.equals(PublicValues.config.getElement(name).getAsJsonPrimitive().getAsString())) {
+                            this.component.setSelectedItem(val);
+                            break;
+                        }
+                    }
+                    this.component.setSelectedItem(PublicValues.config.getElement(name));
                 }
             }else {
                 this.component = new JComboBox<>(displayValues.toArray(new String[0]));
@@ -115,7 +131,15 @@ public class CustomConfigValue<T> implements ICustomConfigValue<T>{
     @Override
     public void writeDefault() {
         if(!fromSpotifyXP) throw new UnsupportedOperationException("writeDefault() is only available for SpotifyXP settings");
-        PublicValues.config.getProperties().put(name, defaultValue);
+        if (defaultValue instanceof String) {
+            PublicValues.config.getProperties().addProperty(name, (String) defaultValue);
+        } if (defaultValue instanceof Integer) {
+            PublicValues.config.getProperties().addProperty(name, (Integer) defaultValue);
+        } else if (defaultValue instanceof Boolean) {
+            PublicValues.config.getProperties().addProperty(name, (Boolean) defaultValue);
+        } else if (defaultValue instanceof Double) {
+            PublicValues.config.getProperties().addProperty(name, (Double) defaultValue);
+        }
     }
 
     @Override

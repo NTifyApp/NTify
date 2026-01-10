@@ -20,7 +20,7 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.protogens.Concert;
 import com.spotifyxp.swingextension.JImagePanel;
-import com.spotifyxp.utils.ConnectionUtils;
+import com.spotifyxp.utils.Utils;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -120,7 +120,7 @@ public class ArtistEventView extends JPanel {
         viewEvent.setForeground(PublicValues.globalFontColor);
         viewEvent.addActionListener(e -> {
             try {
-                ConnectionUtils.openBrowser(ticketInfo.getTicketServiceInfo().getBookUrl());
+                Utils.openBrowser(ticketInfo.getTicketServiceInfo().getBookUrl());
             } catch (URISyntaxException | IOException ex) {
                 ConsoleLogging.Throwable(ex);
             }
@@ -169,7 +169,7 @@ public class ArtistEventView extends JPanel {
             if(googleMaps == null) return;
 
             try {
-                ConnectionUtils.openBrowser(appleMaps);
+                Utils.openBrowser(appleMaps);
             } catch (URISyntaxException | IOException ex) {
                 ConsoleLogging.Throwable(ex);
             }
@@ -185,7 +185,7 @@ public class ArtistEventView extends JPanel {
             if(googleMaps == null) return;
 
             try {
-                ConnectionUtils.openBrowser(googleMaps);
+                Utils.openBrowser(googleMaps);
             } catch (URISyntaxException | IOException ex) {
                 ConsoleLogging.Throwable(ex);
             }

@@ -17,6 +17,9 @@ package com.spotifyxp.theming.themes;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.args.CustomSaveDir;
 import com.spotifyxp.events.Events;
@@ -26,7 +29,6 @@ import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.theming.Theme;
 import com.spotifyxp.utils.AsyncActionListener;
 import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
 
 import javax.swing.*;
 import java.awt.*;
@@ -256,7 +258,7 @@ public class CustomTheme implements Theme {
 
     private static class ThemeConfig {
         private final File configFile;
-        private JSONObject rootCache;
+        private JsonObject rootCache;
 
         public ThemeConfig() {
             configFile = new File(PublicValues.fileslocation, "customTheme.json");
@@ -266,12 +268,12 @@ public class CustomTheme implements Theme {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                rootCache = new JSONObject();
-                rootCache.put("bgcolor", "#3C3F41");
-                rootCache.put("bordercolor", "#000000");
-                rootCache.put("tabpanelcolor", "#3F3F3F");
-                rootCache.put("fontcolor", "#00ff00");
-                rootCache.put("themetouse", "FlatDarkLaf");
+                rootCache = new JsonObject();
+                rootCache.addProperty("bgcolor", "#3C3F41");
+                rootCache.addProperty("bordercolor", "#000000");
+                rootCache.addProperty("tabpanelcolor", "#3F3F3F");
+                rootCache.addProperty("fontcolor", "#00ff00");
+                rootCache.addProperty("themetouse", "FlatDarkLaf");
                 save();
             }
             load();
@@ -279,7 +281,7 @@ public class CustomTheme implements Theme {
 
         void load() {
             try {
-                rootCache = new JSONObject(IOUtils.toString(Files.newInputStream(configFile.toPath()), Charset.defaultCharset()));
+                rootCache = JsonParser.parseString(IOUtils.toString(Files.newInputStream(configFile.toPath()), Charset.defaultCharset())).getAsJsonObject();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -294,12 +296,14 @@ public class CustomTheme implements Theme {
         }
 
         String get(String name) {
-            return rootCache.optString(name);
+            JsonElement value = rootCache.get(name);
+            if (value == null) return null;
+            return value.getAsString();
         }
 
         void set(String name, String value) {
             rootCache.remove(name);
-            rootCache.put(name, value);
+            rootCache.addProperty(name, value);
             save();
         }
     }

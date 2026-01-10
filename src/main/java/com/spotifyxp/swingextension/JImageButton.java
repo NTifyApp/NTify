@@ -17,7 +17,6 @@ package com.spotifyxp.swingextension;
 
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.utils.AsyncActionListener;
-import com.spotifyxp.utils.Resources;
 import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
 import org.apache.batik.swing.JSVGCanvas;
 import org.apache.batik.util.XMLResourceDescriptor;

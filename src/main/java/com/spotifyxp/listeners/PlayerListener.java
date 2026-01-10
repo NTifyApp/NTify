@@ -17,9 +17,6 @@ package com.spotifyxp.listeners;
 
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Episode;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlayableId;
@@ -37,10 +34,7 @@ import com.spotifyxp.utils.TrackUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
-import org.json.JSONException;
 
-import java.io.IOException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Objects;
 import java.util.Timer;

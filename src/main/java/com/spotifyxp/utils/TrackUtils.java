@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,27 +19,17 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.IPlaylistItem;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.*;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings({"SameReturnValue", "IntegerDivisionInFloatingPointContext", "BooleanMethodIsAlwaysInverted"})
 public class TrackUtils {
-    public static String calculateFileSizeKb(Track t) {
-        return calculateFileSizeKb(t.getDurationMs());
-    }
-
     public static String calculateFileSizeKb(long milliseconds) {
         long minutes = getMMofTrack(milliseconds);
         //720kb per minute if normal 96kbps
@@ -61,10 +51,6 @@ public class TrackUtils {
             toret = "N/A";
         }
         return toret + " KB";
-    }
-
-    public static String calculateFileSizeKb(TrackSimplified t) {
-        return calculateFileSizeKb(t.getDurationMs());
     }
 
     public static long getMMofTrack(long milliseconds) {
@@ -143,10 +129,10 @@ public class TrackUtils {
         return "Unknown (BUG)";
     }
 
-    public static String getArtists(Metadata.Artist[] artists) {
+    public static String getArtists(List<Metadata.Artist> artists) {
         StringBuilder builder = new StringBuilder();
         for (Metadata.Artist artist : artists) {
-            if (!(builder.length() == artists.length - 1)) {
+            if (!(builder.length() == artists.size() - 1)) {
                 builder.append(artist.getName()).append(", ");
             } else {
                 builder.append(artist.getName());
@@ -155,26 +141,14 @@ public class TrackUtils {
         return builder.toString();
     }
 
-    public static String getArtists(ArtistSimplified[] artists) {
-        StringBuilder builder = new StringBuilder();
-        for (ArtistSimplified artist : artists) {
-            if (!(builder.length() == artists.length - 1)) {
-                builder.append(artist.getName()).append(", ");
-            } else {
-                builder.append(artist.getName());
-            }
-        }
-        return builder.toString();
-    }
-
-    public static boolean trackHasArtist(ArtistSimplified[] artists, String tosearchfor, boolean ignoreCase) {
-        for (ArtistSimplified artist : artists) {
+    public static boolean trackHasArtist(String[] artists, String tosearchfor, boolean ignoreCase) {
+        for (String artist : artists) {
             if (ignoreCase) {
-                if (artist.getName().equalsIgnoreCase(tosearchfor)) {
+                if (artist.equalsIgnoreCase(tosearchfor)) {
                     return true;
                 }
             } else {
-                if (artist.getName().equals(tosearchfor)) {
+                if (artist.equals(tosearchfor)) {
                     return true;
                 }
             }
@@ -184,113 +158,10 @@ public class TrackUtils {
 
     public static boolean isTrackLiked(String id) {
         try {
-            return InstanceManager.getSpotifyApi().checkUsersSavedTracks(id).build().execute()[0];
+            return PublicValues.session.api().user().isInLibrary(new String[] {"spotify:track:" + id})[0];
         } catch (Exception e) {
             ConsoleLogging.Throwable(e);
             return false;
         }
-    }
-
-    public static Runnable initializeLazyLoadingForPlaylists(
-            JScrollPane scrollPane,
-            ArrayList<String> uricache,
-            DefTable table, 
-            int[] visibleCount,
-            String playlistId,
-            boolean[] inProg,
-            boolean loadnew) {
-        if (loadnew) {
-            uricache.clear();
-            ((DefaultTableModel) table.getModel()).setRowCount(0);
-        }
-        DefaultTableModel model = (DefaultTableModel) table.getModel();
-        try {
-            int count = 0;
-            int songTableHeight = scrollPane.getHeight();
-            int limitTrackHeight = table.getRowHeight() * visibleCount[0];
-            while (songTableHeight > limitTrackHeight) {
-                limitTrackHeight = table.getRowHeight() * (visibleCount[0] + 1);
-            }
-            for (PlaylistTrack track : InstanceManager.getSpotifyApi().getPlaylistsItems(playlistId).limit(visibleCount[0]).build().execute().getItems()) {
-                if (!uricache.contains(track.getTrack().getUri())) {
-                    String a = TrackUtils.getArtists(InstanceManager.getSpotifyApi().getTrack(track.getTrack().getId()).build().execute().getArtists());
-                    model.insertRow(count, new Object[]{track.getTrack().getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getTrack()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getTrack().getDurationMs())});
-                    uricache.add(count, track.getTrack().getUri());
-                    count++;
-                }
-            }
-        } catch (IOException e) {
-            ConsoleLogging.Throwable(e);
-        }
-        Runnable deinitRunnable = () -> {};
-        //ToDo: Add parameter for storing if the function should add a mouse listener
-        if (scrollPane.getName() == null || !scrollPane.getName().equals("MouseListenerTrackUtilsActive")) { // <- This bad
-            scrollPane.setName("MouseListenerTrackUtilsActive"); // <- This bad
-            MouseWheelListener listener = new MouseWheelListener() {
-                @Override
-                public void mouseWheelMoved(MouseWheelEvent e) {
-                    if (!inProg[0]) {
-                        inProg[0] = true;
-                        BoundedRangeModel m = scrollPane.getVerticalScrollBar().getModel();
-                        int extent = m.getExtent();
-                        int maximum = m.getMaximum();
-                        int value = m.getValue();
-                        if (value + extent >= maximum / 4) {
-                            if (scrollPane.isVisible()) {
-                                Thread thread = new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        try {
-                                            int counter = 0;
-                                            int last = 0;
-                                            int parsed = 0;
-                                            while (parsed != visibleCount[0]) {
-                                                PlaylistTrack[] track;
-                                                Paging<PlaylistTrack> playlist = InstanceManager.getSpotifyApi().getPlaylistsItems(playlistId).limit(visibleCount[0]).offset(table.getRowCount()).build().execute();
-                                                if (playlist.getTotal() <= uricache.size()) {
-                                                    return;
-                                                }
-                                                track = playlist.getItems();
-                                                for (PlaylistTrack t : track) {
-                                                    uricache.add(t.getTrack().getUri());
-                                                    String a = TrackUtils.getArtists(InstanceManager.getSpotifyApi().getTrack(t.getTrack().getId()).build().execute().getArtists());
-                                                    table.addModifyAction(() -> ((DefaultTableModel) table.getModel()).addRow(new Object[]{t.getTrack().getName() + " - " + a, TrackUtils.calculateFileSizeKb(t.getTrack()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(t.getTrack().getDurationMs())}));
-                                                    parsed++;
-                                                }
-                                                if (parsed == last) {
-                                                    if (counter > 1) {
-                                                        break;
-                                                    }
-                                                    counter++;
-                                                } else {
-                                                    counter = 0;
-                                                }
-                                                last = parsed;
-                                            }
-                                            inProg[0] = false;
-                                        } catch (Exception e) {
-                                            ConsoleLogging.error("Error loading playlist tracks!");
-                                            inProg[0] = false;
-                                            throw new RuntimeException(e);
-                                        }
-                                    }
-                                }, "Lazy load next");
-                                thread.start();
-                            }
-                        }
-                    }
-                }
-            };
-            scrollPane.addMouseWheelListener(listener);
-            deinitRunnable = () -> {
-                scrollPane.removeMouseWheelListener(listener);
-                scrollPane.setName("");
-            };
-        }
-        return deinitRunnable;
-    }
-
-    public static String calculateFileSizeKb(IPlaylistItem track) {
-        return calculateFileSizeKb(track.getDurationMs());
     }
 }

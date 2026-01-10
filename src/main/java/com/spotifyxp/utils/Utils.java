@@ -16,15 +16,18 @@
 package com.spotifyxp.utils;
 
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.swingextension.JFrame;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.StandardOpenOption;
@@ -139,5 +142,27 @@ public class Utils {
             int dot = version.indexOf(".");
             if(dot != -1) { version = version.substring(0, dot); }
         } return Integer.parseInt(version);
+    }
+
+    public static void openBrowser(String url) throws URISyntaxException, IOException {
+        String browserpath = "";
+        if(new File(PublicValues.fileslocation, "credentials.json").exists()) {
+            browserpath = PublicValues.config.getString(ConfigValues.mypalpath.name);
+            if(!browserpath.isEmpty()) {
+                ProcessBuilder builder = new ProcessBuilder("\"" + browserpath + "\"", url);
+                try {
+                    builder.start();
+                } catch (IOException e) {
+                    ConsoleLogging.Throwable(e);
+                }
+            }
+        }
+        if (browserpath.isEmpty()) {
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(new URI(url));
+            }else{
+                JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("utils.browserpath.unabletoopen.message"), PublicValues.language.translate("utils.browserpath.unabletoopen.title"), JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 }

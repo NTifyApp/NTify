@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,24 @@
  */
 package com.spotifyxp.panels;
 
+import com.google.gson.Gson;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.se.michaelthelin.spotify.enums.ModelObjectType;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Artist;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.PagingCursorbased;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.ArtistId;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.protogens.ExtendedMetadataStuff;
+import com.spotifyxp.utils.SpotifyUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -74,18 +80,15 @@ public class LibraryArtists extends JScrollPane {
             public void run() {
                 new Thread(() -> {
                     try {
-                        InstanceManager.getSpotifyApi().unfollowArtistsOrUsers(
-                                ModelObjectType.ARTIST,
-                                new String[]{
-                                        artistsUris.get(artistsTable.getSelectedRow()).split(":")[2]
-                                }
-                        ).build().execute();
+                        PublicValues.session.api().artist().unfollow(
+                                ArtistId.fromUri(artistsUris.get(artistsTable.getSelectedRow()))
+                        );
                         Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
                                 artistsUris.get(artistsTable.getSelectedRow()),
                                 LibraryChange.Type.ARTIST,
                                 LibraryChange.Action.REMOVE
                         ));
-                    } catch (IOException e) {
+                    } catch (IOException | MercuryClient.MercuryException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -101,19 +104,31 @@ public class LibraryArtists extends JScrollPane {
                 if(change.getAction() == LibraryChange.Action.ADD) {
                     new Thread(() -> {
                         try {
-                            Artist artist = InstanceManager.getSpotifyApi().getArtist(change.getUri().split(":")[2]).build().execute();
-                            artistsUris.add(0, artist.getUri());
+                            ExtendedMetadata.BatchedExtensionResponse response = PublicValues.session.api().getExtendedMetadata(ExtendedMetadata.BatchedEntityRequest.newBuilder()
+                                            .addEntityRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                                    .setEntityUri(change.getUri())
+                                                    .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                                            .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ARTIST_V4)
+                                                            .build())
+                                                    .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                                            .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ON_PLATFORM_REPUTATION_TRAIT)
+                                                            .build())
+                                                    .build())
+                                    .build());
+                            Metadata.Artist artist = Metadata.Artist.parseFrom(response.getExtendedMetadata(0).getExtensionData(1).getExtensionData().getValue());
+                            ExtendedMetadataStuff.OnPlatformReputationTrait reputationTrait = ExtendedMetadataStuff.OnPlatformReputationTrait.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
+                            artistsUris.add(0, change.getUri());
                             artistsTable.addModifyAction(new Runnable() {
                                 @Override
                                 public void run() {
                                     ((DefaultTableModel) artistsTable.getModel()).insertRow(0, new Object[]{
                                             artist.getName(),
-                                            artist.getFollowers().getTotal(),
-                                            String.join(", ", artist.getGenres())
+                                            SpotifyUtils.formatMonthlyListeners(reputationTrait.getMonthlyListeners()),
+                                            String.join(", ", artist.getGenreList())
                                     });
                                 }
                             });
-                        } catch (IOException e) {
+                        } catch (IOException | MercuryClient.MercuryException e) {
                             throw new RuntimeException(e);
                         }
                     }, "Library add artist").start();
@@ -143,40 +158,52 @@ public class LibraryArtists extends JScrollPane {
     private void fetch() {
         try {
             int limit = 50;
-            PagingCursorbased<Artist> artists = InstanceManager.getSpotifyApi().getUsersFollowedArtists(
-                    ModelObjectType.ARTIST
-            ).build().execute();
-            int total = artists.getTotal();
+            UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Artists"}, null, limit, 0);
+            UnofficialSpotifyAPI.LibraryPage libraryV3 = response.data.me.libraryV3;
+            int total = libraryV3.totalCount;
             int offset = 0;
+            Gson gson = new Gson();
             while(offset < total) {
-                String lastArtist = "";
-                for(Artist artist : artists.getItems()) {
-                    artistsUris.add(artist.getUri());
-                    artistsTable.addModifyAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            ((DefaultTableModel) artistsTable.getModel()).addRow(new Object[]{
-                                    artist.getName(),
-                                    artist.getFollowers().getTotal(),
-                                    String.join(", ", artist.getGenres())
-                            });
-                        }
+                ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
+                for(UnofficialSpotifyAPI.LibraryItemEntry artistItem : libraryV3.items) {
+                    UnofficialSpotifyAPI.ArtistItem artistItemData = gson.fromJson(artistItem.item.data, UnofficialSpotifyAPI.ArtistItem.class);
+                    helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                    .setEntityUri(artistItem.item.uri)
+                                    .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                            .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ARTIST_V4)
+                                            .build())
+                                    .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                            .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ON_PLATFORM_REPUTATION_TRAIT)
+                                            .build())
+                            .build(), data -> {
+                        Metadata.Artist artist = Metadata.Artist.parseFrom(data[0].getValue());
+                        ExtendedMetadataStuff.OnPlatformReputationTrait reputationTrait = ExtendedMetadataStuff.OnPlatformReputationTrait.parseFrom(data[1].getValue());
+                        artistsUris.add(artistItemData.data.uri);
+                        artistsTable.addModifyAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                ((DefaultTableModel) artistsTable.getModel()).addRow(new Object[]{
+                                        artist.getName(),
+                                        SpotifyUtils.formatMonthlyListeners(reputationTrait.getMonthlyListeners()),
+                                        String.join(", ", artist.getGenreList())
+                                });
+                            }
+                        });
                     });
-                    lastArtist = artist.getId();
                     offset++;
                 }
-                artists = InstanceManager.getSpotifyApi().getUsersFollowedArtists(
-                        ModelObjectType.ARTIST
-                ).limit(limit).after(lastArtist).build().execute();
+                helper.execute(PublicValues.session.api(), (exception, resp) -> {
+                    ConsoleLogging.Throwable(exception);
+                });
+                response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Artists"}, null, limit, offset);
+                libraryV3 = response.data.me.libraryV3;
             }
-        }catch (IOException e) {
+        }catch (IOException | MercuryClient.MercuryException e) {
             ConsoleLogging.Throwable(e);
         }
     }
 
     public void fill() {
-        new Thread(() -> {
-            fetch();
-        }).start();
+        new Thread(this::fetch).start();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,29 +15,23 @@
  */
 package com.spotifyxp.utils;
 
+import com.spotifyxp.PublicValues;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.EpisodeSimplified;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Image;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.TrackSimplified;
+import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
+import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.*;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.manager.InstanceManager;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class SpotifyUtils {
-    public static Image getImageForSystem(Image[] images) {
-        if (SystemUtils.getUsableRAMmb() < 512) {
-            for (Image i : images) {
-                if (i.getWidth() == 64) {
-                    return i;
-                }
-            }
-            ConsoleLogging.warning("Can't get the right image for the system ram! Using the default one");
-        }
-        return images[0];
-    }
 
     public static Metadata.Image getImageForSystem(List<Metadata.Image> images) {
         if (SystemUtils.getUsableRAMmb() < 512) {
@@ -51,155 +45,106 @@ public class SpotifyUtils {
         return images.get(0);
     }
 
-    public static ArrayList<TrackSimplified> getAllTracksAlbum(String uri) {
-        ArrayList<TrackSimplified> tracks = new ArrayList<>();
-        try {
-            int offset = 0;
-            int limit = 50;
-            int parsed = 0;
-            int total = InstanceManager.getSpotifyApi().getAlbumsTracks(uri.split(":")[2]).build().execute().getTotal();
-            int counter = 0;
-            int last = 0;
-            while (parsed != total) {
-                for (TrackSimplified track : InstanceManager.getSpotifyApi().getAlbumsTracks(uri.split(":")[2]).offset(offset).limit(limit).build().execute().getItems()) {
-                    tracks.add(track);
-                    parsed++;
-                }
-                if (last == parsed) {
-                    if (counter > 1) {
-                        break;
-                    }
-                    counter++;
-                } else {
-                    counter = 0;
-                }
-                last = parsed;
-                offset += limit;
+    public static ArrayList<Metadata.Track> getAllTracksAlbum(String uri) throws IOException, MercuryClient.MercuryException {
+        Metadata.Album album = PublicValues.session.api().album().getMetadata(AlbumId.fromUri(uri));
+        ApiClient.BatchedRequestHelper batchedRequestHelper = new ApiClient.BatchedRequestHelper();
+        ArrayList<Metadata.Track> tracks = new ArrayList<>();
+
+        for (Metadata.Disc disc : album.getDiscList()) {
+            for (Metadata.Track track : disc.getTrackList()) {
+                batchedRequestHelper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                .setEntityUri(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri())
+                                .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                        .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                        .build())
+                        .build(), (data) -> {
+                    tracks.add(Metadata.Track.parseFrom(data[0].getValue()));
+                });
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
+
+        batchedRequestHelper.execute(PublicValues.session.api(), ((exception, response) -> ConsoleLogging.Throwable(exception)));
+
         return tracks;
     }
 
-    /*public static ArrayList<PlaylistTrack> getAllTracksPlaylist(String uri) {
-        ArrayList<PlaylistTrack> tracks = new ArrayList<>();
-        try {
-            int offset = 0;
-            int limit = 50;
-            int parsed = 0;
-            int total = InstanceManager.getSpotifyApi().getPlaylistsItems(uri.split(":")[2]).build().execute().getTotal();
-            int counter = 0;
-            int last = 0;
-            while (parsed != total) {
-                for (PlaylistTrack track : InstanceManager.getSpotifyApi().getPlaylistsItems(uri.split(":")[2]).offset(offset).limit(limit).build().execute().getItems()) {
-                    tracks.add(track);
-                    parsed++;
-                }
-                if (last == parsed) {
-                    if (counter > 1) {
-                        break;
-                    }
-                    counter++;
-                } else {
-                    counter = 0;
-                }
-                last = parsed;
-                offset += limit;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return tracks;
-    }*/
+    public static ArrayList<Metadata.Episode> getAllEpisodesShow(String uri) throws IOException, MercuryClient.MercuryException {
+        Metadata.Show show = PublicValues.session.api().show().getMetadata(ShowId.fromUri(uri));
+        ApiClient.BatchedRequestHelper batchedRequestHelper = new ApiClient.BatchedRequestHelper();
+        ArrayList<Metadata.Episode> episodes = new ArrayList<>();
 
-    public static ArrayList<EpisodeSimplified> getAllEpisodesShow(String uri) {
-        ArrayList<EpisodeSimplified> episodes = new ArrayList<>();
-        try {
-            int offset = 0;
-            int limit = 50;
-            int parsed = 0;
-            int total = InstanceManager.getSpotifyApi().getShowEpisodes(uri.split(":")[2]).build().execute().getTotal();
-            int counter = 0;
-            int last = 0;
-            while (parsed != total) {
-                for (EpisodeSimplified episode : InstanceManager.getSpotifyApi().getShowEpisodes(uri.split(":")[2]).offset(offset).limit(limit).build().execute().getItems()) {
-                    episodes.add(episode);
-                    parsed++;
-                }
-                if (last == parsed) {
-                    if (counter > 1) {
-                        break;
-                    }
-                    counter++;
-                } else {
-                    counter = 0;
-                }
-                last = parsed;
-                offset += limit;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        for (Metadata.Episode episode : show.getEpisodeList()) {
+            batchedRequestHelper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                            .setEntityUri(EpisodeId.fromHex(Utils.bytesToHex(episode.getGid())).toSpotifyUri())
+                            .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                    .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.EPISODE_V4)
+                                    .build())
+                    .build(), (data) -> {
+                episodes.add(Metadata.Episode.parseFrom(data[0].getValue()));
+            });
         }
+
         return episodes;
     }
 
-    public static ArrayList<AlbumSimplified> getAllAlbumsArtist(String uri) {
-        ArrayList<AlbumSimplified> albums = new ArrayList<>();
-        try {
-            int offset = 0;
-            int limit = 50;
-            int parsed = 0;
-            int total = InstanceManager.getSpotifyApi().getArtistsAlbums(uri.split(":")[2]).build().execute().getTotal();
-            int counter = 0;
-            int last = 0;
-            while (parsed != total) {
-                for (AlbumSimplified album : InstanceManager.getSpotifyApi().getArtistsAlbums(uri.split(":")[2]).offset(offset).limit(limit).build().execute().getItems()) {
-                    albums.add(album);
-                    parsed++;
+    public static ArrayList<TrackOrEpisode> getAllTracksPlaylist(String uri) throws IOException, MercuryClient.MercuryException {
+        Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().playlist().get(PlaylistId.fromUri(uri));
+        ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
+        ArrayList<TrackOrEpisode> tracks = new ArrayList<>();
+        for (Playlist4ApiProto.Item item : listContent.getContents().getItemsList()) {
+            switch (item.getUri().split(":")[1]) {
+                case "track": {
+                    helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                            .setEntityUri(item.getUri())
+                            .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                    .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                    .build())
+                            .build(), data -> {
+                        Metadata.Track track = Metadata.Track.parseFrom(data[0].getValue());
+                        tracks.add(new TrackOrEpisode(track, null, true));
+                    });
+                    break;
                 }
-                if (last == parsed) {
-                    if (counter > 1) {
-                        break;
-                    }
-                    counter++;
-                } else {
-                    counter = 0;
+                case "episode": {
+                    helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                            .setEntityUri(item.getUri())
+                            .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                    .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.EPISODE_V4)
+                                    .build())
+                            .build(), data -> {
+                        Metadata.Episode episode = Metadata.Episode.parseFrom(data[0].getValue());
+                        tracks.add(new TrackOrEpisode(null, episode, false));
+                    });
+                    break;
                 }
-                last = parsed;
-                offset += limit;
+                default:
+                    ConsoleLogging.warning("Unsupported playlist item type: " + item.getUri());
+                    break;
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
-        return albums;
+        helper.execute(PublicValues.session.api(), ((exception, response) -> ConsoleLogging.Throwable(exception)));
+        return tracks;
     }
 
-    /*public static ArrayList<Track> getAllTopTracksArtist(String uri) {
-        ArrayList<Track> tracks = new ArrayList<>();
-        try {
-            int parsed = 0;
-            int total = InstanceManager.getSpotifyApi().getArtistsTopTracks(uri.split(":")[2], PublicValues.countryCode).build().execute().length;
-            int counter = 0;
-            int last = 0;
-            while (parsed != total) {
-                for (Track track : InstanceManager.getSpotifyApi().getArtistsTopTracks(uri.split(":")[2], PublicValues.countryCode).build().execute()) {
-                    tracks.add(track);
-                    parsed++;
-                }
-                if (last == parsed) {
-                    if (counter > 1) {
-                        break;
-                    }
-                    counter++;
-                } else {
-                    counter = 0;
-                }
-                last = parsed;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public static class TrackOrEpisode {
+        public Metadata.Track track;
+        public Metadata.Episode episode;
+        public boolean isTrack;
+
+        public TrackOrEpisode(Metadata.Track track, Metadata.Episode episode, boolean isTrack) {
+            this.track = track;
+            this.episode = episode;
+            this.isTrack = isTrack;
         }
-        return tracks;
-    }*/
+    }
+
+    public static String formatMonthlyListeners(long monthlyListeners) {
+        if(monthlyListeners >= 1_000_000) {
+            return String.format(Locale.ENGLISH, "%.1fM", monthlyListeners / 1_000_000.0);
+        } else if(monthlyListeners >= 1_000) {
+            return String.format(Locale.ENGLISH, "%.1fK", monthlyListeners / 1_000.0);
+        } else {
+            return String.valueOf(monthlyListeners);
+        }
+    }
 }

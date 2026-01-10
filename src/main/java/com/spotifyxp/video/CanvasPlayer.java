@@ -19,8 +19,6 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.deps.com.spotify.canvaz.CanvazOuterClass;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Episode;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
@@ -46,11 +44,11 @@ public class CanvasPlayer extends JFrame {
     private File cachePath;
     private boolean videoLoaded = false;
 
-    public CanvasPlayer() {
+    public CanvasPlayer() throws IOException {
         setTitle(PublicValues.language.translate("ui.canvasplayer.title").replace("%APPNAME%", ApplicationUtils.getName()));
         setPreferredSize(new Dimension(290, 460));
         if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
-            cachePath = new File(PublicValues.appLocation, "cvnscache");
+            cachePath = new File(PublicValues.fileslocation, "cvnscache");
             if(!cachePath.exists()) {
                 if(!cachePath.mkdir()) {
                     ConsoleLogging.error("Failed to create cvnscache directory");
@@ -104,7 +102,7 @@ public class CanvasPlayer extends JFrame {
         try {
             if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
                 clearCache();
-                String cvnsUrl = PublicValues.session.api().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
+                String cvnsUrl = PublicValues.session.api().track().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
                         .addEntities(CanvazOuterClass.EntityCanvazRequest.Entity.newBuilder()
                                 .setEntityUri(uri)
                                 .buildPartial())
@@ -123,7 +121,7 @@ public class CanvasPlayer extends JFrame {
                 PublicValues.vlcPlayer.play(new File(cachePath, convertUrlToName(cvnsUrl)).getAbsolutePath());
                 videoLoaded = true;
             } else {
-                String cvnsUrl = PublicValues.session.api().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
+                String cvnsUrl = PublicValues.session.api().track().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
                         .addEntities(CanvazOuterClass.EntityCanvazRequest.Entity.newBuilder()
                                 .setEntityUri(uri)
                                 .buildPartial())

@@ -15,19 +15,21 @@
  */
 package com.spotifyxp.swingextension;
 
+import com.spotifyxp.Initiator;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.utils.GraphicalMessage;
-import com.spotifyxp.utils.Resources;
 import org.apache.commons.io.IOUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class JImagePanel extends JPanel {
     private BufferedImage image;
@@ -66,7 +68,7 @@ public class JImagePanel extends JPanel {
     // ---------- Image setters ----------
     public void setImage(String resourcePath) {
         recalculate = null;
-        try (InputStream in = new Resources().readToInputStream(resourcePath)) {
+        try (InputStream in = Initiator.class.getResourceAsStream(resourcePath)) {
             imageBytes = IOUtils.toByteArray(in);
         } catch (IOException ex) {
             ConsoleLogging.Throwable(ex);

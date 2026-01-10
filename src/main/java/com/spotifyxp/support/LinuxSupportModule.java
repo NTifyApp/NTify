@@ -18,8 +18,8 @@ package com.spotifyxp.support;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.deps.org.mpris.*;
 import com.spotifyxp.deps.org.mpris.mpris.PlaybackStatus;
-import com.spotifyxp.deps.se.michaelthelin.spotify.exceptions.detailed.NotFoundException;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlayableId;
 import com.spotifyxp.deps.xyz.gianlu.librespot.player.Player;
 import com.spotifyxp.events.EventSubscriber;
@@ -29,7 +29,8 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.utils.ApplicationUtils;
-import jnr.ffi.Runtime;
+import com.spotifyxp.utils.GraphicalMessage;
+import com.spotifyxp.utils.SpotifyUtils;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.jetbrains.annotations.NotNull;
@@ -58,8 +59,11 @@ public class LinuxSupportModule implements SupportModule {
     public void run() {
         PublicValues.enableMediaControl = false;
         if (!PublicValues.customSaveDir) {
-            PublicValues.fileslocation = System.getProperty("user.home") + "/.local/share/" + ApplicationUtils.getName();
-            PublicValues.appLocation = PublicValues.fileslocation;
+            try {
+                PublicValues.fileslocation = System.getProperty("user.home") + "/.local/share/" + ApplicationUtils.getName();
+            } catch (IOException e) {
+                GraphicalMessage.sorryErrorExit("Failed to get user home directory: " + e.getMessage());
+            }
             PublicValues.configfilepath = PublicValues.fileslocation + "/config.json";
             PublicValues.tempPath = System.getProperty("java.io.tmpdir");
         }
@@ -140,7 +144,7 @@ public class LinuxSupportModule implements SupportModule {
                         }
                     })
                     .build(ApplicationUtils.getName());
-        } catch (DBusException e) {
+        } catch (DBusException | IOException e) {
             ConsoleLogging.warning("Failed to initialize MPRIS support");
         }
         TimerTask task = new TimerTask() {
@@ -224,14 +228,13 @@ public class LinuxSupportModule implements SupportModule {
                             mpris.setMetadata(new Metadata.Builder()
                                     .setTrackID(new DBusPath("/NTify/Track/Current"))
                                     .setTitle(metadata.getName())
-                                    .setArtURL(URI.create(InstanceManager.getSpotifyApi().getTrack(metadata.id.toSpotifyUri().split(":")[2]).build().execute().getAlbum().getImages()[0].getUrl()))
+                                    .setArtURL(URI.create("https://i.scdn.co/image/" +
+                                            Utils.bytesToHex(SpotifyUtils.getImageForSystem(metadata.getCoverImage().getImageList()).getFileId()).toLowerCase()))
                                     .setLength((int) TimeUnit.MILLISECONDS.toMicros(metadata.duration()))
                                     .setArtists(Collections.singletonList(metadata.getArtist()))
                                     .setAlbumName(metadata.getAlbumName())
                                     .build());
-                        } catch (NotFoundException e) {
-                            ConsoleLogging.warning("Resource not found in onMetadataAvailable");
-                        } catch (DBusException | IOException ex) {
+                        } catch (DBusException ex) {
                             throw new RuntimeException(ex);
                         }
                     }

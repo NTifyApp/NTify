@@ -17,10 +17,14 @@ package com.spotifyxp.lib;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.utils.ApplicationUtils;
-import com.spotifyxp.utils.Resources;
+import org.apache.commons.io.IOUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -306,7 +310,7 @@ public class libLanguage {
 
     JsonObject jsoncache = null;
 
-    public String translateHTML(String htmlfile) {
+    public String translateHTML(String htmlfile) throws IOException {
         StringBuilder cache = new StringBuilder();
         for (String s : htmlfile.split("\n")) {
             if (s.equalsIgnoreCase("")) {
@@ -325,7 +329,7 @@ public class libLanguage {
         final String[] ret = {key};
         if(jsoncache == null) {
             try {
-                jsoncache = new Gson().fromJson(removeComment(new Resources().readToString(clazz, lf + "/" + languageCode + ".json")), JsonObject.class);
+                jsoncache = new Gson().fromJson(removeComment(IOUtils.toString(Initiator.class.getResourceAsStream("/" + lf + "/" + languageCode + ".json"), StandardCharsets.UTF_8)), JsonObject.class);
             } catch (Exception e) {
                 // Can be too early in init. So no ConsoleLogging.Throwable
                 ConsoleLogging.error("Failed to get translation for: " + key);
@@ -343,7 +347,12 @@ public class libLanguage {
             // Can be too early in init. So no ConsoleLogging.Throwable
             e.printStackTrace();
         }
-        return ret[0].replaceAll("%APPNAME%", ApplicationUtils.getName());
+        try {
+            return ret[0].replaceAll("%APPNAME%", ApplicationUtils.getName());
+        }catch (IOException e) {
+            ConsoleLogging.Throwable(e);
+            return ret[0];
+        }
     }
 
     public ArrayList<String> getAvailableLanguages() {
@@ -352,7 +361,7 @@ public class libLanguage {
             if (languages.contains(language.getName())) {
                 continue;
             }
-            if (new Resources().readToInputStream(clazz, "lang/" + language.getCode() + ".json") != null) {
+            if (Initiator.class.getResourceAsStream("/lang/" + language.getCode() + ".json") != null) {
                 languages.add(language.getName());
             }
         }

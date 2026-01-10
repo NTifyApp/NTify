@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.swingextension.JDialog;
 import com.spotifyxp.swingextension.JImagePanel;
-import com.spotifyxp.utils.StringUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -45,7 +44,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -62,7 +60,7 @@ public class AddPlaylistDialog extends JDialog {
     public JButton playlistChangeImageButton;
     public JImagePanel playlistImage;
 
-    private byte[] imageBytes;
+    private byte[] imageBytes = new byte[0];
     private final ContextMenu fileSelectMenu;
     private final JDialog thisDialog = this;
 
@@ -142,20 +140,20 @@ public class AddPlaylistDialog extends JDialog {
         /**
          * Can be empty
          */
-        public final String imageBase64;
+        public final byte[] imageData;
         public final String name;
         public final String description;
         public final boolean isPublic;
         public final boolean isCollaborative;
 
         Playlist(
-                String imageBase64,
+                byte[] imageData,
                 String name,
                 String description,
                 boolean isPublic,
                 boolean isCollaborative
         ) {
-            this.imageBase64 = imageBase64;
+            this.imageData = imageData;
             this.name = name;
             this.description = description;
             this.isPublic = isPublic;
@@ -290,20 +288,12 @@ public class AddPlaylistDialog extends JDialog {
         okbutton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String base64EncodedImageData = "";
-                if (imageBytes != null) {
-                    base64EncodedImageData = Base64.getEncoder().encodeToString(imageBytes);
-                    if (StringUtils.calculateStringSizeInKilobytes(base64EncodedImageData) > 255.0) {
-                        JOptionPane.showMessageDialog(thisDialog, PublicValues.language.translate("addplaylist.dialog.toobig.description"), PublicValues.language.translate("addplaylist.dialog.toobig.title"), JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                }
                 if (playlistName.getText().isEmpty()) {
                     JOptionPane.showMessageDialog(thisDialog, PublicValues.language.translate("addplaylist.dialog.noname.description"), PublicValues.language.translate("addplaylist.dialog.noname.title"), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 ok.run(new Playlist(
-                        base64EncodedImageData,
+                        imageBytes,
                         playlistName.getText(),
                         playlistDescriptionText.getText(),
                         playlistVisibility.isSelected(),

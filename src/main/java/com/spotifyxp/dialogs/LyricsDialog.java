@@ -17,6 +17,7 @@ package com.spotifyxp.dialogs;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.configuration.ConfigValues;
@@ -33,14 +34,13 @@ import com.spotifyxp.swingextension.RAWTextArea;
 import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.ClipboardUtil;
 import com.spotifyxp.utils.GraphicalMessage;
-import com.spotifyxp.utils.Resources;
-import org.json.JSONException;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class LyricsDialog extends JDialog {
@@ -49,7 +49,7 @@ public class LyricsDialog extends JDialog {
     public JPanel paintPanel;
     private final ArrayList<ColoredLyricsLine> displayedLines = new ArrayList<>();
 
-    public LyricsDialog() {
+    public LyricsDialog() throws IOException {
         $$$setupUI$$$();
         setTitle(PublicValues.language.translate("ui.lyrics.title").replace("%APPNAME%", ApplicationUtils.getName()));
         setContentPane(contentPanel);
@@ -62,19 +62,19 @@ public class LyricsDialog extends JDialog {
         try {
             if (isVisible()) {
                 lyrics = InstanceManager.getUnofficialSpotifyApi().getLyrics(uri);
-                if (lyrics == null) throw new JSONException("");
+                if (lyrics == null) throw new NullPointerException();
                 //New lyrics
             } else {
                 lyrics = InstanceManager.getUnofficialSpotifyApi().getLyrics(uri);
-                if (lyrics == null) throw new JSONException("");
+                if (lyrics == null) throw new NullPointerException();
                 addWindowListener(new WindowAdapter() {
                     @Override
                     public void windowClosing(WindowEvent e) {
                         super.windowClosing(e);
                         if (PublicValues.theme.isLight()) {
-                            PlayerArea.playerAreaLyricsButton.setImage(new Resources().readToInputStream("icons/microphonedark.svg"));
+                            PlayerArea.playerAreaLyricsButton.setImage(Initiator.class.getResourceAsStream("/icons/microphonedark.svg"));
                         } else {
-                            PlayerArea.playerAreaLyricsButton.setImage(new Resources().readToInputStream("icons/microphonewhite.svg"));
+                            PlayerArea.playerAreaLyricsButton.setImage(Initiator.class.getResourceAsStream("/icons/microphonewhite.svg"));
                         }
                         PlayerArea.playerAreaLyricsButton.isFilled = false;
                         Events.unsubscribe(SpotifyXPEvents.playerSeekedBackwards.getName(), seekedBackwards());
@@ -82,7 +82,7 @@ public class LyricsDialog extends JDialog {
                     }
                 });
                 try {
-                    setIconImage(ImageIO.read(new Resources().readToInputStream("ntify.png")));
+                    setIconImage(ImageIO.read(Initiator.class.getResourceAsStream("/ntify.png")));
                 } catch (Exception e) {
                     ConsoleLogging.Throwable(e);
                     if (PublicValues.config.getString(ConfigValues.hideExceptions.name).equals("false")) {
@@ -114,7 +114,7 @@ public class LyricsDialog extends JDialog {
             Events.subscribe(SpotifyXPEvents.playerSeekedForwards.getName(), seekedForwards());
             this.uri = uri;
             return true;
-        } catch (JSONException e) {
+        } catch (NullPointerException e) {
             ConsoleLogging.info("No song lyrics available for: " + uri);
             return false;
         }

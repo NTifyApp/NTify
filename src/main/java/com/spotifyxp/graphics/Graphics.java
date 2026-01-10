@@ -15,8 +15,8 @@
  */
 package com.spotifyxp.graphics;
 
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.utils.Resources;
 
 import java.io.InputStream;
 
@@ -84,6 +84,6 @@ public enum Graphics {
     }
 
     public InputStream getInputStream() {
-        return new Resources().readToInputStream(path);
+        return Initiator.class.getResourceAsStream(path);
     }
 }

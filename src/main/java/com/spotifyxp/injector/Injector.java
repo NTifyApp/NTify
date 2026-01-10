@@ -22,7 +22,6 @@ import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.utils.GraphicalMessage;
 import org.apache.commons.io.IOUtils;
-import org.json.JSONException;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -46,10 +45,10 @@ public class Injector {
      * Injects all extensions found inside the Extensions folder
      */
     public void autoInject() {
-        if (!new File(PublicValues.appLocation, "Extensions").exists()) {
-            new File(PublicValues.appLocation, "Extensions").mkdir();
+        if (!new File(PublicValues.fileslocation, "Extensions").exists()) {
+            new File(PublicValues.fileslocation, "Extensions").mkdir();
         } else {
-            for(File file : new File(PublicValues.appLocation, "Extensions").listFiles(new FilenameFilter() {
+            for(File file : new File(PublicValues.fileslocation, "Extensions").listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".jar");
@@ -60,7 +59,7 @@ public class Injector {
                     new File(file.getParentFile(), file.getName() + ".updated").renameTo(file);
                 }
             }
-            availableExtensions = new File(PublicValues.appLocation, "Extensions").listFiles(new FilenameFilter() {
+            availableExtensions = new File(PublicValues.fileslocation, "Extensions").listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".jar");
@@ -75,7 +74,7 @@ public class Injector {
                     break;
                 }
                 if (firstGoThrough) {
-                    for (File file : new File(PublicValues.appLocation, "Extensions").listFiles(new FilenameFilter() {
+                    for (File file : new File(PublicValues.fileslocation, "Extensions").listFiles(new FilenameFilter() {
                         @Override
                         public boolean accept(File dir, String name) {
                             return name.endsWith(".jar");
@@ -193,10 +192,6 @@ public class Injector {
             } else {
                 classLoader.close();
             }
-        } catch (JSONException jsonException) {
-            ConsoleLogging.error("Failed to load extension: '" + path + "'! Invalid plugin.json");
-            availableExtensions--;
-            entry.failed = true;
         } catch (NullPointerException nullPointerException) {
             ConsoleLogging.error("Failed to load extension: '" + path + "'! plugin.json not found");
             availableExtensions--;

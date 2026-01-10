@@ -22,14 +22,12 @@ import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.swingextension.AnsiArea;
 import com.spotifyxp.swingextension.JFrame;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

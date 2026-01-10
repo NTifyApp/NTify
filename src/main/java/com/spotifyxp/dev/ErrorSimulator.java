@@ -20,6 +20,7 @@ import com.spotifyxp.utils.ApplicationUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public class ErrorSimulator extends JFrame {
     private static JTextField exceptionDescriptionOptional;
@@ -27,7 +28,7 @@ public class ErrorSimulator extends JFrame {
     private static JButton submit;
 
     private class ContentPanel extends JPanel {
-        public ContentPanel() {
+        public ContentPanel() throws IOException {
             setLayout(null);
             setPreferredSize(new Dimension(400, 25));
             setTitle(ApplicationUtils.getName() + " - Error Generator (Developer Tools)");
@@ -50,7 +51,11 @@ public class ErrorSimulator extends JFrame {
     public void open() {
         if (isVisible()) return;
         setResizable(false);
-        getContentPane().add(new ContentPanel());
+        try {
+            getContentPane().add(new ContentPanel());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         super.open();
     }
 }

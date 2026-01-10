@@ -15,12 +15,14 @@
  */
 package com.spotifyxp.configuration;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.theming.ThemeLoader;
 import com.spotifyxp.utils.GraphicalMessage;
 import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,39 +30,25 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Objects;
 
 public class Config {
-    public static class JSONProperties extends JSONObject {
-        public JSONProperties() {
-        }
-
-        public JSONProperties(String source) {
-            super(source);
-        }
-
-        public void put(ConfigValues value) {
-            put(value.name, value.defaultValue);
-        }
-    }
-
-    JSONProperties properties;
-    JSONProperties modifiedAtRuntime;
+    JsonObject properties;
+    JsonObject modifiedAtRuntime;
 
     public Config() {
-        properties = new JSONProperties();
+        properties = new JsonObject();
         PublicValues.themeLoader = new ThemeLoader();
         if (!new File(PublicValues.configfilepath).exists()) {
             for (ConfigValues value : ConfigValues.values()) {
-                properties.put(value);
+                putConfigValue(properties, value);
             }
             if (!new File(PublicValues.fileslocation).exists()) {
                 if (!new File(PublicValues.fileslocation).mkdir()) {
                     GraphicalMessage.sorryErrorExit("Failed creating important directory");
                 }
             }
-            if (!new File(PublicValues.appLocation).exists()) {
-                if (!new File(PublicValues.appLocation).mkdir()) {
+            if (!new File(PublicValues.fileslocation).exists()) {
+                if (!new File(PublicValues.fileslocation).mkdir()) {
                     GraphicalMessage.sorryErrorExit("Failed creating important directory");
                 }
             }
@@ -78,14 +66,30 @@ public class Config {
             }
         }
         try {
-            properties = new JSONProperties(IOUtils.toString(Files.newInputStream(Paths.get(PublicValues.configfilepath)), Charset.defaultCharset()));
-            modifiedAtRuntime = new JSONProperties(IOUtils.toString(Files.newInputStream(Paths.get(PublicValues.configfilepath)), Charset.defaultCharset()));
+            properties = JsonParser.parseString(IOUtils.toString(Files.newInputStream(Paths.get(PublicValues.configfilepath)), Charset.defaultCharset())).getAsJsonObject();
+            modifiedAtRuntime = JsonParser.parseString(IOUtils.toString(Files.newInputStream(Paths.get(PublicValues.configfilepath)), Charset.defaultCharset())).getAsJsonObject();
         } catch (IOException e) {
             GraphicalMessage.sorryErrorExit("Failed creating important directory");
         }
     }
 
-    JSONProperties getProperties() {
+    private void putConfigValue(JsonObject where, ConfigValues value) {
+        switch (value.type) {
+            case BOOLEAN:
+                where.addProperty(value.name, (Boolean) value.defaultValue);
+                break;
+            case STRING:
+                where.addProperty(value.name, (String) value.defaultValue);
+                break;
+            case INT:
+                where.addProperty(value.name, (Integer) value.defaultValue);
+                break;
+            case CUSTOM:
+                ((CustomConfigValue<?>) value.defaultValue).writeDefault();
+        }
+    }
+
+    JsonObject getProperties() {
         return properties;
     }
 
@@ -101,7 +105,7 @@ public class Config {
             if(value.defaultValue instanceof CustomConfigValue) {
                 if (!properties.has(value.name)) {
                     try {
-                        properties.put(Objects.requireNonNull(ConfigValues.get(value.name)));
+                        putConfigValue(properties, value);
                         ConsoleLogging.warning("Key '" + value.name + "' not found! Creating...");
                         foundInvalid = true;
                     } catch (NullPointerException e) {
@@ -111,7 +115,7 @@ public class Config {
                 }
                 if (!(ConfigValueTypes.parse(properties.get(value.name)) == ((CustomConfigValue<?>)value.defaultValue).internalType())) {
                     ConsoleLogging.warning("Key '" + value.name + "' has the wrong value type: '" + ConfigValueTypes.parse(properties.get(value.name)) + "'! Resetting to default value...");
-                    properties.put(value.name, ((CustomConfigValue<?>)value.defaultValue).getDefaultValue());
+                    putConfigValue(properties, value);
                     foundInvalid = true;
                 }
                 if (!((CustomConfigValue<?>)value.defaultValue).check()) {
@@ -124,7 +128,7 @@ public class Config {
             //Handle some values that need extra checking
             if (!properties.has(value.name)) {
                 try {
-                    properties.put(Objects.requireNonNull(ConfigValues.get(value.name)));
+                    putConfigValue(properties, value);
                     ConsoleLogging.warning("Key '" + value.name + "' not found! Creating...");
                     foundInvalid = true;
                 } catch (NullPointerException e) {
@@ -134,7 +138,7 @@ public class Config {
             }
             if (!(ConfigValueTypes.parse(properties.get(value.name)) == value.type)) {
                 ConsoleLogging.warning("Key '" + value.name + "' has the wrong value type: '" + ConfigValueTypes.parse(properties.get(value.name)) + "'! Resetting to default value...");
-                properties.put(value.name, value.defaultValue);
+                putConfigValue(properties, value);
                 foundInvalid = true;
             }
         }
@@ -154,7 +158,21 @@ public class Config {
      * @param value Value of entry
      */
     public void write(String name, Object value) {
-        modifiedAtRuntime.put(name, value);
+        if (value instanceof Boolean) {
+            properties.addProperty(name, (Boolean) value);
+        } else if (value instanceof String) {
+            properties.addProperty(name, (String) value);
+        } else if (value instanceof Integer) {
+            properties.addProperty(name, (Integer) value);
+        } else if (value instanceof Double) {
+            properties.addProperty(name, (Double) value);
+        } else if (value instanceof Float) {
+            properties.addProperty(name, (Float) value);
+        } else if (value instanceof Long) {
+            properties.addProperty(name, (Long) value);
+        } else if (value instanceof Character) {
+            properties.addProperty(name, (Character) value);
+        }
     }
 
     public void save() {
@@ -167,15 +185,15 @@ public class Config {
     }
 
     /**
-     * Returns the value of the given entry inside the config as object
+     * Returns the value of the given entry inside the config as JsonElement
      *
      * @param name name of the entry
      * @return Object
      */
-    public Object getObject(String name) {
-        Object ret = properties.get(name);
+    public JsonElement getElement(String name) {
+        JsonElement ret = properties.get(name);
         if (ret == null) {
-            ret = "";
+            return null;
         }
         return ret;
     }
@@ -187,7 +205,7 @@ public class Config {
      * @return String
      */
     public String getString(String name) {
-        String ret = properties.getString(name);
+        String ret = properties.get(name).getAsString();
         if (ret == null) {
             ret = "";
         }
@@ -201,7 +219,9 @@ public class Config {
      * @return Boolean
      */
     public Boolean getBoolean(String name) {
-        return properties.optBoolean(name);
+        JsonElement value = properties.get(name);
+        if (value == null) return null;
+        return value.getAsBoolean();
     }
 
     /**
@@ -211,6 +231,8 @@ public class Config {
      * @return Integer
      */
     public int getInt(String name) {
-        return properties.optInt(name);
+        JsonElement value = properties.get(name);
+        if (value == null) return -1;
+        return value.getAsInt();
     }
 }

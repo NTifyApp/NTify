@@ -50,7 +50,7 @@ public final class ApResolver {
     }
 
     private void fillPool() throws IOException {
-        request("accesspoint", "dealer");
+        request("accesspoint", "dealer", "spclient");
     }
 
     public void refreshPool() throws IOException {
@@ -125,8 +125,7 @@ public final class ApResolver {
 
     @NotNull
     public String getRandomSpclient() {
-        return "spclient.wg.spotify.com:443";
-        //return getRandomOf("spclient");
+        return getRandomOf("spclient");
     }
 
     @NotNull

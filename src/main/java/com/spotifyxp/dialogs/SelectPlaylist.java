@@ -15,14 +15,14 @@
  */
 package com.spotifyxp.dialogs;
 
+import com.google.gson.Gson;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
+import com.spotifyxp.api.UnofficialSpotifyAPI;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.swingextension.JDialog;
 
 import javax.swing.*;
@@ -131,30 +131,18 @@ public class SelectPlaylist extends JDialog {
 
         new Thread(() -> {
             try {
-                int limit = 50;
-                Paging<PlaylistSimplified> playlists = InstanceManager.getSpotifyApi().getListOfCurrentUsersPlaylists()
-                        .limit(limit)
-                        .build().execute();
-                int total = playlists.getTotal();
-                int offset = 0;
-                while (offset < total) {
-                    if (!loadplaylists) break;
-                    for (PlaylistSimplified playlist : playlists.getItems()) {
-                        if (!playlist.getOwner().getId().equals(PublicValues.session.username())) {
-                            total--;
-                            continue;
-                        }
-                        uris.add(playlist.getUri());
-                        playlistsModel.addElement(playlist.getName());
+                UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[]{"Playlists"}, null, 999999, 0);
+
+                Gson gson = new Gson();
+                for (UnofficialSpotifyAPI.LibraryItemEntry item : response.data.me.libraryV3.items) {
+                    UnofficialSpotifyAPI.PlaylistItem playlistItem = gson.fromJson(gson.toJson(item.item.data), UnofficialSpotifyAPI.PlaylistItem.class);
+                    if (playlistItem.ownerV2.data.username.equals(PublicValues.session.username())) {
+                        uris.add(playlistItem.uri);
+                        playlistsModel.addElement(playlistItem.name);
                     }
-                    offset += limit;
-                    playlists = InstanceManager.getSpotifyApi().getListOfCurrentUsersPlaylists()
-                            .limit(limit)
-                            .offset(offset)
-                            .build().execute();
                 }
                 okButton.setEnabled(true);
-            } catch (IOException e) {
+            } catch (IOException | MercuryClient.MercuryException e) {
                 ConsoleLogging.Throwable(e);
                 dispose();
             }

@@ -18,7 +18,12 @@ package com.spotifyxp.panels;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -27,7 +32,6 @@ import com.spotifyxp.swingextension.DDReorderList;
 import com.spotifyxp.utils.TrackUtils;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -88,8 +92,8 @@ public class Queue extends JScrollPane implements View {
             if(!queueUriCache.isEmpty()) {
                 queueUriCache.add((String) data[0]);
                 try {
-                    Track track = InstanceManager.getSpotifyApi().getTrack(((String) data[0]).split(":")[2]).build().execute();
-                    String a = TrackUtils.getArtists(track.getArtists());
+                    Metadata.Track track = PublicValues.session.api().track().getMetadata(TrackId.fromUri((String) data[0]));
+                    String a = TrackUtils.getArtists(track.getArtistList());
                     queueListModel.addElement(track.getName() + " - " + a);
                 } catch (ArrayIndexOutOfBoundsException e) {
                     // This happens when (psst... I don't know)
@@ -104,12 +108,23 @@ public class Queue extends JScrollPane implements View {
                 queueUriCache.clear();
                 ((DefaultListModel<?>) queueList.getModel()).clear();
                 try {
+                    ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
                     for (ContextTrackOuterClass.ContextTrack t : InstanceManager.getSpotifyPlayer().tracks(true).next) {
-                        Track track = InstanceManager.getSpotifyApi().getTrack(t.getUri().split(":")[2]).build().execute();
-                        queueUriCache.add(t.getUri());
-                        String a = TrackUtils.getArtists(track.getArtists());
-                        queueListModel.addElement(track.getName() + " - " + a);
+                        helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                        .setEntityUri(t.getUri())
+                                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                                .build())
+                                .build(), dataRet -> {
+                            Metadata.Track track = Metadata.Track.parseFrom(dataRet[0].getValue());
+                            queueUriCache.add(t.getUri());
+                            String a = TrackUtils.getArtists(track.getArtistList());
+                            queueListModel.addElement(track.getName() + " - " + a);
+                        });
                     }
+                    helper.execute(PublicValues.session.api(), (exception, response) -> {
+                        ConsoleLogging.Throwable(exception);
+                    });
                 } catch (ArrayIndexOutOfBoundsException e) {
                     // This happens when (psst... I don't know)
                 } catch (Exception e) {
@@ -131,13 +146,24 @@ public class Queue extends JScrollPane implements View {
             queueUriCache.clear();
             ((DefaultListModel<?>) queueList.getModel()).clear();
             try {
+                ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
                 for (ContextTrackOuterClass.ContextTrack t : InstanceManager.getSpotifyPlayer().tracks(true).next) {
                     // Metadata map??
-                    Track track = InstanceManager.getSpotifyApi().getTrack(t.getUri().split(":")[2]).build().execute();
-                    queueUriCache.add(t.getUri());
-                    String a = TrackUtils.getArtists(track.getArtists());
-                    queueListModel.addElement(track.getName() + " - " + a);
+                    helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                    .setEntityUri(t.getUri())
+                                    .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                            .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                            .build())
+                            .build(), dataRet -> {
+                        Metadata.Track track = Metadata.Track.parseFrom(dataRet[0].getValue());
+                        queueUriCache.add(t.getUri());
+                        String a = TrackUtils.getArtists(track.getArtistList());
+                        queueListModel.addElement(track.getName() + " - " + a);
+                    });
                 }
+                helper.execute(PublicValues.session.api(), (exception, response) -> {
+                    ConsoleLogging.Throwable(exception);
+                });
             } catch (ArrayIndexOutOfBoundsException e) {
                 // This happens when (psst... I don't know)
             } catch (Exception e) {
@@ -158,12 +184,24 @@ public class Queue extends JScrollPane implements View {
             queueUriCache.clear();
             ((DefaultListModel<?>) queueList.getModel()).clear();
             try {
+                ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
                 for (ContextTrackOuterClass.ContextTrack t : InstanceManager.getSpotifyPlayer().tracks(true).next) {
-                    Track track = InstanceManager.getSpotifyApi().getTrack(t.getUri().split(":")[2]).build().execute();
-                    queueUriCache.add(t.getUri());
-                    String a = TrackUtils.getArtists(track.getArtists());
-                    queueListModel.addElement(track.getName() + " - " + a);
+                    // Metadata map??
+                    helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                            .setEntityUri(t.getUri())
+                            .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                    .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                    .build())
+                            .build(), dataRet -> {
+                        Metadata.Track track = Metadata.Track.parseFrom(dataRet[0].getValue());
+                        queueUriCache.add(t.getUri());
+                        String a = TrackUtils.getArtists(track.getArtistList());
+                        queueListModel.addElement(track.getName() + " - " + a);
+                    });
                 }
+                helper.execute(PublicValues.session.api(), (exception, response) -> {
+                    ConsoleLogging.Throwable(exception);
+                });
             } catch (ArrayIndexOutOfBoundsException e) {
                 // This happens when (psst... I don't know)
             } catch (Exception e) {
@@ -194,16 +232,29 @@ public class Queue extends JScrollPane implements View {
             Queue.queueUriCache.clear();
             Thread queueworker = new Thread(() -> {
                 try {
-                    for (ContextTrackOuterClass.ContextTrack track : InstanceManager.getPlayer().getPlayer().tracks(true).next) {
-                        Track t = InstanceManager.getSpotifyApi().getTrack(track.getUri().split(":")[2]).build().execute();
-                        String a = TrackUtils.getArtists(t.getArtists());
-                        Queue.queueUriCache.add(track.getUri());
-                        Queue.queueListModel.addElement(t.getName() + " - " + a);
+
+                    ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
+                    for (ContextTrackOuterClass.ContextTrack t : InstanceManager.getSpotifyPlayer().tracks(true).next) {
+                        // Metadata map??
+                        helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                .setEntityUri(t.getUri())
+                                .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                        .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                        .build())
+                                .build(), dataRet -> {
+                            Metadata.Track track = Metadata.Track.parseFrom(dataRet[0].getValue());
+                            queueUriCache.add(t.getUri());
+                            String a = TrackUtils.getArtists(track.getArtistList());
+                            queueListModel.addElement(track.getName() + " - " + a);
+                        });
                     }
-                } catch (IOException ex) {
-                    ConsoleLogging.Throwable(ex);
+                    helper.execute(PublicValues.session.api(), (exception, response) -> {
+                        ConsoleLogging.Throwable(exception);
+                    });
                 } catch (NullPointerException exc) {
                     // Nothing in queue
+                } catch (IOException | MercuryClient.MercuryException e) {
+                    throw new RuntimeException("Failed to list tracks in queue", e);
                 }
             }, "Queue worker (ContentPanel)");
             queueworker.start();

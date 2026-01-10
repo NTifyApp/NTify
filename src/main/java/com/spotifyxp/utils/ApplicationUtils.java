@@ -15,57 +15,62 @@
  */
 package com.spotifyxp.utils;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
-import org.json.JSONObject;
+import org.apache.commons.io.IOUtils;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class ApplicationUtils {
-    private static JSONObject object = null;
+    private static JsonObject object = null;
     private static final String ErrorMessage = "Check Application.json";
 
-    private static void fetch() {
-        object = new JSONObject(new Resources().readToString("Application.json"));
+    private static void fetch() throws IOException {
+        object = JsonParser.parseString(IOUtils.toString(Initiator.class.getResourceAsStream("/Application.json"), StandardCharsets.UTF_8)).getAsJsonObject();
     }
 
-    public static String getName() {
+    public static String getName() throws IOException {
         if (object == null) {
             fetch();
         }
         if (object.has("Name")) {
-            return object.getString("Name");
+            return object.get("Name").getAsString();
         } else {
             return ErrorMessage;
         }
     }
 
-    public static String getVersion() {
-        if(PublicValues.updaterDisabled || new Resources().readToInputStream("commit_id.txt") == null) {
+    public static String getVersion() throws IOException {
+        if(PublicValues.updaterDisabled || Initiator.class.getResourceAsStream("/commit_id.txt") == null) {
             return "Debug Build";
         }
-        return new Resources().readToString("commit_id.txt").substring(0, 7);
+        return IOUtils.toString(Initiator.class.getResourceAsStream("/commit_id.txt"), StandardCharsets.UTF_8).substring(0, 7);
     }
 
-    public static String getFullVersion() {
-        if(PublicValues.updaterDisabled || new Resources().readToInputStream("commit_id.txt") == null) {
+    public static String getFullVersion() throws IOException {
+        if(PublicValues.updaterDisabled || Initiator.class.getResourceAsStream("/commit_id.txt") == null) {
             return "";
         }
-        return new Resources().readToString("commit_id.txt");
+        return IOUtils.toString(Initiator.class.getResourceAsStream("/commit_id.txt"), StandardCharsets.UTF_8);
     }
 
-    public static String getReleaseCandidate() {
+    public static String getReleaseCandidate() throws IOException {
         if (object == null) {
             fetch();
         }
         if (object.has("ReleaseCandidate")) {
-            return object.getString("ReleaseCandidate");
+            return object.get("ReleaseCandidate").getAsString();
         } else {
             return ErrorMessage;
         }
     }
 
-    public static String getUserAgent() {
+    public static String getUserAgent() throws IOException {
         String osSpecifier = System.getProperty("os.name").contains("mac") ? "Macintosh" :
                 System.getProperty("os.name").contains("win") ? "Windows" : "Linux";
         ; //Macintosh

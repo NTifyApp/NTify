@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,37 +15,17 @@
  */
 package com.spotifyxp.api;
 
-import com.google.gson.Gson;
+import com.google.gson.*;
+import com.google.gson.annotations.SerializedName;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.canvaz.CanvazOuterClass;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.manager.InstanceManager;
-import com.spotifyxp.protogens.Concert;
-import com.spotifyxp.protogens.ConcertsOuterClass;
-import com.spotifyxp.utils.ApplicationUtils;
-import com.spotifyxp.utils.ConnectionUtils;
-import com.spotifyxp.utils.MapUtils;
-import okhttp3.MediaType;
-import okhttp3.RequestBody;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.ZoneId;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+@SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "unused"})
 public class UnofficialSpotifyAPI {
     /**
      * Holds all the information of the lyrics for a track
@@ -77,24 +57,25 @@ public class UnofficialSpotifyAPI {
      */
     public Lyrics getLyrics(String uri) {
         try {
-            JSONObject object = new JSONObject(ConnectionUtils.makeGet("https://spclient.wg.spotify.com/color-lyrics/v2/track/" + uri.split(":")[2] + "?format=json&vocalRemoval=false",
-                    MapUtils.of("Authorization", "Bearer " + InstanceManager.getSpotifyApi().getAccessToken(), "App-Platform", "Win32", "User-Agent", ApplicationUtils.getUserAgent())));
-            JSONObject lyricsroot = new JSONObject(object.getJSONObject("lyrics").toString());
+            JsonObject lyricsRoot = PublicValues.session.api().track().getLyrics(uri, false).getAsJsonObject("lyrics");
             Lyrics lyrics = new Lyrics();
-            lyrics.language = lyricsroot.getString("language");
-            lyrics.providerLyricsId = lyricsroot.getString("providerLyricsId");
-            lyrics.providerDisplayName = lyricsroot.getString("providerDisplayName");
-            lyrics.syncType = lyricsroot.getString("syncType");
-            for (Object line : lyricsroot.getJSONArray("lines")) {
-                JSONObject l = new JSONObject(line.toString());
+            lyrics.language = lyricsRoot.get("language").getAsString();
+            lyrics.providerLyricsId = lyricsRoot.get("providerLyricsId").getAsString();
+            lyrics.providerDisplayName = lyricsRoot.get("providerDisplayName").getAsString();
+            lyrics.syncType = lyricsRoot.get("syncType").getAsString();
+            for (JsonElement line : lyricsRoot.getAsJsonArray("lines")) {
+                JsonObject l = line.getAsJsonObject();
                 LyricsLine lyricsLine = new LyricsLine();
-                lyricsLine.endTimeMs = Long.parseLong(l.getString("endTimeMs"));
-                lyricsLine.startTimeMs = Long.parseLong(l.getString("startTimeMs"));
-                lyricsLine.words = l.getString("words");
+                lyricsLine.endTimeMs = Long.parseLong(l.get("endTimeMs").getAsString());
+                lyricsLine.startTimeMs = Long.parseLong(l.get("startTimeMs").getAsString());
+                lyricsLine.words = l.get("words").getAsString();
                 lyrics.lines.add(lyricsLine);
             }
             return lyrics;
-        } catch (JSONException | IOException e) {
+        } catch (IOException e) {
+            return null;
+        } catch (MercuryClient.MercuryException e) {
+            ConsoleLogging.Throwable(e);
             return null;
         }
     }
@@ -163,44 +144,44 @@ public class UnofficialSpotifyAPI {
             return episodeOrChapter;
         }
 
-        public static HomeTabSectionItem fromJSON(JSONObject json) {
+        public static HomeTabSectionItem fromJSON(JsonObject json) {
             Optional<HomeTabPlaylist> playlist = Optional.empty();
             Optional<HomeTabArtist> artist = Optional.empty();
             Optional<HomeTabAlbum> album = Optional.empty();
             Optional<HomeTabEpisodeOrChapter> episodeOrChapter = Optional.empty();
-            switch (HomeTabSectionItemTypes.valueOf(json.getJSONObject("content").getString("__typename"))) {
+            switch (HomeTabSectionItemTypes.valueOf(json.getAsJsonObject("content").get("__typename").getAsString())) {
                 case PlaylistResponseWrapper:
-                    if(json.getJSONObject("content").getJSONObject("data").getString("__typename").equals("NotFound")) {
+                    if(json.getAsJsonObject("content").getAsJsonObject("data").get("__typename").getAsString().equals("NotFound")) {
                         break;
                     }
-                    if(json.getJSONObject("content").getJSONObject("data").getString("__typename").equals("GenericError")) break;
-                    playlist = Optional.of(HomeTabPlaylist.fromJSON(json.getJSONObject("content").getJSONObject("data")));
+                    if(json.getAsJsonObject("content").getAsJsonObject("data").get("__typename").getAsString().equals("GenericError")) break;
+                    playlist = Optional.of(HomeTabPlaylist.fromJSON(json.getAsJsonObject("content").getAsJsonObject("data")));
                     break;
                 case ArtistResponseWrapper:
-                    if(json.getJSONObject("content").getJSONObject("data").getString("__typename").equals("NotFound")) {
+                    if(json.getAsJsonObject("content").getAsJsonObject("data").get("__typename").getAsString().equals("NotFound")) {
                         break;
                     }
-                    artist = Optional.of(HomeTabArtist.fromJSON(json.getJSONObject("content").getJSONObject("data")));
+                    artist = Optional.of(HomeTabArtist.fromJSON(json.getAsJsonObject("content").getAsJsonObject("data")));
                     break;
                 case AlbumResponseWrapper:
-                    if(json.getJSONObject("content").getJSONObject("data").getString("__typename").equals("NotFound")) {
+                    if(json.getAsJsonObject("content").getAsJsonObject("data").get("__typename").getAsString().equals("NotFound")) {
                         break;
                     }
-                    album = Optional.of(HomeTabAlbum.fromJSON(json.getJSONObject("content").getJSONObject("data")));
+                    album = Optional.of(HomeTabAlbum.fromJSON(json.getAsJsonObject("content").getAsJsonObject("data")));
                     break;
                 case EpisodeOrChapterResponseWrapper:
-                    if(json.getJSONObject("content").getJSONObject("data").getString("__typename").equals("NotFound")) {
+                    if(json.getAsJsonObject("content").getAsJsonObject("data").get("__typename").getAsString().equals("NotFound")) {
                         break;
                     }
-                    HomeTabEpisodeOrChapter homeTabEpisodeOrChapter = HomeTabEpisodeOrChapter.fromJSON(json.getJSONObject("content").getJSONObject("data"));
+                    HomeTabEpisodeOrChapter homeTabEpisodeOrChapter = HomeTabEpisodeOrChapter.fromJSON(json.getAsJsonObject("content").getAsJsonObject("data"));
                     if(homeTabEpisodeOrChapter != null) episodeOrChapter = Optional.of(homeTabEpisodeOrChapter);
                     break;
                 case UnknownType:
                     ConsoleLogging.warning("[HomeTab] Got section item with unknown type");
             }
             return new HomeTabSectionItem(
-                    HomeTabSectionItemTypes.valueOf(json.getJSONObject("content").getString("__typename")),
-                    json.getString("uri"),
+                    HomeTabSectionItemTypes.valueOf(json.getAsJsonObject("content").get("__typename").getAsString()),
+                    json.get("uri").getAsString(),
                     playlist,
                     artist,
                     album,
@@ -246,19 +227,19 @@ public class UnofficialSpotifyAPI {
             return items;
         }
 
-        public static HomeTabSection fromJSON(JSONObject json) {
+        public static HomeTabSection fromJSON(JsonObject json) {
             Optional<String> name = Optional.empty();
-            if(json.getJSONObject("data").has("title")) {
-                name = Optional.of(json.getJSONObject("data").getJSONObject("title").getString("text"));
+            if(json.getAsJsonObject("data").has("title")) {
+                name = Optional.of(json.getAsJsonObject("data").getAsJsonObject("title").get("text").getAsString());
             }
             ArrayList<HomeTabSectionItem> items = new ArrayList<>();
-            for(Object itemObject : json.getJSONObject("sectionItems").getJSONArray("items")) {
-                items.add(HomeTabSectionItem.fromJSON(new JSONObject(itemObject.toString())));
+            for(JsonElement element : json.getAsJsonObject("sectionItems").getAsJsonArray("items")) {
+                items.add(HomeTabSectionItem.fromJSON(element.getAsJsonObject()));
             }
             return new HomeTabSection(
-                    HomeTabSectionTypes.valueOf(json.getJSONObject("data").getString("__typename")),
+                    HomeTabSectionTypes.valueOf(json.getAsJsonObject("data").get("__typename").getAsString()),
                     name,
-                    json.getString("uri"),
+                    json.get("uri").getAsString(),
                     items
             );
         }
@@ -284,17 +265,17 @@ public class UnofficialSpotifyAPI {
             return sections;
         }
 
-        public static HomeTab fromJSON(JSONObject json) {
+        public static HomeTab fromJSON(JsonObject json) {
             ArrayList<HomeTabSection> sections = new ArrayList<>();
-            for(Object sectionObject : json.getJSONObject("sectionContainer").getJSONObject("sections").getJSONArray("items")) {
+            for(JsonElement sectionObject : json.getAsJsonObject("sectionContainer").getAsJsonObject("sections").getAsJsonArray("items")) {
                 try {
-                    sections.add(HomeTabSection.fromJSON(new JSONObject(sectionObject.toString())));
-                }catch (JSONException e) {
+                    sections.add(HomeTabSection.fromJSON(sectionObject.getAsJsonObject()));
+                }catch (Exception e) {
                     ConsoleLogging.warning("[HomeTab] Got section item with unknown/unsupported data");
                 }
             }
             return new HomeTab(
-                    json.getJSONObject("greeting").getString("text"),
+                    json.getAsJsonObject("greeting").get("text").getAsString(),
                     sections
             );
         }
@@ -344,17 +325,17 @@ public class UnofficialSpotifyAPI {
             return images;
         }
 
-        public static HomeTabPlaylist fromJSON(JSONObject object) {
+        public static HomeTabPlaylist fromJSON(JsonObject object) {
             ArrayList<HomeTabImage> images = new ArrayList<>();
-            for(Object image : object.getJSONObject("images").getJSONArray("items")) {
-                JSONObject imageObject = new JSONObject(image.toString());
-                images.add(HomeTabImage.fromJSON(imageObject.getJSONArray("sources").getJSONObject(0)));
+            for(JsonElement image : object.getAsJsonObject("images").getAsJsonArray("items")) {
+                JsonObject imageObject = image.getAsJsonObject();
+                images.add(HomeTabImage.fromJSON(imageObject.getAsJsonArray("sources").get(0).getAsJsonObject()));
             }
             return new HomeTabPlaylist(
-                    object.getString("name"),
-                    object.getString("description"),
-                    object.getString("uri"),
-                    object.getJSONObject("ownerV2").getJSONObject("data").getString("name"),
+                    object.get("name").getAsString(),
+                    object.get("description").getAsString(),
+                    object.get("uri").getAsString(),
+                    object.getAsJsonObject("ownerV2").getAsJsonObject("data").get("name").getAsString(),
                     images
             );
         }
@@ -390,11 +371,11 @@ public class UnofficialSpotifyAPI {
             return url;
         }
 
-        public static HomeTabImage fromJSON(JSONObject json) {
+        public static HomeTabImage fromJSON(JsonObject json) {
             return new HomeTabImage(
-                    json.optInt("width", -1),
-                    json.optInt("height", -1),
-                    json.getString("url")
+                    optionalJson(json, "width", new JsonPrimitive(-1)).getAsInt(),
+                    optionalJson(json, "height", new JsonPrimitive(-1)).getAsInt(),
+                    json.get("url").getAsString()
             );
         }
     }
@@ -425,16 +406,16 @@ public class UnofficialSpotifyAPI {
             return images;
         }
 
-        public static HomeTabArtist fromJSON(JSONObject json) {
+        public static HomeTabArtist fromJSON(JsonObject json) {
             ArrayList<HomeTabImage> images = new ArrayList<>();
             if(json.has("visuals")) {
-                for (Object imageObject : json.getJSONObject("visuals").getJSONObject("avatarImage").getJSONArray("sources")) {
-                    images.add(HomeTabImage.fromJSON(new JSONObject(imageObject.toString())));
+                for (JsonElement imageObject : json.getAsJsonObject("visuals").getAsJsonObject("avatarImage").getAsJsonArray("sources")) {
+                    images.add(HomeTabImage.fromJSON(imageObject.getAsJsonObject()));
                 }
             }
             return new HomeTabArtist(
-                    json.getJSONObject("profile").getString("name"),
-                    json.getString("uri"),
+                    json.getAsJsonObject("profile").get("name").getAsString(),
+                    json.get("uri").getAsString(),
                     images
             );
         }
@@ -477,18 +458,18 @@ public class UnofficialSpotifyAPI {
             return images;
         }
 
-        public static HomeTabAlbum fromJSON(JSONObject object) {
+        public static HomeTabAlbum fromJSON(JsonObject object) {
             ArrayList<HomeTabArtist> artists = new ArrayList<>();
-            for(Object artist : object.getJSONObject("artists").getJSONArray("items")) {
-                artists.add(HomeTabArtist.fromJSON(new JSONObject(artist.toString())));
+            for(JsonElement artist : object.getAsJsonObject("artists").getAsJsonArray("items")) {
+                artists.add(HomeTabArtist.fromJSON(artist.getAsJsonObject()));
             }
             ArrayList<HomeTabImage> images = new ArrayList<>();
-            for(Object image : object.getJSONObject("coverArt").getJSONArray("sources")) {
-                images.add(HomeTabImage.fromJSON(new JSONObject(image.toString())));
+            for(JsonElement image : object.getAsJsonObject("coverArt").getAsJsonArray("sources")) {
+                images.add(HomeTabImage.fromJSON(image.getAsJsonObject()));
             }
             return new HomeTabAlbum(
-                    object.getString("name"),
-                    object.getString("uri"),
+                    object.get("name").getAsString(),
+                    object.get("uri").getAsString(),
                     artists,
                     images
             );
@@ -574,73 +555,28 @@ public class UnofficialSpotifyAPI {
             return coverImages;
         }
 
-        public static HomeTabEpisodeOrChapter fromJSON(JSONObject object) {
+        public static HomeTabEpisodeOrChapter fromJSON(JsonObject object) {
             ArrayList<HomeTabImage> EpisodeOrChapterImages = new ArrayList<>();
-            if(object.getString("__typename").equalsIgnoreCase("restrictedcontent")) return null;
-            for(Object image : object.getJSONObject("coverArt").getJSONArray("sources")) {
-                EpisodeOrChapterImages.add(HomeTabImage.fromJSON(new JSONObject(image.toString())));
+            if(object.get("__typename").getAsString().equalsIgnoreCase("restrictedcontent")) return null;
+            for(JsonElement image : object.getAsJsonObject("coverArt").getAsJsonArray("sources")) {
+                EpisodeOrChapterImages.add(HomeTabImage.fromJSON(image.getAsJsonObject()));
             }
             ArrayList<HomeTabImage> coverImages = new ArrayList<>();
-            for(Object image : object.getJSONObject("podcastV2").getJSONObject("data").getJSONObject("coverArt").getJSONArray("sources")) {
-                coverImages.add(HomeTabImage.fromJSON(new JSONObject(image.toString())));
+            for(JsonElement image : object.getAsJsonObject("podcastV2").getAsJsonObject("data").getAsJsonObject("coverArt").getAsJsonArray("sources")) {
+                coverImages.add(HomeTabImage.fromJSON(image.getAsJsonObject()));
             }
             return new HomeTabEpisodeOrChapter(
-                    object.getJSONObject("duration").getLong("totalMilliseconds"),
-                    object.getJSONObject("releaseDate").getString("isoString"),
-                    object.getJSONObject("playedState").getLong("playPositionMilliseconds"),
-                    object.getString("name"),
-                    object.getString("description"),
-                    object.getString("uri"),
+                    object.getAsJsonObject("duration").get("totalMilliseconds").getAsLong(),
+                    object.getAsJsonObject("releaseDate").get("isoString").getAsString(),
+                    object.getAsJsonObject("playedState").get("playPositionMilliseconds").getAsLong(),
+                    object.get("name").getAsString(),
+                    object.get("description").getAsString(),
+                    object.get("uri").getAsString(),
                     EpisodeOrChapterImages,
-                    object.getJSONObject("podcastV2").getJSONObject("data").getString("name"),
-                    object.getJSONObject("podcastV2").getJSONObject("data").getJSONObject("publisher").getString("name"),
+                    object.getAsJsonObject("podcastV2").getAsJsonObject("data").get("name").getAsString(),
+                    object.getAsJsonObject("podcastV2").getAsJsonObject("data").getAsJsonObject("publisher").get("name").getAsString(),
                     coverImages
             );
-        }
-    }
-
-    /**
-     * Gets the complete HomeTab (Used in the tab Home)
-     *
-     * @return instance of HomeTab
-     * @see HomeTab
-     */
-    public Optional<HomeTab> getHomeTab() throws IOException {
-        JSONObject root;
-        try {
-            //https://api-partner.spotify.com/pathfinder/v1/query?operationName=home&variables=%7B%22timeZone%22%3A%22Europe%2FBerlin%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2263c412a34a2071adfd99b804ea2fe1d8e9c5fd7d248e29ca54cc97a7ca06b561%22%7D%7D
-            String url = "https://api-partner.spotify.com/pathfinder/v1/query?operationName=home&variables=" + URLEncoder.encode("{\"timeZone\":\"" + ZoneId.systemDefault() + "\"}", Charset.defaultCharset().toString()) + "&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2263c412a34a2071adfd99b804ea2fe1d8e9c5fd7d248e29ca54cc97a7ca06b561%22%7D%7D";
-            root = new JSONObject(new JSONObject(ConnectionUtils.makeGet(url,
-                    MapUtils.of("Authorization", "Bearer " + InstanceManager.getSpotifyApi().getAccessToken(), "App-Platform", "Win32", "User-Agent", ApplicationUtils.getUserAgent()))).getJSONObject("data").getJSONObject("home").toString());
-        } catch (UnsupportedEncodingException e) {
-            String url = "https://api-partner.spotify.com/pathfinder/v1/query?operationName=home&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2263c412a34a2071adfd99b804ea2fe1d8e9c5fd7d248e29ca54cc97a7ca06b561%22%7D%7D";
-            root = new JSONObject(new JSONObject(ConnectionUtils.makeGet(url,
-                    MapUtils.of("Authorization", "Bearer " + InstanceManager.getSpotifyApi().getAccessToken(), "App-Platform", "Win32", "User-Agent", ApplicationUtils.getUserAgent()))).getJSONObject("data").getJSONObject("home").toString());
-        }
-        try {
-            return Optional.of(HomeTab.fromJSON(root));
-        }catch (JSONException e) {
-            ConsoleLogging.error("Error in HomeTab! Dumping JSON: " + root);
-            ConsoleLogging.Throwable(e);
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * Gets an url referring to a canvas mp4 file for a track<br><br>
-     * <a style="color:yellow;font:bold">!!Deprecated!! </a> Will be removed in a future version
-     *
-     * @param uri Track URI (spotify:track:xyz)
-     * @return String
-     */
-    @Deprecated
-    public static String getCanvasURLForTrack(String uri) {
-        try {
-            return PublicValues.session.api().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder().addEntities(CanvazOuterClass.EntityCanvazRequest.Entity.newBuilder().setEntityUri(uri).buildPartial()).build()).getCanvases(0).getUrl();
-        } catch (ArrayIndexOutOfBoundsException e) {
-            return "";
-        } catch (IOException | MercuryClient.MercuryException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -667,13 +603,12 @@ public class UnofficialSpotifyAPI {
             return body;
         }
 
-        public static SpotifyBrowse fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
+        public static SpotifyBrowse fromJSON(JsonObject json) {
             ArrayList<SpotifyBrowseEntry> entries = new ArrayList<>();
-            for(Object object : jsonObject.getJSONArray("body")) {
-                entries.add(SpotifyBrowseEntry.fromJSON(object.toString()));
+            for(JsonElement object : json.getAsJsonArray("body")) {
+                entries.add(SpotifyBrowseEntry.fromJSON(object.getAsJsonObject()));
             }
-            return new SpotifyBrowse(jsonObject.getString("id"), jsonObject.getString("title"), entries);
+            return new SpotifyBrowse(json.get("id").getAsString(), json.get("title").getAsString(), entries);
         }
     }
 
@@ -733,35 +668,34 @@ public class UnofficialSpotifyAPI {
             return children;
         }
 
-        protected static SpotifyBrowseEntry fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
+        protected static SpotifyBrowseEntry fromJSON(JsonObject json) {
             Optional<SpotifyBrowserEntryImages> images = Optional.empty();
-            if(jsonObject.has("images")) {
-                images = Optional.of(SpotifyBrowserEntryImages.fromJSON(jsonObject.getJSONObject("images").toString()));
+            if(json.has("images")) {
+                images = Optional.of(SpotifyBrowserEntryImages.fromJSON(json.getAsJsonObject("images")));
             }
             Optional<ArrayList<SpotifyBrowseEntry>> children = Optional.empty();
-            if(jsonObject.has("children")) {
+            if(json.has("children")) {
                 ArrayList<SpotifyBrowseEntry> childrenList = new ArrayList<>();
-                for(Object object : jsonObject.getJSONArray("children")) {
-                    childrenList.add(SpotifyBrowseEntry.fromJSON(object.toString()));
+                for(JsonElement object : json.getAsJsonArray("children")) {
+                    childrenList.add(SpotifyBrowseEntry.fromJSON(object.getAsJsonObject()));
                 }
                 children = Optional.of(childrenList);
             }
             Optional<SpotifyBrowseEntryCustom> custom = Optional.empty();
-            if(jsonObject.has("custom")) {
-                custom = Optional.of(SpotifyBrowseEntryCustom.fromJSON(jsonObject.getJSONObject("custom").toString()));
+            if(json.has("custom")) {
+                custom = Optional.of(SpotifyBrowseEntryCustom.fromJSON(json.getAsJsonObject("custom")));
             }
             Optional<SpotifyBrowseEntryMetadata> metadata = Optional.empty();
-            if(jsonObject.has("metadata")) {
-                metadata = Optional.of(SpotifyBrowseEntryMetadata.fromJSON(jsonObject.getJSONObject("metadata").toString()));
+            if(json.has("metadata")) {
+                metadata = Optional.of(SpotifyBrowseEntryMetadata.fromJSON(json.getAsJsonObject("metadata")));
             }
             Optional<SpotifyBrowseEntryEvents> events = Optional.empty();
-            if(jsonObject.has("events")) {
-                events = Optional.of(SpotifyBrowseEntryEvents.fromJSON(jsonObject.getJSONObject("events").toString()));
+            if(json.has("events")) {
+                events = Optional.of(SpotifyBrowseEntryEvents.fromJSON(json.getAsJsonObject("events")));
             }
-            return new SpotifyBrowseEntry(jsonObject.getString("id"),
-                    SpotifyBrowseEntryComponent.fromJSON(jsonObject.getJSONObject("component").toString()),
-                    SpotifyBrowseEntryText.fromJSON(jsonObject.getJSONObject("text").toString()),
+            return new SpotifyBrowseEntry(json.get("id").getAsString(),
+                    SpotifyBrowseEntryComponent.fromJSON(json.getAsJsonObject("component")),
+                    SpotifyBrowseEntryText.fromJSON(json.getAsJsonObject("text")),
                     custom,
                     metadata,
                     images, children, events);
@@ -779,11 +713,10 @@ public class UnofficialSpotifyAPI {
             return images;
         }
 
-        protected static SpotifyBrowserEntryImages fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
+        protected static SpotifyBrowserEntryImages fromJSON(JsonObject json) {
             ArrayList<SpotifyBrowseEntryImagesImage> images = new ArrayList<>();
-            for(String key : jsonObject.keySet()) {
-                images.add(new SpotifyBrowseEntryImagesImage(jsonObject.getJSONObject(key).getString("uri"),
+            for(String key : json.keySet()) {
+                images.add(new SpotifyBrowseEntryImagesImage(json.getAsJsonObject(key).get("uri").getAsString(),
                         SpotifyBrowseEntryImagesImageTypes.valueOf(key.toUpperCase(Locale.ENGLISH))));
             }
             return new SpotifyBrowserEntryImages(images);
@@ -856,29 +789,29 @@ public class UnofficialSpotifyAPI {
             return accessibilityText;
         }
 
-        protected static SpotifyBrowseEntryMetadata fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
+        protected static SpotifyBrowseEntryMetadata fromJSON(JsonObject jsonObject) {
             Optional<String> uri = Optional.empty();
-            if(jsonObject.has("uri")) {
-                uri = Optional.of(jsonObject.getString("uri"));
+            if (jsonObject.has("uri")) {
+                uri = Optional.of(jsonObject.get("uri").getAsString());
             }
             Optional<String> promotion_id = Optional.empty();
-            if(jsonObject.has("promotion_id")) {
-                promotion_id = Optional.of(jsonObject.getString("promotion_id"));
+            if (jsonObject.has("promotion_id")) {
+                promotion_id = Optional.of(jsonObject.get("promotion_id").getAsString());
             }
             Optional<String> videoUrl = Optional.empty();
-            if(jsonObject.has("video_url")) {
-                videoUrl = Optional.of(jsonObject.getString("video_url"));
+            if (jsonObject.has("video_url")) {
+                videoUrl = Optional.of(jsonObject.get("video_url").getAsString());
             }
             Optional<Boolean> isAnimated = Optional.empty();
-            if(jsonObject.has("is_animated")) {
-                isAnimated = Optional.of(jsonObject.getBoolean("is_animated"));
+            if (jsonObject.has("is_animated")) {
+                isAnimated = Optional.of(jsonObject.get("is_animated").getAsBoolean());
             }
             Optional<String> accessibilityText = Optional.empty();
-            if(jsonObject.has("accessibility_text")) {
-                accessibilityText = Optional.of(jsonObject.getString("accessibility_text"));
+            if (jsonObject.has("accessibility_text")) {
+                accessibilityText = Optional.of(jsonObject.get("accessibility_text").getAsString());
             }
-            return new SpotifyBrowseEntryMetadata(jsonObject.getString("sectionId"), uri, promotion_id,
+            String sectionId = jsonObject.has("sectionId") ? jsonObject.get("sectionId").getAsString() : "";
+            return new SpotifyBrowseEntryMetadata(sectionId, uri, promotion_id,
                     videoUrl, isAnimated, accessibilityText);
         }
     }
@@ -897,13 +830,14 @@ public class UnofficialSpotifyAPI {
             return events;
         }
 
-        protected static SpotifyBrowseEntryEvents fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
+        protected static SpotifyBrowseEntryEvents fromJSON(JsonObject jsonObject) {
             ArrayList<SpotifyBrowseEntryEventsEvent> events = new ArrayList<>();
-            for(String key : jsonObject.keySet()) {
+            for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+                String key = entry.getKey();
                 // Only click is implemented right now
-                if(key.equals("click")) {
-                    events.add(SpotifyBrowseEntryEventsEvent.fromJSON(jsonObject.getJSONObject(key).toString(), SpotifyBrowseEntryEventsTypes.CLICK));
+                if (key.equals("click")) {
+                    JsonObject clickObj = entry.getValue().getAsJsonObject();
+                    events.add(SpotifyBrowseEntryEventsEvent.fromJSON(clickObj));
                     break;
                 }
             }
@@ -935,13 +869,13 @@ public class UnofficialSpotifyAPI {
             return data_uri;
         }
 
-        protected static SpotifyBrowseEntryEventsEvent fromJSON(String json, SpotifyBrowseEntryEventsTypes type) {
-            JSONObject jsonObject = new JSONObject(json);
+        protected static SpotifyBrowseEntryEventsEvent fromJSON(JsonObject jsonObject) {
             Optional<SpotifyBrowseEntryEventsEventDataUri> data_uri = Optional.empty();
-            if(jsonObject.getJSONObject("data").has("uri") && jsonObject.getJSONObject("data").keySet().size() == 1) {
-                data_uri = Optional.of(SpotifyBrowseEntryEventsEventDataUri.fromJSON(jsonObject.getJSONObject("data").toString()));
+            if (jsonObject.has("data") && jsonObject.getAsJsonObject("data").has("uri") && jsonObject.getAsJsonObject("data").entrySet().size() == 1) {
+                data_uri = Optional.of(SpotifyBrowseEntryEventsEventDataUri.fromJSON(jsonObject.getAsJsonObject("data")));
             }
-            return new SpotifyBrowseEntryEventsEvent(jsonObject.getString("name"), type, data_uri);
+            String name = jsonObject.has("name") ? jsonObject.get("name").getAsString() : "";
+            return new SpotifyBrowseEntryEventsEvent(name, SpotifyBrowseEntryEventsTypes.CLICK, data_uri);
         }
     }
 
@@ -956,9 +890,8 @@ public class UnofficialSpotifyAPI {
             return uri;
         }
 
-        protected static SpotifyBrowseEntryEventsEventDataUri fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
-            return new SpotifyBrowseEntryEventsEventDataUri(new JSONObject(json).getString("uri"));
+        protected static SpotifyBrowseEntryEventsEventDataUri fromJSON(JsonObject jsonObject) {
+            return new SpotifyBrowseEntryEventsEventDataUri(jsonObject.has("uri") ? jsonObject.get("uri").getAsString() : "");
         }
     }
 
@@ -993,19 +926,18 @@ public class UnofficialSpotifyAPI {
             return entityType;
         }
 
-        protected static SpotifyBrowseEntryCustom fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
+        protected static SpotifyBrowseEntryCustom fromJSON(JsonObject jsonObject) {
             Optional<String> style = Optional.empty();
-            if(jsonObject.has("style")) {
-                style = Optional.of(jsonObject.getString("style"));
+            if (jsonObject.has("style")) {
+                style = Optional.of(jsonObject.get("style").getAsString());
             }
             Optional<String> backgroundColor = Optional.empty();
-            if(jsonObject.has("backgroundColor")) {
-                backgroundColor = Optional.of(jsonObject.getString("backgroundColor"));
+            if (jsonObject.has("backgroundColor")) {
+                backgroundColor = Optional.of(jsonObject.get("backgroundColor").getAsString());
             }
             Optional<String> entityType = Optional.empty();
-            if(jsonObject.has("entityType")) {
-                entityType = Optional.of(jsonObject.getString("entityType"));
+            if (jsonObject.has("entityType")) {
+                entityType = Optional.of(jsonObject.get("entityType").getAsString());
             }
             return new SpotifyBrowseEntryCustom(style, backgroundColor, entityType);
         }
@@ -1041,21 +973,21 @@ public class UnofficialSpotifyAPI {
             return subtitle;
         }
 
-        protected static SpotifyBrowseEntryText fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
+        protected static SpotifyBrowseEntryText fromJSON(JsonObject jsonObject) {
             Optional<String> accessory = Optional.empty();
-            if(jsonObject.has("accessory")) {
-                accessory = Optional.of(jsonObject.getString("accessory"));
+            if (jsonObject.has("accessory")) {
+                accessory = Optional.of(jsonObject.get("accessory").getAsString());
             }
             Optional<String> description = Optional.empty();
-            if(jsonObject.has("description")) {
-                description = Optional.of(jsonObject.getString("description"));
+            if (jsonObject.has("description")) {
+                description = Optional.of(jsonObject.get("description").getAsString());
             }
             Optional<String> subtitle = Optional.empty();
-            if(jsonObject.has("subtitle")) {
-                subtitle = Optional.of(jsonObject.getString("subtitle"));
+            if (jsonObject.has("subtitle")) {
+                subtitle = Optional.of(jsonObject.get("subtitle").getAsString());
             }
-            return new SpotifyBrowseEntryText(jsonObject.getString("title"), accessory, description, subtitle);
+            String title = jsonObject.has("title") ? jsonObject.get("title").getAsString() : "";
+            return new SpotifyBrowseEntryText(title, accessory, description, subtitle);
         }
     }
 
@@ -1076,9 +1008,10 @@ public class UnofficialSpotifyAPI {
             return category;
         }
 
-        protected static SpotifyBrowseEntryComponent fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
-            return new SpotifyBrowseEntryComponent(jsonObject.getString("id"), jsonObject.getString("category"));
+        protected static SpotifyBrowseEntryComponent fromJSON(JsonObject jsonObject) {
+            String id = jsonObject.has("id") ? jsonObject.get("id").getAsString() : "";
+            String category = jsonObject.has("category") ? jsonObject.get("category").getAsString() : "";
+            return new SpotifyBrowseEntryComponent(id, category);
         }
     }
 
@@ -1106,20 +1039,19 @@ public class UnofficialSpotifyAPI {
             return body;
         }
 
-        public static SpotifyBrowseSection fromJSON(String json) {
-            JSONObject jsonObject = new JSONObject(json);
+        public static SpotifyBrowseSection fromJSON(JsonObject jsonObject) {
             ArrayList<SpotifyBrowseEntry> entries = new ArrayList<>();
-            for(Object object : jsonObject.getJSONArray("body")) {
-                entries.add(SpotifyBrowseEntry.fromJSON(object.toString()));
+            for (JsonElement object : jsonObject.getAsJsonArray("body")) {
+                entries.add(SpotifyBrowseEntry.fromJSON(object.getAsJsonObject()));
             }
             String header;
-            if(jsonObject.has("header")) {
-                header = jsonObject.getJSONObject("header").getJSONObject("text").getString("title");
-            }else{
-                header = jsonObject.getString("title");
+            if (jsonObject.has("header")) {
+                header = jsonObject.getAsJsonObject("header").getAsJsonObject("text").get("title").getAsString();
+            } else {
+                header = jsonObject.has("title") ? jsonObject.get("title").getAsString() : "";
             }
             return new SpotifyBrowseSection(header,
-                    jsonObject.getString("id"), entries);
+                    jsonObject.has("id") ? jsonObject.get("id").getAsString() : "", entries);
         }
     }
 
@@ -1165,99 +1097,605 @@ public class UnofficialSpotifyAPI {
         public List<ArtistUnionDiscoveredOnItem> items;
     }
 
-    public static ArtistUnionDiscoveredOn getArtistDiscoveredOn(String uri) throws IOException {
-        String requestJSON = "{\"variables\": {\"uri\": \"%s\"},\"operationName\": \"queryArtistDiscoveredOn\",\"extensions\": {\"persistedQuery\": {\"version\": 1,\"sha256Hash\": \"71c2392e4cecf6b48b9ad1311ae08838cbdabcfd189c6bf0c66c2430b8dcfdb1\"}}}";
-        ArtistUnionDiscoveredOn discoveredOn = new Gson().fromJson(new JSONObject(ConnectionUtils.makePostRaw("https://api-partner.spotify.com/pathfinder/v2/query", RequestBody.create(
-                MediaType.parse("application/json"),
-                String.format(requestJSON, uri)
-        ), new HashMap<String, String>() {{
-            put("client-token", PublicValues.session.api().getClientToken());
-            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
-            put("app-platform", "Win32");
-            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
-            put("accept", "application/json");
-        }}).string()).getJSONObject("data").getJSONObject("artistUnion").getJSONObject("relatedContent").getJSONObject("discoveredOnV2").toString(), ArtistUnionDiscoveredOn.class);
-        return discoveredOn;
+    public static class LibraryResponse {
+        public Data data;
+
+        public static class Data {
+            public Me me;
+        }
+
+        public static class Me {
+            public LibraryPage libraryV3;
+        }
     }
 
-    public static ArtistUnionRelatedArtists getArtistRelatedArtists(String uri) throws IOException {
-        String requestJSON = "{\"variables\": {\"uri\": \"%s\"},\"operationName\": \"queryArtistRelated\",\"extensions\": {\"persistedQuery\": {\"version\": 1,\"sha256Hash\": \"3d031d6cb22a2aa7c8d203d49b49df731f58b1e2799cc38d9876d58771aa66f3\"}}}";
-        ArtistUnionRelatedArtists artists = new Gson().fromJson(new JSONObject(ConnectionUtils.makePostRaw("https://api-partner.spotify.com/pathfinder/v2/query", RequestBody.create(
-                MediaType.parse("application/json"),
-                String.format(requestJSON, uri)
-        ), new HashMap<String, String>() {{
-            put("client-token", PublicValues.session.api().getClientToken());
-            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
-            put("app-platform", "Win32");
-            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
-            put("accept", "application/json");
-        }}).string()).getJSONObject("data").getJSONObject("artistUnion").getJSONObject("relatedContent").getJSONObject("relatedArtists").toString(), ArtistUnionRelatedArtists.class);
-        return artists;
+    public static class LibraryFilter {
+        public String id;
+        public String name;
     }
 
-    public static ArtistUnionHeaderImage getArtistHeaderImage(String uri) throws IOException {
-        String requestJSON = "{\"variables\": {\"uri\": \"%s\",\"locale\": \"\"},\"operationName\": \"queryArtistOverview\",\"extensions\": {\"persistedQuery\": {\"version\": 1,\"sha256Hash\": \"1ac33ddab5d39a3a9c27802774e6d78b9405cc188c6f75aed007df2a32737c72\"}}}";
-        ArtistUnionHeaderImage image = new Gson().fromJson(new JSONObject(ConnectionUtils.makePostRaw("https://api-partner.spotify.com/pathfinder/v2/query", RequestBody.create(
-                MediaType.parse("application/json"),
-                String.format(requestJSON, uri)
-        ), new HashMap<String, String>() {{
-            put("client-token", PublicValues.session.api().getClientToken());
-            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
-            put("app-platform", "Win32");
-            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
-            put("accept", "application/json");
-        }}).string()).getJSONObject("data").getJSONObject("artistUnion").getJSONObject("headerImage").toString(), ArtistUnionHeaderImage.class);
-        return image;
+    public static class LibraryPage {
+        @com.google.gson.annotations.SerializedName("__typename")
+        public String typename;
+        public List<AvailableFilter> availableFilters;
+        public List<SortOrder> availableSortOrders;
+        public List<LibraryItemEntry> items;
+        public PagingInfo pagingInfo;
+        public List<LibraryFilter> selectedFilters;
+        public SortOrder selectedSortOrder;
+        public int totalCount;
+
+        public static LibraryPage fromJsonObject(JsonObject root) {
+            // root is expected to be the full response object which contains data.me.libraryV3
+            if (root == null) return null;
+            JsonObject lib = null;
+            if (root.has("data") && root.getAsJsonObject("data").has("me") && root.getAsJsonObject("data").getAsJsonObject("me").has("libraryV3")) {
+                lib = root.getAsJsonObject("data").getAsJsonObject("me").getAsJsonObject("libraryV3");
+            } else if (root.has("libraryV3")) {
+                lib = root.getAsJsonObject("libraryV3");
+            }
+            if (lib == null) return null;
+            return new Gson().fromJson(lib, LibraryPage.class);
+        }
+
+        public static LibraryPage fromJsonString(String json) {
+            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            return fromJsonObject(root);
+        }
     }
 
-    public static SpotifyBrowse getSpotifyBrowse() throws IOException {
-        String query = "?platform=android&client-timezone=" + ZoneId.systemDefault().toString().replace("/", "%2F") + "&podcast=true&locale=" + Locale.getDefault();
-        byte[] response = ConnectionUtils.makeGetRaw("https://spclient.wg.spotify.com/hubview-mobile-v1/browse/" + query, new HashMap<String, String>() {{
-            put("client-token", PublicValues.session.api().getClientToken());
-            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
-            put("app-platform", "Android");
-            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
-            put("accept-encoding", "gzip");
-            put("user-agent", "Spotify/8.9.96.476 Android/31 (Android SDK built for x86_64) " + ApplicationUtils.getName() + "/" + ApplicationUtils.getVersion());
-        }}).bytes();
-        return SpotifyBrowse.fromJSON(IOUtils.toString(
-                new GZIPInputStream(new ByteArrayInputStream(response)),
-                StandardCharsets.UTF_8
-        ));
+    public static class AvailableFilter {
+        public String id;
+        public String name;
     }
 
-    // The endpoint returns an id of 'browse-page-mobile-fallback' when there is something wrong
-    public static SpotifyBrowseSection getSpotifyBrowseSection(String sectionUri) throws IOException {
-        String query = "?platform=android&client-timezone=" + ZoneId.systemDefault().toString().replace("/", "%2F") + "&podcast=true&locale=" + Locale.getDefault();
-        byte[] response = ConnectionUtils.makeGetRaw("https://spclient.wg.spotify.com/hubview-mobile-v1/browse/" + sectionUri + query, new HashMap<String, String>() {{
-            put("client-token", PublicValues.session.api().getClientToken());
-            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
-            put("app-platform", "Android");
-            put("accept-language", Locale.getDefault().toString().replace("_", "-"));
-            put("accept-encoding", "gzip");
-            put("user-agent", "Spotify/8.9.96.476 Android/31 (Android SDK built for x86_64) " + ApplicationUtils.getName() + "/" + ApplicationUtils.getVersion());
-        }}).bytes();
-        return SpotifyBrowseSection.fromJSON(IOUtils.toString(
-                new GZIPInputStream(new ByteArrayInputStream(response)),
-                StandardCharsets.UTF_8
-        ));
+    public static class SortOrder {
+        public String id;
+        public String name;
     }
 
-    public static ConcertsOuterClass.Concerts getConcerts() throws IOException {
-        return ConcertsOuterClass.Concerts.parseFrom(ConnectionUtils.makePostRaw("https://spclient.wg.spotify.com/live-events-view/spotify.liveeventsview.v2.LiveEventsFeedService/GetPage", RequestBody.create(Concert.ConcertRequest.newBuilder()
-                .setId("ignored")
-                .build().toByteArray(), MediaType.get("application/x-protobuf")), new HashMap<String, String>() {{
-            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
-            put("app-platform", "Win32");
-        }}).bytes());
+    public static class PagingInfo {
+        public int limit;
+        public int offset;
     }
 
-    public static Concert.ConcertResponse getConcert(String id) throws IOException {
-        return Concert.ConcertResponse.parseFrom(ConnectionUtils.makePostRaw("https://spclient.wg.spotify.com/live-events-view/spotify.liveeventsview.v1.EventPageService/EventPage", RequestBody.create(Concert.ConcertRequest.newBuilder()
-                        .setId(id)
-                .build().toByteArray(), MediaType.get("application/x-protobuf")), new HashMap<String, String>() {{
-            put("authorization", "Bearer " + InstanceManager.getPkce().getToken());
-            put("app-platform", "Win32");
-        }}).bytes());
+    public static class LibraryItemEntry {
+        public AddedAt addedAt;
+        public int depth;
+        public ItemWrapper item;
+        public boolean pinnable;
+        public boolean pinned;
+        public PlayedAt playedAt;
+    }
+
+    public static class AddedAt {
+        public String isoString;
+    }
+
+    public static class PlayedAt {
+        public String isoString;
+    }
+
+    public static class ItemWrapper {
+        @com.google.gson.annotations.SerializedName("__typename")
+        public String typename;
+        @com.google.gson.annotations.SerializedName("_uri")
+        public String uri;
+        public JsonObject data;
+    }
+
+    // Parser for `data.me.library.tracks` responses
+    public static class LibraryTracksResponse {
+        public Data data;
+
+        public static class Data {
+            public Me me;
+        }
+
+        public static class Me {
+            public Library library;
+        }
+
+        public static class Library {
+            public UserLibraryTracks tracks;
+        }
+    }
+
+    public static class UserLibraryTracks {
+        @com.google.gson.annotations.SerializedName("__typename")
+        public String typename;
+        public List<UserLibraryTrackResponse> items;
+        public PagingInfo pagingInfo;
+        public int totalCount;
+
+        public static UserLibraryTracks fromJsonObject(JsonObject root) {
+            if (root == null) return null;
+            JsonObject tracksObj = null;
+            if (root.has("data") && root.getAsJsonObject("data").has("me")
+                    && root.getAsJsonObject("data").getAsJsonObject("me").has("library")
+                    && root.getAsJsonObject("data").getAsJsonObject("me").getAsJsonObject("library").has("tracks")) {
+                tracksObj = root.getAsJsonObject("data").getAsJsonObject("me").getAsJsonObject("library").getAsJsonObject("tracks");
+            } else if (root.has("tracks")) {
+                tracksObj = root.getAsJsonObject("tracks");
+            }
+            if (tracksObj == null) return null;
+            return new Gson().fromJson(tracksObj, UserLibraryTracks.class);
+        }
+
+        public static UserLibraryTracks fromJsonString(String json) {
+            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            return fromJsonObject(root);
+        }
+    }
+
+    // Convenience helpers for callers
+    public static UserLibraryTracks parseLibraryTracks(JsonObject root) {
+        return UserLibraryTracks.fromJsonObject(root);
+    }
+
+    public static UserLibraryTracks parseLibraryTracks(String json) {
+        return UserLibraryTracks.fromJsonString(json);
+    }
+
+    public static class UserLibraryTrackResponse {
+        @com.google.gson.annotations.SerializedName("__typename")
+        public String typename;
+        public AddedAt addedAt;
+        public TrackWrapper track;
+    }
+
+    public static class TrackWrapper {
+        @com.google.gson.annotations.SerializedName("_uri")
+        public String uri;
+        public TrackData data;
+    }
+
+    public static class TrackData {
+        @com.google.gson.annotations.SerializedName("__typename")
+        public String typename;
+        public AlbumOfTrack albumOfTrack;
+        public Artists artists;
+        public AssociationsV3 associationsV3;
+        public ContentRating contentRating;
+        public Integer discNumber;
+        public Duration duration;
+        public String mediaType;
+        public String name;
+        public Playability playability;
+        public Integer trackNumber;
+    }
+
+    public static class PlaylistItem {
+        @SerializedName("__typename")
+        public String typename;
+        public List<Attribute> attributes;
+        public CurrentUserCapabilities currentUserCapabilities;
+        public String description;
+        public String format;
+        public Images images;
+        public String name;
+        public OwnerV2 ownerV2;
+        public String revisionId;
+        public String uri;
+
+        public static PlaylistItem fromJson(String json) {
+            return new Gson().fromJson(json, PlaylistItem.class);
+        }
+
+        public static class Attribute {
+            public String key;
+            public String value;
+        }
+
+        public static class CurrentUserCapabilities {
+            public boolean canEditItems;
+            public boolean canView;
+        }
+
+        public static class Images {
+            public List<ImageItem> items;
+        }
+
+        public static class ImageItem {
+            public List<CoverSource> sources;
+        }
+
+        public static class ColorDetail {
+            public String hex;
+            public boolean isFallback;
+        }
+
+        public static class OwnerV2 {
+            public OwnerData data;
+        }
+
+        public static class OwnerData {
+            @SerializedName("__typename")
+            public String typename;
+            public Object avatar;
+            public String id;
+            public String name;
+            public String uri;
+            public String username;
+        }
+    }
+
+    public static class ShowItem {
+        public CoverArt coverArt;
+        public String description;
+        public String name;
+        public Publisher publisher;
+        public String uri;
+        public Language language;
+        public String mediaType;
+
+        public static class Publisher {
+            public String name;
+        }
+
+        public static class Language {
+            public String code;
+        }
+    }
+
+    public static class AlbumOfTrack {
+        public Artists artists;
+        public CoverArt coverArt;
+        public String name;
+        public String uri;
+    }
+
+    public static class Artists {
+        public List<ArtistItem> items;
+    }
+
+    public static class ArtistItem {
+        public ArtistItemData data;
+    }
+
+    public static class ArtistItemData {
+        public Profile profile;
+        public String uri;
+    }
+
+    public static class Profile {
+        public String name;
+    }
+
+    public static class CoverArt {
+        public List<CoverSource> sources;
+    }
+
+    public static class CoverSource {
+        public Integer height;
+        public String url;
+        public Integer width;
+    }
+
+    public static class AssociationsV3 {
+        public CountWrapper audioAssociations;
+        public CountWrapper videoAssociations;
+    }
+
+    public static class CountWrapper {
+        public int totalCount;
+    }
+
+    public static class ContentRating {
+        public String label;
+    }
+
+    public static class Duration {
+        public long totalMilliseconds;
+    }
+
+    public static class Playability {
+        public boolean playable;
+        public String reason;
+    }
+
+    public static class SearchV2Response {
+        public Data data;
+
+        public static class Data {
+            public SearchV2 searchV2;
+        }
+
+        public static class SearchV2 {
+            public AlbumsV2 albumsV2;
+            public ArtistsWithData artists;
+            public Playlists playlists;
+            public Podcasts podcasts;
+            public TracksV2 tracksV2;
+            public Users users;
+            public TopResultsV2 topResultsV2;
+        }
+
+        public static class AlbumsV2 {
+            @SerializedName("__typename")
+            public String typename;
+            public List<AlbumResponseWrapper> items;
+            public int totalCount;
+        }
+
+        public static class AlbumResponseWrapper {
+            @SerializedName("__typename")
+            public String typename;
+            public Album data;
+        }
+
+        public static class Album {
+            @SerializedName("__typename")
+            public String typename;
+            public Artists artists;
+            public CoverArt coverArt;
+            public Date date;
+            public String name;
+            public String uri;
+            public String type;
+        }
+
+        public static class ArtistsWithData {
+            public List<ArtistsItemData> items;
+        }
+
+        public static class ArtistsItemData {
+            public ArtistItem data;
+        }
+
+        public static class Artists {
+            public List<ArtistItem> items;
+        }
+
+        public static class ArtistItem {
+            public ArtistProfile profile;
+            public String uri;
+        }
+
+        public static class ArtistData {
+            @SerializedName("__typename")
+            public String typename;
+            public ArtistProfile profile;
+            public String uri;
+        }
+
+        public static class ArtistProfile {
+            public String name;
+        }
+
+        public static class Playlists {
+            public List<PlaylistResponseWrapper> items;
+            public int totalCount;
+
+            public static Playlists fromJsonObject(JsonObject root) {
+                if (root == null) return null;
+                JsonObject playlistsObj = null;
+                if (root.has("data") && root.getAsJsonObject("data").has("searchV2")) {
+                    playlistsObj = root.getAsJsonObject("data").getAsJsonObject("searchV2").getAsJsonObject("playlists");
+                } else if (root.has("playlists")) {
+                    playlistsObj = root.getAsJsonObject("playlists");
+                }
+                return playlistsObj == null ? null : new Gson().fromJson(playlistsObj, Playlists.class);
+            }
+        }
+
+        public static class PlaylistResponseWrapper {
+            @SerializedName("__typename")
+            public String typename;
+            public PlaylistItem data;
+        }
+
+        public static class PlaylistItem {
+            @SerializedName("__typename")
+            public String typename;
+            private String name;
+            private String uri;
+            private String description;
+            private UserResponseWrapper ownerV2;
+
+            public Optional<String> getName() {
+                return Optional.ofNullable(name);
+            }
+
+            public Optional<String> getUri() {
+                return Optional.ofNullable(uri);
+            }
+
+            public Optional<String> getDescription() {
+                return Optional.ofNullable(description);
+            }
+
+            public Optional<UserResponseWrapper> getOwnerV2() {
+                return Optional.ofNullable(ownerV2);
+            }
+        }
+
+        public static class TracksV2 {
+            public List<TracksV2Item> items;
+            public int totalCount;
+        }
+
+        public static class TrackItem {
+            public TrackData data;
+        }
+
+        public static class TracksV2Item {
+            public TrackItem item;
+        }
+
+        public static class TrackData {
+            @SerializedName("__typename")
+            public String typename;
+            public String id;
+            public String name;
+            public String uri;
+            public Album albumOfTrack;
+            public Artists artists;
+            public Duration duration;
+        }
+
+        public static class Podcasts {
+            public List<PodcastResponseWrapper> items;
+            public int totalCount;
+        }
+
+        public static class PodcastResponseWrapper {
+            @SerializedName("__typename")
+            public String typename;
+            public Podcast data;
+        }
+
+        public static class Podcast {
+            public String name;
+            public String uri;
+            public String mediaType;
+            public Publisher publisher;
+            public CoverArt coverArt;
+        }
+
+        public static class Publisher {
+            public String name;
+        }
+
+        public static class Users {
+            public List<UsersItem> items;
+            public int totalCount;
+        }
+
+        public static class UsersItem {
+            @SerializedName("__typename")
+            public String typename;
+            public UserData data;
+        }
+
+        public static class UserData {
+            public String username;
+            public String uri;
+        }
+
+        public static class UserResponseWrapper {
+            @SerializedName("__typename")
+            public String typename;
+            public UserData data;
+        }
+
+        public static class CoverArt {
+            public List<CoverSource> sources;
+        }
+
+        public static class CoverSource {
+            public String url;
+            public Integer width;
+            public Integer height;
+        }
+
+        public static class Avatar {
+            public List<CoverSource> sources;
+        }
+
+        public static class Duration {
+            public Long totalMilliseconds;
+        }
+
+        public static class Date {
+            public Integer year;
+        }
+
+        public static class TopResultsV2 {
+            public List<Featured> items;
+        }
+
+        public static class Featured {
+            @SerializedName("__typename")
+            public String typename;
+            public JsonObject data;
+        }
+
+        public static SearchV2Response fromJsonObject(JsonObject root) {
+            try {
+                return new Gson().fromJson(root, SearchV2Response.class);
+            } catch (Exception ex) {
+                return null;
+            }
+        }
+
+        public static SearchV2Response fromJsonString(String json) {
+            try {
+                JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+                return fromJsonObject(root);
+            } catch (Exception ex) {
+                return null;
+            }
+        }
+    }
+
+    public static LibraryResponse getLibraryPage(String[] filters, String[] features, int limit, int offset) throws IOException, MercuryClient.MercuryException {
+        return new Gson().fromJson(
+                PublicValues.session.api().user().getLibrary(filters, features, limit, offset).toString(),
+                LibraryResponse.class
+        );
+    }
+
+    /**
+     * Gets the complete HomeTab (Used in the tab Home)
+     *
+     * @return instance of HomeTab
+     * @see HomeTab
+     */
+    public Optional<HomeTab> getHomeTab() throws IOException, MercuryClient.MercuryException {
+        JsonObject root = PublicValues.session.api().user().getHome();
+        try {
+            return Optional.of(HomeTab.fromJSON(root.getAsJsonObject("data").getAsJsonObject("home")));
+        }catch (Exception e) {
+            ConsoleLogging.error("Error in HomeTab! Dumping JSON: " + root);
+            ConsoleLogging.Throwable(e);
+        }
+        return Optional.empty();
+    }
+
+    public static ArtistUnionDiscoveredOn getArtistDiscoveredOn(String uri) throws IOException, MercuryClient.MercuryException {
+        return new Gson().fromJson(
+                PublicValues.session.api().artist().getArtistDiscoveredOn(uri).toString(),
+                ArtistUnionDiscoveredOn.class);
+    }
+
+    public static LibraryTracksResponse getLibraryTracks(int limit, int offset) throws IOException, MercuryClient.MercuryException {
+        return new Gson().fromJson(
+                PublicValues.session.api().user().getLibraryTracks(limit, offset).toString(),
+                LibraryTracksResponse.class
+        );
+    }
+
+    public static ArtistUnionRelatedArtists getArtistRelatedArtists(String uri) throws IOException, MercuryClient.MercuryException {
+        return new Gson().fromJson(
+                PublicValues.session.api().artist().getArtistRelatedArtists(uri).toString(),
+                ArtistUnionRelatedArtists.class);
+    }
+
+    public static ArtistUnionHeaderImage getArtistHeaderImage(String uri) throws IOException, MercuryClient.MercuryException {
+        return new Gson().fromJson(
+                PublicValues.session.api().artist().getArtistHeaderImage(uri).toString(),
+                ArtistUnionHeaderImage.class);
+    }
+
+    public static SpotifyBrowse getSpotifyBrowse() throws IOException, MercuryClient.MercuryException {
+        return SpotifyBrowse.fromJSON(PublicValues.session.api().getSpotifyBrowse());
+    }
+
+    public static SpotifyBrowseSection getSpotifyBrowseSection(String sectionUri) throws IOException, MercuryClient.MercuryException {
+        return SpotifyBrowseSection.fromJSON(PublicValues.session.api().getSpotifyBrowseSection(sectionUri));
+    }
+
+    public static SearchV2Response search(String searchTerm, int offset, int limit, int numberOfTopResults, boolean includeAudiobooks, boolean includeArtistHasConcertsField, boolean includePreRelease, boolean includeAuthors) throws IOException, MercuryClient.MercuryException {
+        if (numberOfTopResults < 1) numberOfTopResults = 1;
+        return SearchV2Response.fromJsonObject(PublicValues.session.api().search(searchTerm, offset, limit, numberOfTopResults, includeAudiobooks, includeArtistHasConcertsField, includePreRelease, includeAuthors));
+    }
+
+    protected static JsonElement optionalJson(JsonObject jsonElement, String key, JsonPrimitive defaultValue) {
+        JsonElement element = jsonElement.get(key);
+        if (element == null || element.isJsonNull())
+            return defaultValue;
+
+        return element;
     }
 }

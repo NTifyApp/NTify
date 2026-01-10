@@ -19,12 +19,9 @@ import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.lib.libLanguage;
 import com.spotifyxp.logging.LogsViewer;
-import com.spotifyxp.panels.SplashPanel;
 import com.spotifyxp.theming.themes.DarkGreen;
 
 import javax.swing.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 
 public class LogViewer implements Argument {
     @Override

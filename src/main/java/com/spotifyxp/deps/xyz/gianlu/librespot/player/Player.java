@@ -24,7 +24,6 @@ import com.spotifyxp.deps.com.spotify.transfer.TransferStateOuterClass;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.AbsChunkedInputStream;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.PlayableContentFeeder;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.NameThreadFactory;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.SharedSchedulers;
 import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
 import com.spotifyxp.deps.xyz.gianlu.librespot.dacp.DacpMetadataPipe;
@@ -311,6 +310,13 @@ public class Player implements Closeable {
             }
         });
         return future;
+    }
+
+    public void waitReady() throws InterruptedException {
+        try {
+            ready().get();
+        } catch (ExecutionException ignored) {
+        }
     }
 
 

@@ -26,19 +26,18 @@ import com.spotifyxp.deps.com.spotify.connectstate.Connect;
 import com.spotifyxp.deps.com.spotify.explicit.ExplicitContentPubsub;
 import com.spotifyxp.deps.com.spotify.explicit.ExplicitContentPubsub.UserAttributesUpdate;
 import com.spotifyxp.deps.xyz.gianlu.librespot.Version;
+import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.AudioKeyManager;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.PlayableContentFeeder;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.cdn.CdnManager;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.storage.ChannelManager;
 import com.spotifyxp.deps.xyz.gianlu.librespot.cache.CacheManager;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.NameThreadFactory;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.SharedSchedulers;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.crypto.CipherPair;
 import com.spotifyxp.deps.xyz.gianlu.librespot.crypto.DiffieHellman;
 import com.spotifyxp.deps.xyz.gianlu.librespot.crypto.PBKDF2;
 import com.spotifyxp.deps.xyz.gianlu.librespot.crypto.Packet;
-import com.spotifyxp.deps.xyz.gianlu.librespot.dealer.ApiClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.dealer.DealerClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.events.EventSubscriber;
@@ -716,6 +715,11 @@ public final class Session implements Closeable {
 
     @NotNull
     public Random random() {
+        return inner.random;
+    }
+
+    @NotNull
+    public SecureRandom secureRandom() {
         return inner.random;
     }
 

@@ -54,7 +54,7 @@ public class Updater {
 
         // 1. Copy SpotifyXP into tmp
         Files.copy(
-                Paths.get(PublicValues.appLocation + File.separator + "NTify.jar"),
+                Paths.get(PublicValues.fileslocation + File.separator + "NTify.jar"),
                 new File(System.getProperty("java.io.tmpdir"), "NTify.jar").toPath(),
                 StandardCopyOption.REPLACE_EXISTING
         );

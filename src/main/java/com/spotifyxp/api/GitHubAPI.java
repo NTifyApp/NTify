@@ -17,11 +17,11 @@ package com.spotifyxp.api;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.spotifyxp.utils.ConnectionUtils;
+import com.spotifyxp.PublicValues;
+import okhttp3.Request;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
 
 public class GitHubAPI {
@@ -39,7 +39,10 @@ public class GitHubAPI {
     }
 
     public static List<Release> getReleases() throws IOException {
-        List<Release> release = new Gson().fromJson(ConnectionUtils.makeGet("https://api.github.com/repos/NTifyApp/NTify/releases", new HashMap<>()), new TypeToken<List<Release>>(){}.getType());
+        List<Release> release = new Gson().fromJson(PublicValues.defaultHttpClient.newCall(new Request.Builder()
+                        .url("https://api.github.com/repos/NTifyApp/NTify/releases")
+                        .get()
+                .build()).execute().body().string(), new TypeToken<List<Release>>(){}.getType());
         for (Release r : release) {
             if(r.assets.isEmpty()) continue;
             r.assets.get(0).url = "https://github.com/NTifyApp/NTify/releases/download/" + r.tag_name + "/NTify.jar";

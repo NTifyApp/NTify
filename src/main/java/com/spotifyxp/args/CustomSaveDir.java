@@ -24,7 +24,6 @@ public class CustomSaveDir implements Argument {
             PublicValues.fileslocation = parameter1;
             PublicValues.configfilepath = PublicValues.fileslocation + "/config.json";
             PublicValues.customSaveDir = true;
-            PublicValues.appLocation = PublicValues.fileslocation;
         };
     }
 

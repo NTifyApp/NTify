@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,19 @@ package com.spotifyxp.panels;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Album;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Artist;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.TrackSimplified;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.AlbumId;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.ArtistId;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.protogens.ExtendedMetadataStuff;
 import com.spotifyxp.swingextension.JImagePanel;
 import com.spotifyxp.utils.*;
 
@@ -32,8 +38,6 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -142,14 +146,13 @@ public class ArtistPanel extends JScrollPane implements View {
                     Search.searchplaylistsongscache.clear();
                     ((DefaultTableModel) Search.searchplaylisttable.getModel()).setRowCount(0);
                     try {
-                        Album album = InstanceManager.getSpotifyApi().getAlbum(albumUriCache.get(artistAlbumTable.getSelectedRow()).split(":")[2]).build().execute();
-                        for (TrackSimplified simplified : album.getTracks().getItems()) {
+                        for (Metadata.Track track : SpotifyUtils.getAllTracksAlbum(albumUriCache.get(artistAlbumTable.getSelectedRow()))) {
                             artistAlbumTable.addModifyAction(() -> {
-                                ((DefaultTableModel) Search.searchplaylisttable.getModel()).addRow(new Object[]{simplified.getName(), TrackUtils.calculateFileSizeKb(simplified.getDurationMs()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(simplified.getDurationMs())});
-                                Search.searchplaylistsongscache.add(simplified.getUri());
+                                ((DefaultTableModel) Search.searchplaylisttable.getModel()).addRow(new Object[]{track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
+                                Search.searchplaylistsongscache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
                             });
                         }
-                    } catch (IOException ex) {
+                    } catch (IOException | MercuryClient.MercuryException ex) {
                         GraphicalMessage.openException(ex);
                         ConsoleLogging.Throwable(ex);
                     }
@@ -194,10 +197,8 @@ public class ArtistPanel extends JScrollPane implements View {
             public void mouseClicked(MouseEvent e) {
                 if(e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && relatedArtistsTable.getSelectedRow() != -1) {
                     try {
-                        fillWith(InstanceManager.getSpotifyApi().getArtist(
-                                relatedArtistsUriCache.get(relatedArtistsTable.getSelectedRow()).split(":")[2]
-                        ).build().execute());
-                    } catch (IOException ex) {
+                        fillWith(relatedArtistsUriCache.get(relatedArtistsTable.getSelectedRow()));
+                    } catch (IOException | MercuryClient.MercuryException ex) {
                         ConsoleLogging.Throwable(ex);
                     }
                 }
@@ -280,10 +281,44 @@ public class ArtistPanel extends JScrollPane implements View {
         artistalbumcontextmenu = new ContextMenu(artistAlbumTable, albumUriCache, getClass());
     }
 
-    public void fillWith(Artist artist) throws IOException {
+    private class ArtistResponse {
+        public Metadata.Artist artist;
+        public ExtendedMetadataStuff.OnPlatformReputationTrait reputationTrait;
+    }
+
+    private ArtistResponse fetchArtist(String uri) throws IOException, MercuryClient.MercuryException {
+        ArtistResponse artistResponse = new ArtistResponse();
+
+        ExtendedMetadata.BatchedExtensionResponse response = PublicValues.session.api().getExtendedMetadata(ExtendedMetadata.BatchedEntityRequest.newBuilder()
+                        .addEntityRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                .setEntityUri(uri)
+                                .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                        .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ARTIST_V4)
+                                        .build())
+                                .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                        .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ON_PLATFORM_REPUTATION_TRAIT)
+                                        .build())
+                                .build())
+                .build());
+
+        PublicValues.session.api().checkExtendedMetadataResponse(response);
+
+        artistResponse.reputationTrait = ExtendedMetadataStuff.OnPlatformReputationTrait.parseFrom(response.getExtendedMetadata(1).getExtensionData(0).getExtensionData().getValue());
+        artistResponse.artist = Metadata.Artist.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
+
+        return artistResponse;
+    }
+
+    public void fillWith(String uri) throws IOException, MercuryClient.MercuryException {
         reset();
 
-        artistImage.setImage(new URL(SpotifyUtils.getImageForSystem(artist.getImages()).getUrl()).openStream());
+        ArtistResponse artistResponse = fetchArtist(uri);
+
+        Metadata.Artist artist = artistResponse.artist;
+
+        if (artist.getPortraitGroup().getImageCount() != 0) {
+            artistImage.setImage(new URL("https://i.scdn.co/image/" + Utils.bytesToHex(SpotifyUtils.getImageForSystem(artist.getPortraitGroup().getImageList()).getFileId()).toLowerCase(Locale.ENGLISH)));
+        }
 
         Style style = artistTitle.addStyle("", null);
         StyleConstants.setBold(style, true);
@@ -294,12 +329,16 @@ public class ArtistPanel extends JScrollPane implements View {
                     artistTitle.getStyledDocument().getLength(),
                     artist.getName() + "\n",
                     style);
-            artistTitle.getStyledDocument().insertString(artistTitle.getStyledDocument().getLength(), artist.getFollowers().getTotal().toString() + " " + PublicValues.language.translate("ui.artist.followers"), null);
+
+
+            artistTitle.getStyledDocument().insertString(artistTitle.getStyledDocument().getLength(), SpotifyUtils.formatMonthlyListeners(artistResponse.reputationTrait.getMonthlyListeners()) + " " + PublicValues.language.translate("ui.artist.monthlylisteners"), null);
         } catch (BadLocationException e) {
             ConsoleLogging.Throwable(e);
         }
 
-        UnofficialSpotifyAPI.ArtistUnionRelatedArtists relatedArtists = UnofficialSpotifyAPI.getArtistRelatedArtists(artist.getUri());
+        String artistUri = ArtistId.fromHex(Utils.bytesToHex(artist.getGid())).toSpotifyUri();
+
+        UnofficialSpotifyAPI.ArtistUnionRelatedArtists relatedArtists = UnofficialSpotifyAPI.getArtistRelatedArtists(artistUri);
         for(UnofficialSpotifyAPI.ArtistUnionRelatedArtistsArtist relatedArtist : relatedArtists.items) {
             relatedArtistsUriCache.add(relatedArtist.uri);
             relatedArtistsTable.addModifyAction(new Runnable() {
@@ -312,7 +351,7 @@ public class ArtistPanel extends JScrollPane implements View {
             });
         }
 
-        UnofficialSpotifyAPI.ArtistUnionDiscoveredOn discoveredOn = UnofficialSpotifyAPI.getArtistDiscoveredOn(artist.getUri());
+        UnofficialSpotifyAPI.ArtistUnionDiscoveredOn discoveredOn = UnofficialSpotifyAPI.getArtistDiscoveredOn(artistUri);
         for(UnofficialSpotifyAPI.ArtistUnionDiscoveredOnItem discoveredOnItem : discoveredOn.items) {
             if(discoveredOnItem.data.__typename.toLowerCase(Locale.ENGLISH).contains("error")) continue;
             discoveredOnUriCache.add(discoveredOnItem.data.uri);
@@ -327,18 +366,81 @@ public class ArtistPanel extends JScrollPane implements View {
             });
         }
 
-        Thread trackthread = new Thread(() -> {
-            try {
-                for (Track t : InstanceManager.getSpotifyApi().getArtistsTopTracks(artist.getId(), PublicValues.countryCode).build().execute()) {
-                    ArtistPanel.popularUriCache.add(t.getUri());
-                    InstanceManager.getSpotifyAPI().addSongToList(TrackUtils.getArtists(t.getArtists()), t, artistPopularSongList);
-                }
-            } catch (IOException ex) {
-                ConsoleLogging.Throwable(ex);
+        ApiClient.BatchedRequestHelper batchedRequestHelper = new ApiClient.BatchedRequestHelper();
+
+        for (Metadata.TopTracks topTracks : artist.getTopTrackList()) {
+            for(Metadata.Track trackEntry : topTracks.getTrackList()) {
+                batchedRequestHelper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                        .setEntityUri(TrackId.fromHex(Utils.bytesToHex(trackEntry.getGid())).toSpotifyUri())
+                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                .build())
+                        .build(), (data) -> {
+                    Metadata.Track track = Metadata.Track.parseFrom(data[0].getValue());
+                    artistPopularSongList.addModifyAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((DefaultTableModel) artistPopularSongList.getModel()).addRow(new Object[]{
+                                    track.getName(),
+                                    TrackUtils.calculateFileSizeKb(track.getDuration()),
+                                    TrackUtils.getBitrate(),
+                                    TrackUtils.getHHMMSSOfTrack(track.getDuration())
+                            });
+                        }
+                    });
+
+                    popularUriCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
+                });
             }
-        }, "Get tracks (HomePanel)");
-        InstanceManager.getSpotifyAPI().addAllAlbumsToList(ArtistPanel.albumUriCache, artist.getUri(), ArtistPanel.artistAlbumTable);
-        trackthread.start();
+        }
+
+        for(Metadata.AlbumGroup albumGroup : artist.getAlbumGroupList()) {
+            for (Metadata.Album albumEntry : albumGroup.getAlbumList()) {
+                batchedRequestHelper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                        .setEntityUri(AlbumId.fromHex(Utils.bytesToHex(albumEntry.getGid())).toSpotifyUri())
+                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ALBUM_V4)
+                                .build())
+                        .build(), (data) -> {
+                    Metadata.Album album = Metadata.Album.parseFrom(data[0].getValue());
+                    artistAlbumTable.addModifyAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((DefaultTableModel) artistAlbumTable.getModel()).addRow(new Object[]{
+                                    album.getName()
+                            });
+                        }
+                    });
+
+                    albumUriCache.add(AlbumId.fromHex(Utils.bytesToHex(album.getGid())).toSpotifyUri());
+                });
+            }
+        }
+
+        for (Metadata.AlbumGroup albumGroup : artist.getSingleGroupList()) {
+            for (Metadata.Album albumEntry : albumGroup.getAlbumList()) {
+                batchedRequestHelper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                        .setEntityUri(AlbumId.fromHex(Utils.bytesToHex(albumEntry.getGid())).toSpotifyUri())
+                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ALBUM_V4)
+                                .build())
+                        .build(), (data) -> {
+                    Metadata.Album album = Metadata.Album.parseFrom(data[0].getValue());
+                    artistAlbumTable.addModifyAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((DefaultTableModel) artistAlbumTable.getModel()).addRow(new Object[]{
+                                    album.getName()
+                            });
+                        }
+                    });
+
+                    albumUriCache.add(AlbumId.fromHex(Utils.bytesToHex(album.getGid())).toSpotifyUri());
+                });
+            }
+        }
+
+        batchedRequestHelper.execute(PublicValues.session.api(), null);
     }
 
     public void reset() {

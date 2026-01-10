@@ -147,6 +147,7 @@ public class PlayerUtils {
             }
             Player player = new Player(playerconfig, session);
             session.connectionInit();
+            player.waitReady();
             PublicValues.session = session;
             Events.subscribe(SpotifyXPEvents.internetConnectionDropped.getName(), connectionDroppedListener());
             Events.subscribe(SpotifyXPEvents.internetConnectionReconnected.getName(), connectionReconnectedListener());
@@ -168,7 +169,7 @@ public class PlayerUtils {
         return null;
     }
 
-    Session authenticate(Session.Configuration configuration) throws ExecutionException, InterruptedException {
+    Session authenticate(Session.Configuration configuration) throws ExecutionException, InterruptedException, IOException {
         CompletableFuture<Session> sessionFuture = new CompletableFuture<>();
         final Runnable[] cancelRunnable = new Runnable[1];
         LoginDialog.open(

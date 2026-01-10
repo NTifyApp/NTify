@@ -25,20 +25,25 @@ import com.spotifyxp.deps.mslinks.ShellLinkHelper;
 import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.SplashPanel;
-import com.spotifyxp.utils.*;
+import com.spotifyxp.utils.ApplicationUtils;
+import com.spotifyxp.utils.GraphicalMessage;
+import com.spotifyxp.utils.LinuxAppUtil;
+import com.spotifyxp.utils.MacOSAppUtil;
+import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 public class Setup {
 
     @SuppressWarnings("all")
     public Setup() throws IOException {
         SplashPanel.frame.setVisible(false);
-        AcceptComponent thirdparty = new AcceptComponent(new Resources().readToString("setup/thirdparty.html"));
+        AcceptComponent thirdparty = new AcceptComponent(IOUtils.toString(Initiator.class.getResourceAsStream("/setup/thirdparty.html"), StandardCharsets.UTF_8));
         com.spotifyxp.deps.de.werwolf2303.javasetuptool.Setup setup = new com.spotifyxp.deps.de.werwolf2303.javasetuptool.Setup.Builder()
-                .setProgramImage(new Resources().readToInputStream("setup.png"))
+                .setProgramImage(Initiator.class.getResourceAsStream("/setup.png"))
                 .setProgramName(ApplicationUtils.getName())
                 .setProgramVersion(ApplicationUtils.getVersion())
                 .setOnFinish(new Runnable() {
@@ -78,23 +83,23 @@ public class Setup {
             InstallProgressComponent macos = new InstallProgressComponent();
             try {
                 macos.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
-                        .setFrom(PublicValues.appLocation)
+                        .setFrom(PublicValues.fileslocation)
                         .setType(InstallProgressComponent.FileOperationTypes.CREATEDIR));
                 macos.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
-                        .setFrom(new Resources().readToInputStream("ntify.ico"))
-                        .setTo(PublicValues.appLocation + File.separator + "ntify.ico")
+                        .setFrom(Initiator.class.getResourceAsStream("/ntify.ico"))
+                        .setTo(PublicValues.fileslocation + File.separator + "ntify.ico")
                         .setType(InstallProgressComponent.FileOperationTypes.COPYSTREAM));
                 String jarPath = Initiator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
                 macos.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                         .setFrom(jarPath)
-                        .setTo(PublicValues.appLocation + File.separator + "NTify.jar")
+                        .setTo(PublicValues.fileslocation + File.separator + "NTify.jar")
                         .setType(InstallProgressComponent.FileOperationTypes.COPY));
                 macos.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                         .setCustom(() -> {
-                            MacOSAppUtil util = new MacOSAppUtil(ApplicationUtils.getName());
-                            util.setIcon("ntify.icns");
-                            util.setExecutableLocation(PublicValues.appLocation + "/NTify.jar");
                             try {
+                                MacOSAppUtil util = new MacOSAppUtil(ApplicationUtils.getName());
+                                util.setIcon("ntify.icns");
+                                util.setExecutableLocation(PublicValues.fileslocation + "/NTify.jar");
                                 util.create();
                                 return true;
                             } catch (Exception e) {
@@ -115,25 +120,25 @@ public class Setup {
         InstallProgressComponent win = new InstallProgressComponent();
         try {
             win.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
-                    .setFrom(PublicValues.appLocation)
+                    .setFrom(PublicValues.fileslocation)
                     .setType(InstallProgressComponent.FileOperationTypes.CREATEDIR));
             win.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
-                    .setFrom(new Resources().readToInputStream("ntify.ico"))
-                    .setTo(PublicValues.appLocation + "/ntify.ico")
+                    .setFrom(Initiator.class.getResourceAsStream("/ntify.ico"))
+                    .setTo(PublicValues.fileslocation + "/ntify.ico")
                     .setType(InstallProgressComponent.FileOperationTypes.COPYSTREAM));
             String jarPath = Initiator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
             win.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                     .setFrom(jarPath)
-                    .setTo(PublicValues.appLocation + "/NTify.jar")
+                    .setTo(PublicValues.fileslocation + "/NTify.jar")
                     .setType(InstallProgressComponent.FileOperationTypes.COPY));
             win.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                     .setCustom(() -> {
                         try {
                             ShellLink shellLink = new ShellLink();
-                            shellLink.setIconLocation(PublicValues.appLocation + "/ntify.ico");
+                            shellLink.setIconLocation(PublicValues.fileslocation + "/ntify.ico");
                             shellLink.setCMDArgs("--setup-complete");
                             ShellLinkHelper helper = new ShellLinkHelper(shellLink);
-                            helper.setLocalTarget("C", PublicValues.appLocation.replace("C:\\", "") + "/NTify.jar");
+                            helper.setLocalTarget("C", PublicValues.fileslocation.replace("C:\\", "") + "/NTify.jar");
                             helper.saveTo(System.getProperty("user.home") + "/Desktop/NTify.lnk");
                             return true;
                         } catch (Exception e) {
@@ -156,27 +161,27 @@ public class Setup {
                         .setFrom(PublicValues.fileslocation)
                         .setType(InstallProgressComponent.FileOperationTypes.CREATEDIR));
                 linux.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
-                        .setFrom(PublicValues.appLocation)
+                        .setFrom(PublicValues.fileslocation)
                         .setType(InstallProgressComponent.FileOperationTypes.CREATEDIR));
                 linux.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
-                        .setFrom(new Resources().readToInputStream("ntify.ico"))
-                        .setTo(PublicValues.appLocation + File.separator + "ntify.ico")
+                        .setFrom(Initiator.class.getResourceAsStream("/ntify.ico"))
+                        .setTo(PublicValues.fileslocation + File.separator + "ntify.ico")
                         .setType(InstallProgressComponent.FileOperationTypes.COPYSTREAM));
                 String jarPath = Initiator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
                 linux.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                         .setFrom(jarPath)
-                        .setTo(PublicValues.appLocation + File.separator + "NTify.jar")
+                        .setTo(PublicValues.fileslocation + File.separator + "NTify.jar")
                         .setType(InstallProgressComponent.FileOperationTypes.COPY));
                 linux.addFileOperation(new InstallProgressComponent.FileOperationBuilder()
                         .setCustom(() -> {
-                            LinuxAppUtil util = new LinuxAppUtil(ApplicationUtils.getName());
-                            util.setVersion(ApplicationUtils.getVersion());
-                            util.setComment("Listen to Spotify");
-                            util.setPath(PublicValues.appLocation);
-                            util.setExecutableLocation("java -jar NTify.jar --setup-complete");
-                            util.setIconlocation(PublicValues.appLocation + "/ntify.ico");
-                            util.setCategories("Java", "Audio");
                             try {
+                                LinuxAppUtil util = new LinuxAppUtil(ApplicationUtils.getName());
+                                util.setVersion(ApplicationUtils.getVersion());
+                                util.setComment("Listen to Spotify");
+                                util.setPath(PublicValues.fileslocation);
+                                util.setExecutableLocation("java -jar NTify.jar --setup-complete");
+                                util.setIconlocation(PublicValues.fileslocation + "/ntify.ico");
+                                util.setCategories("Java", "Audio");
                                 util.create();
                                 return true;
                             } catch (Exception e) {

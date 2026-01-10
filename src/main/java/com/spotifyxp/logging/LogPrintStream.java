@@ -19,15 +19,15 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
 import org.apache.commons.io.IOUtils;
 
-import javax.xml.crypto.Data;
 import java.io.*;
 import java.nio.charset.Charset;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Locale;
 
 public class LogPrintStream {
     private final PrintStream internalPrintStream;

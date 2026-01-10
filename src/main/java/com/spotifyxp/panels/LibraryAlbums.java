@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
 
 package com.spotifyxp.panels;
 
+import com.google.gson.Gson;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.se.michaelthelin.spotify.enums.ModelObjectType;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.*;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.AlbumId;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.manager.InstanceManager;
-import com.spotifyxp.utils.GraphicalMessage;
 import com.spotifyxp.utils.TrackUtils;
 
 import javax.swing.*;
@@ -75,15 +77,15 @@ public class LibraryAlbums extends JScrollPane{
             public void run() {
                 new Thread(() -> {
                     try {
-                        InstanceManager.getSpotifyApi().removeAlbumsForCurrentUser(
-                                albumsUris.get(albumsTable.getSelectedRow()).split(":")[2]
-                        ).build().execute();
+                        PublicValues.session.api().album().add(AlbumId.fromUri(
+                                albumsUris.get(albumsTable.getSelectedRow())
+                        ));
                         Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
                                 albumsUris.get(albumsTable.getSelectedRow()),
                                 LibraryChange.Type.ALBUM,
                                 LibraryChange.Action.REMOVE
                         ));
-                    }catch (IOException e) {
+                    }catch (IOException | MercuryClient.MercuryException e) {
                         throw new RuntimeException(e);
                     }
                 }, "Remove from albums").start();
@@ -99,15 +101,15 @@ public class LibraryAlbums extends JScrollPane{
                 if(change.getAction() == LibraryChange.Action.ADD) {
                     new Thread(() -> {
                         try {
-                            Album album = InstanceManager.getSpotifyApi().getAlbum(change.getUri().split(":")[2]).build().execute();
-                            albumsUris.add(0, album.getUri());
+                            Metadata.Album album = PublicValues.session.api().album().getMetadata(AlbumId.fromUri(change.getUri()));
+                            albumsUris.add(0, AlbumId.fromHex(Utils.bytesToHex(album.getGid())).toSpotifyUri());
                             albumsTable.addModifyAction(() -> {
                                 ((DefaultTableModel) albumsTable.getModel()).insertRow(0, new Object[] {
                                         album.getName(),
-                                        TrackUtils.getArtists(album.getArtists())
+                                        TrackUtils.getArtists(album.getArtistList())
                                 });
                             });
-                        }catch (IOException e) {
+                        }catch (IOException | MercuryClient.MercuryException e) {
                             throw new RuntimeException(e);
                         }
                     }, "Library add album").start();
@@ -132,31 +134,36 @@ public class LibraryAlbums extends JScrollPane{
     private void fetch() {
         try {
             int limit = 50;
-            Paging<SavedAlbum> albums = InstanceManager.getSpotifyApi().getCurrentUsersSavedAlbums()
-                    .limit(limit)
-                    .build().execute();
-            int total = albums.getTotal();
+            UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Albums"}, null, limit, 0);
+            UnofficialSpotifyAPI.LibraryPage libraryV3 = response.data.me.libraryV3;
+            int total = libraryV3.totalCount;
             int offset = 0;
+            Gson gson = new Gson();
             while(offset < total) {
-                for(SavedAlbum album : albums.getItems()) {
-                    albumsUris.add(album.getAlbum().getUri());
+                for(UnofficialSpotifyAPI.LibraryItemEntry albumItem : libraryV3.items) {
+                    UnofficialSpotifyAPI.AlbumOfTrack album = gson.fromJson(albumItem.item.data.toString(), UnofficialSpotifyAPI.AlbumOfTrack.class);
+                    albumsUris.add(album.uri);
                     albumsTable.addModifyAction(new Runnable() {
                         @Override
                         public void run() {
+                            String artists = "";
+                            for(UnofficialSpotifyAPI.ArtistItem artist : album.artists.items) {
+                                artists += artist.data.profile.name + ", ";
+                            }
+                            if (!artists.isEmpty())
+                                artists = artists.substring(0, artists.length() - 2);
                             ((DefaultTableModel) albumsTable.getModel()).addRow(new Object[]{
-                                    album.getAlbum().getName(),
-                                    TrackUtils.getArtists(album.getAlbum().getArtists()),
+                                    album.name,
+                                    artists,
                             });
                         }
                     });
                     offset++;
                 }
-                albums = InstanceManager.getSpotifyApi().getCurrentUsersSavedAlbums()
-                        .limit(limit)
-                        .offset(offset)
-                        .build().execute();
+                response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Albums"}, null, limit, offset);
+                libraryV3 = response.data.me.libraryV3;
             }
-        }catch (IOException e) {
+        }catch (IOException | MercuryClient.MercuryException e) {
             ConsoleLogging.Throwable(e);
         }
     }

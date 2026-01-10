@@ -22,7 +22,6 @@ import com.spotifyxp.manager.InstanceManager;
 
 public class Player {
     com.spotifyxp.deps.xyz.gianlu.librespot.player.Player player;
-    SpotifyAPI api;
 
     /**
      * Retries building a working librespot-player instance
@@ -41,8 +40,7 @@ public class Player {
         InstanceManager.setPlayer(null);
     }
 
-    public Player(SpotifyAPI a) {
-        api = a;
+    public Player() {
         player = InstanceManager.getPlayerUtils().buildPlayer();
         ConsoleLogging.info(PublicValues.language.translate("debug.connection.ready"));
         player.addEventsListener(new PlayerListener(this));

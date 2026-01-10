@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 package com.spotifyxp.panels;
 
 import com.neovisionaries.i18n.CountryCode;
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.ctxmenu.GlobalContextMenus;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Artist;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.dev.ErrorSimulator;
 import com.spotifyxp.dev.LocationFinder;
 import com.spotifyxp.dialogs.ErrorDisplay;
@@ -34,17 +35,21 @@ import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.updater.Updater;
 import com.spotifyxp.updater.UpdaterUI;
-import com.spotifyxp.utils.*;
+import com.spotifyxp.utils.ApplicationUtils;
+import com.spotifyxp.utils.AsyncActionListener;
+import com.spotifyxp.utils.GraphicalMessage;
+import com.spotifyxp.utils.Utils;
+import org.apache.commons.io.IOUtils;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 public class ContentPanel extends JPanel {
@@ -60,7 +65,17 @@ public class ContentPanel extends JPanel {
     public static JPanel tabPanel;
     public static final JTabbedPane legacySwitch = new JTabbedPane();
     public static final JMenuBar bar = new JMenuBar();
-    public static final JFrame frame = new JFrame(ApplicationUtils.getName() + " - " + ApplicationUtils.getVersion() + " " + ApplicationUtils.getReleaseCandidate());
+    public static final JFrame frame;
+
+    static {
+        try {
+            frame = new JFrame(ApplicationUtils.getName() + " - " + ApplicationUtils.getVersion() + " " + ApplicationUtils.getReleaseCandidate());
+        } catch (IOException e) {
+            GraphicalMessage.sorryErrorExit("Unable to start the application: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Views currentView = Views.HOME; //The view on start is home
     public static Views lastView = Views.HOME;
     public static View currentViewPanel;
@@ -182,10 +197,9 @@ public class ContentPanel extends JPanel {
         currentViewPanel.makeInvisible();
         switchView(Views.ARTIST);
         try {
-            Artist a = InstanceManager.getSpotifyApi().getArtist(fromUri.split(":")[2]).build().execute();
-            artistPanel.fillWith(a);
+            artistPanel.fillWith(fromUri);
             artistPanel.openPanel();
-        } catch (IOException ex) {
+        } catch (IOException | MercuryClient.MercuryException ex) {
             ConsoleLogging.Throwable(ex);
         }
     }
@@ -200,7 +214,7 @@ public class ContentPanel extends JPanel {
         HTMLDialog dialog = new HTMLDialog();
         dialog.getDialog().setPreferredSize(new Dimension(400, 500));
         try {
-            String out = new Resources().readToString("about.html");
+            String out = IOUtils.toString(Initiator.class.getResourceAsStream("about.html"), StandardCharsets.UTF_8);
             StringBuilder cache = new StringBuilder();
             for (String s : out.split("\n")) {
                 if (s.contains("(TRANSLATE)")) {
@@ -209,7 +223,7 @@ public class ContentPanel extends JPanel {
                 }
                 cache.append(s);
             }
-            String openSourceList = new Resources().readToString("setup/thirdparty.html");
+            String openSourceList = IOUtils.toString(Initiator.class.getResourceAsStream("setup/thirdparty.html"), StandardCharsets.UTF_8);
             String finalHTML = cache.toString().split("<insertOpenSourceList>")[0] + openSourceList + cache.toString().split("</insertOpenSourceList>")[1];
             dialog.open(PublicValues.language.translate("ui.menu.help.about"), finalHTML.replace("%APPNAME%", ApplicationUtils.getName()));
         } catch (Exception ex) {
@@ -412,7 +426,13 @@ public class ContentPanel extends JPanel {
                 new LogsViewer().open();
             }
         });
-        audioVisualizer.addActionListener(e -> PublicValues.visualizer.open());
+        audioVisualizer.addActionListener(e -> {
+            try {
+                PublicValues.visualizer.open();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
         extensions.addActionListener(e -> {
             if(injectorStore == null) {
                 try {

@@ -21,8 +21,6 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Episode;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
@@ -33,16 +31,17 @@ import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.panels.PlayerArea;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.swingextension.JImagePanel;
-import com.spotifyxp.theming.themes.DarkGreen;
-import com.spotifyxp.utils.*;
+import com.spotifyxp.utils.ApplicationUtils;
+import com.spotifyxp.utils.SVGUtils;
+import com.spotifyxp.utils.SpotifyUtils;
+import com.spotifyxp.utils.Utils;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
-import java.net.MalformedURLException;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Locale;
 
@@ -145,7 +144,7 @@ public class FullscreenPlayerDialog {
         }
     }
 
-    public void open() {
+    public void open() throws IOException {
         frame = new JFrame(ApplicationUtils.getName() + " - Fullscreen Player");
         frame.setContentPane(contentPanel);
         frame.setUndecorated(true);
@@ -172,14 +171,6 @@ public class FullscreenPlayerDialog {
 
     public void close() {
         frame.dispose();
-    }
-
-    public static void main(String[] args) {
-        PublicValues.theme = new DarkGreen();
-        PublicValues.theme.initTheme();
-        ContentPanel.frame.setBackground(Color.decode("#3c3f41"));
-        FullscreenPlayerDialog dialog = new FullscreenPlayerDialog();
-        dialog.open();
     }
 
     /**

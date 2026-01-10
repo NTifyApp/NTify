@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.SecureRandom;
 
 /**
  * @author Gianlu
@@ -53,6 +54,20 @@ public interface SpotifyId {
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
             throw new SpotifyIdParsingException(ex);
         }
+    }
+
+    static String generateId(SecureRandom random) {
+        byte[] bytes = new byte[16];
+        random.nextBytes(bytes);
+        final String possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        java.math.BigInteger bi = new java.math.BigInteger(1, bytes);
+        StringBuilder sb = new StringBuilder();
+        while (bi.compareTo(java.math.BigInteger.ZERO) > 0) {
+            int index = bi.mod(java.math.BigInteger.valueOf(62)).intValue();
+            sb.append(possible.charAt(index));
+            bi = bi.divide(java.math.BigInteger.valueOf(62));
+        }
+        return sb.reverse().toString();
     }
 
     @NotNull

@@ -29,12 +29,14 @@ import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.zip.ZipInputStream;
 
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 
@@ -104,7 +106,7 @@ public class UpdaterUI extends JFrame {
                 ProcessBuilder builder = new ProcessBuilder(
                         "java",
                         "-jar",
-                        new File(PublicValues.appLocation, "NTify.jar").getAbsolutePath()
+                        new File(PublicValues.fileslocation, "NTify.jar").getAbsolutePath()
                 );
                 try {
                     builder.start();
@@ -132,7 +134,7 @@ public class UpdaterUI extends JFrame {
             InputStream in = response.body().byteStream();
             byte[] data = new byte[1024];
             long downloadedFileSize = 0;
-            FileOutputStream stream = new FileOutputStream(new File(PublicValues.appLocation, "NTify.jar.zip"));
+            FileOutputStream stream = new FileOutputStream(new File(PublicValues.fileslocation, "NTify.jar.zip"));
             int x;
             while ((x = in.read(data, 0, 1024)) >= 0) {
                 downloadedFileSize += x;

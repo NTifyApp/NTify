@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package spotify.collection.proto.v2;
+
+option java_package = "com.spotifyxp.deps.com.spotify.collection2.v2.proto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+message ItemData {
+  oneof data {
+    PlayContextBansItemData play_context_bans_item_data = 1001;
+    BanItemData ban_item_data = 1002;
+    ArtistBanItemData artistban_item_data = 1003;
+    BanIntentItemData ban_intent_item_data = 1004;
+    SnoozedRecsItemData snoozedrecs_item_data = 1005;
+    RatingItemData rating_item_data = 1006;
+    PageMatchItemData page_match_item_data = 1007;
+  }
+}
+
+message PlayContextBansItemData {
+  enum ItemProvider {
+    PROVIDER_UNSPECIFIED = 0;
+    PROVIDER_CONTEXT = 1;
+    PROVIDER_AUTOPLAY = 2;
+    PROVIDER_ENHANCE = 3;
+  }
+
+  PlayContextBansItemData.ItemProvider item_provider = 1;
+}
+
+message BanItemData {
+  bool banned_for_managed_account = 1;
+}
+
+message ArtistBanItemData {
+  bool banned_for_managed_account = 1;
+}
+
+message BanIntentItemData {
+  bool banned_for_managed_account = 1;
+}
+
+message SnoozedRecsItemData {
+  .google.protobuf.Timestamp expires_at = 1;
+  optional string snooze_context_uri = 2;
+}
+
+message RatingItemData {
+  enum RatingValue {
+    UNSET = 0;
+    RATING_1 = 1;
+    RATING_2 = 2;
+    RATING_3 = 3;
+    RATING_4 = 4;
+    RATING_5 = 5;
+  }
+
+  RatingItemData.RatingValue rating_value = 1;
+}
+
+message PageMatchItemData {
+  .google.protobuf.Duration page_match_offset = 1;
+}
+
+message PageRequest {
+  string username = 1;
+  string set = 2;
+  string pagination_token = 3;
+  int32 limit = 4;
+}
+
+message CollectionItem {
+  string uri = 1;
+  int32 added_at = 2;
+  bool is_removed = 3;
+  optional string context_uri = 4;
+  optional ItemData item_data = 5;
+}
+
+message PageResponse {
+  repeated .spotify.collection.proto.v2.CollectionItem items = 1;
+  string next_page_token = 2;
+  string sync_token = 3;
+}
+
+message DeltaRequest {
+  string username = 1;
+  string set = 2;
+  string last_sync_token = 3;
+}
+
+message DeltaResponse {
+  bool delta_update_possible = 1;
+  repeated .spotify.collection.proto.v2.CollectionItem items = 2;
+  string sync_token = 3;
+}
+
+message WriteRequest {
+  string username = 1;
+  string set = 2;
+  repeated .spotify.collection.proto.v2.CollectionItem items = 3;
+  string client_update_id = 4;
+}
+
+message InitializedRequest {
+  string username = 1;
+  string set = 2;
+}
+
+message InitializedResponse {
+  bool initialized = 1;
+}
+

@@ -17,9 +17,12 @@ package com.spotifyxp.support;
 
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.utils.ApplicationUtils;
+import com.spotifyxp.utils.GraphicalMessage;
 
 import java.awt.*;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -34,13 +37,20 @@ public class MacOSXSupportModule implements SupportModule {
     public void run() {
         PublicValues.updaterDisabled = true;
         if (!PublicValues.customSaveDir) {
-            PublicValues.fileslocation = System.getProperty("user.home") + "/Library/Application Support/" + ApplicationUtils.getName();
-            PublicValues.appLocation = PublicValues.fileslocation;
+            try {
+                PublicValues.fileslocation = System.getProperty("user.home") + "/Library/Application Support/" + ApplicationUtils.getName();
+            }catch (IOException e) {
+                GraphicalMessage.sorryErrorExit("Unable to get the Application path: " + e.getMessage());
+            }
             PublicValues.configfilepath = PublicValues.fileslocation + "/config.json";
             PublicValues.tempPath = System.getProperty("java.io.tmpdir");
         }
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-        System.setProperty("com.apple.mrj.application.apple.menu.about.name", ApplicationUtils.getName());
+        try {
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", ApplicationUtils.getName());
+        }catch (IOException e) {
+            ConsoleLogging.warning("Unable to set the application name: " + e.getMessage());
+        }
         try {
             Class<?> util = Class.forName("com.apple.eawt.Application");
             Method getApplication = util.getMethod("getApplication", new Class[0]);

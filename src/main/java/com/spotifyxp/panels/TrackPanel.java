@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 package com.spotifyxp.panels;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.EpisodeSimplified;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.TrackSimplified;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -113,64 +112,37 @@ public class TrackPanel extends Panel implements View {
         try {
             switch (contentType) {
                 case playlist:
-                    if(PublicValues.config.getBoolean(ConfigValues.load_all_tracks.name)) {
-                        Thread thread = new Thread(() -> {
-                            advancedUriCache.clear();
-                            ((DefaultTableModel)  advancedSongTable.getModel()).setRowCount(0);
-                            try {
-                                int offset = 0;
-                                int parsed = 0;
-                                int counter = 0;
-                                int last = 0;
-                                int total = InstanceManager.getSpotifyApi().getPlaylist(forUri.split(":")[2]).build().execute().getTracks().getTotal();
-                                while (parsed != total) {
-                                    Paging<PlaylistTrack> ptracks = InstanceManager.getSpotifyApi().getPlaylistsItems(forUri.split(":")[2]).offset(offset).limit(100).build().execute();
-                                    for (PlaylistTrack track : ptracks.getItems()) {
-                                        ((DefaultTableModel)  advancedSongTable.getModel()).addRow(new Object[]{track.getTrack().getName(), TrackUtils.calculateFileSizeKb(track.getTrack()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getTrack().getDurationMs())});
-                                        advancedUriCache.add(track.getTrack().getUri());
-                                        parsed++;
-                                    }
-                                    if (last == parsed) {
-                                        if (counter > 1) {
-                                            break;
-                                        }
-                                        counter++;
-                                    } else {
-                                        counter = 0;
-                                    }
-                                    last = parsed;
-                                    offset += 100;
+                    Thread thread = new Thread(() -> {
+                        advancedUriCache.clear();
+                        ((DefaultTableModel)  advancedSongTable.getModel()).setRowCount(0);
+                        try {
+                            for (SpotifyUtils.TrackOrEpisode trackOrEpisode : SpotifyUtils.getAllTracksPlaylist(forUri)) {
+                                if (trackOrEpisode.isTrack) {
+                                    Metadata.Track track = trackOrEpisode.track;
+                                    ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
+                                    advancedUriCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
+                                } else {
+                                    Metadata.Episode episode = trackOrEpisode.episode;
+                                    ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{episode.getName(), TrackUtils.calculateFileSizeKb(episode.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(episode.getDuration())});
+                                    advancedUriCache.add(EpisodeId.fromHex(Utils.bytesToHex(episode.getGid())).toSpotifyUri());
                                 }
-                            } catch (NullPointerException e) {
-                                ConsoleLogging.warning("Weird nullpointer in TrackPanel");
-                            } catch (Exception e1) {
-                                throw new RuntimeException(e1);
                             }
-                        }, "Get playlist tracks");
-                        thread.start();
-                    }else {
-                        boolean loadNew = true;
-                        lazyLoadingDeInit = TrackUtils.initializeLazyLoadingForPlaylists(
-                                advancedScrollPanel,
-                                advancedUriCache,
-                                advancedSongTable,
-                                new int[] {28},
-                                forUri.split(":")[2],
-                                inProg,
-                                loadNew
-                        );
-                    }
+                        }catch (Exception e) {
+                            ConsoleLogging.Throwable(e);
+                        }
+                    }, "Get playlist tracks");
+                    thread.start();
                     break;
                 case show:
-                    for (EpisodeSimplified simplified : SpotifyUtils.getAllEpisodesShow(forUri)) {
-                        ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{simplified.getName(), TrackUtils.calculateFileSizeKb(simplified.getDurationMs()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(simplified.getDurationMs())});
-                        advancedUriCache.add(simplified.getUri());
+                    for (Metadata.Episode episode : SpotifyUtils.getAllEpisodesShow(forUri)) {
+                        ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{episode.getName(), TrackUtils.calculateFileSizeKb(episode.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(episode.getDuration())});
+                        advancedUriCache.add(EpisodeId.fromHex(Utils.bytesToHex(episode.getGid())).toSpotifyUri());
                     }
                     break;
                 case album:
-                    for (TrackSimplified simplified : SpotifyUtils.getAllTracksAlbum(forUri)) {
-                        ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{simplified.getName(), TrackUtils.calculateFileSizeKb(simplified.getDurationMs()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(simplified.getDurationMs())});
-                        advancedUriCache.add(simplified.getUri());
+                    for (Metadata.Track track : SpotifyUtils.getAllTracksAlbum(forUri)) {
+                        ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
+                        advancedUriCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
                     }
                     break;
                 default:

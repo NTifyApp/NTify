@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.spotifyxp.panels;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Artist;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
@@ -112,7 +112,7 @@ public class HomePanel extends JScrollPane implements View {
             try {
                 tab = InstanceManager.getUnofficialSpotifyApi().getHomeTab();
                 future.complete(null);
-            } catch (IOException e) {
+            } catch (IOException | MercuryClient.MercuryException e) {
                 future.cancel(false);
                 throw new RuntimeException(e);
             }
@@ -207,8 +207,7 @@ public class HomePanel extends JScrollPane implements View {
                                 setVisible(false);
                                 ContentPanel.switchView(Views.ARTIST);
                                 try {
-                                    Artist a = InstanceManager.getSpotifyApi().getArtist(id).build().execute();
-                                    ContentPanel.artistPanel.fillWith(a);
+                                    ContentPanel.artistPanel.fillWith(uri);
                                 } catch (IOException ex) {
                                     ConsoleLogging.Throwable(ex);
                                 }
@@ -217,7 +216,8 @@ public class HomePanel extends JScrollPane implements View {
                                 ContentPanel.trackPanel.open(uri, ct);
                                 break;
                         }
-                    } catch (Exception ignored) {
+                    } catch (Exception exception) {
+                        ConsoleLogging.Throwable(exception);
                     }
                 }
             }

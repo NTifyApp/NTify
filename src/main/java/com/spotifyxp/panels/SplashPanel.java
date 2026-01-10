@@ -21,7 +21,6 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.swingextension.JImagePanel;
 import com.spotifyxp.utils.GraphicalMessage;
-import com.spotifyxp.utils.Resources;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;

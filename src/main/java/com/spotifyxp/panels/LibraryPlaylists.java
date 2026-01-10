@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,20 @@
  */
 package com.spotifyxp.panels;
 
+import com.google.gson.Gson;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
+import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Playlist;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
+import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlaylistId;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.dialogs.AddPlaylistDialog;
 import com.spotifyxp.dialogs.ChangePlaylistDialog;
 import com.spotifyxp.events.EventSubscriber;
@@ -45,7 +52,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Objects;
 
 public class LibraryPlaylists extends JSplitPane {
     public static JScrollPane playlistsPlaylistsScrollPane;
@@ -68,28 +74,14 @@ public class LibraryPlaylists extends JSplitPane {
         ((DefaultTableModel) playlistsPlaylistsTable.getModel()).setRowCount(0);
         playlistsUriCache.clear();
         try {
-            int total = InstanceManager.getSpotifyApi().getListOfCurrentUsersPlaylists().build().execute().getTotal();
-            int parsed = 0;
-            int counter = 0;
-            int last = 0;
-            int offset = 0;
-            while (parsed != total) {
-                PlaylistSimplified[] playlists = InstanceManager.getSpotifyApi().getListOfCurrentUsersPlaylists().offset(offset).limit(50).build().execute().getItems();
-                for (PlaylistSimplified simplified : playlists) {
-                    playlistsUriCache.add(simplified.getUri());
-                    ((DefaultTableModel) playlistsPlaylistsTable.getModel()).addRow(new Object[]{simplified.getName()});
-                    parsed++;
-                }
-                if (parsed == last) {
-                    if (counter > 1) {
-                        break;
-                    }
-                    counter++;
-                } else {
-                    counter = 0;
-                }
-                last = parsed;
-                offset += 50;
+            UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Playlists"}, null, 999999, 0);
+
+            Gson gson = new Gson();
+            for (UnofficialSpotifyAPI.LibraryItemEntry item : response.data.me.libraryV3.items) {
+                UnofficialSpotifyAPI.PlaylistItem playlistItem = gson.fromJson(gson.toJson(item.item.data), UnofficialSpotifyAPI.PlaylistItem.class);
+
+                playlistsUriCache.add(playlistItem.uri);
+                ((DefaultTableModel) playlistsPlaylistsTable.getModel()).addRow(new Object[]{playlistItem.name});
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -144,66 +136,60 @@ public class LibraryPlaylists extends JSplitPane {
                         lazyLoadingDeInit.run();
                         lazyLoadingDeInit = null;
                     }
-                    if(PublicValues.config.getBoolean(ConfigValues.load_all_tracks.name)) {
-                        Thread thread = new Thread(() -> {
-                            playlistsSongUriCache.clear();
-                            ((DefaultTableModel) playlistsSongTable.getModel()).setRowCount(0);
-                            try {
-                                int offset = 0;
-                                int parsed = 0;
-                                int counter = 0;
-                                int last = 0;
-                                Playlist playlist = InstanceManager.getSpotifyApi().getPlaylist(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2]).build().execute();
-                                int total = playlist.getTracks().getTotal();
-                                playlistDescription.setText(playlist.getDescription());
-                                playlistDescriptionScrollPane.setVisible(!playlist.getDescription().isEmpty());
-                                playlistsSongsPanel.revalidate();
-                                playlistsSongsPanel.repaint();
-                                while (parsed != total) {
-                                    Paging<PlaylistTrack> ptracks = InstanceManager.getSpotifyApi().getPlaylistsItems(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2]).offset(offset).limit(100).build().execute();
-                                    for (PlaylistTrack track : ptracks.getItems()) {
-                                        ((DefaultTableModel) playlistsSongTable.getModel()).addRow(new Object[] {track.getTrack().getName(), TrackUtils.calculateFileSizeKb(track.getTrack()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getTrack().getDurationMs())});
-                                        playlistsSongUriCache.add(track.getTrack().getUri());
-                                        parsed++;
-                                    }
-                                    if (last == parsed) {
-                                        if (counter > 1) {
-                                            break;
-                                        }
-                                        counter++;
-                                    } else {
-                                        counter = 0;
-                                    }
-                                    last = parsed;
-                                    offset += 100;
-                                }
-                            } catch (Exception e1) {
-                                throw new RuntimeException(e1);
-                            }
-                        }, "Get playlist tracks");
-                        thread.start();
-                    }else {
+                    Thread thread = new Thread(() -> {
+                        playlistsSongUriCache.clear();
+                        ((DefaultTableModel) playlistsSongTable.getModel()).setRowCount(0);
                         try {
-                            Playlist playlist = InstanceManager.getSpotifyApi().getPlaylist(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2]).build().execute();
-                            playlistDescription.setText(playlist.getDescription());
-                            playlistDescriptionScrollPane.setVisible(!playlist.getDescription().isEmpty());
-                            playlistsSongsPanel.revalidate();
-                            playlistsSongsPanel.repaint();
-                        } catch (IOException ex) {
-                            ConsoleLogging.Throwable(ex);
-                        }
-                        loadNew = true;
-                        lazyLoadingDeInit = TrackUtils.initializeLazyLoadingForPlaylists(
-                                playlistsSongsScrollPane,
-                                playlistsSongUriCache,
-                                playlistsSongTable,
-                                new int[] {28},
-                                playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2],
-                                inProg,
-                                loadNew
-                        );
-                        loadNew = false;
-                    }
+                            Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().playlist().get(PlaylistId.fromUri(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())));
+                            ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
+                            for (Playlist4ApiProto.Item item : listContent.getContents().getItemsList()) {
+                                switch (item.getUri().split(":")[1]) {
+                                    case "track": {
+                                        helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                                .setEntityUri(item.getUri())
+                                                .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                                        .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                                        .build())
+                                                .build(), data -> {
+                                            Metadata.Track track = Metadata.Track.parseFrom(data[0].getValue());
+                                            playlistsSongTable.addModifyAction(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    ((DefaultTableModel) playlistsSongTable.getModel()).addRow(new Object[] {track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
+                                                    playlistsSongUriCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
+                                                }
+                                            });
+                                        });
+                                        break;
+                                    }
+                                    case "episode": {
+                                        helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                                .setEntityUri(item.getUri())
+                                                .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                                        .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.EPISODE_V4)
+                                                        .build())
+                                                .build(), data -> {
+                                            Metadata.Episode episode = Metadata.Episode.parseFrom(data[0].getValue());
+                                            playlistsSongTable.addModifyAction(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    ((DefaultTableModel) playlistsSongTable.getModel()).addRow(new Object[] {episode.getName(), TrackUtils.calculateFileSizeKb(episode.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(episode.getDuration())});
+                                                    playlistsSongUriCache.add(EpisodeId.fromHex(Utils.bytesToHex(episode.getGid())).toSpotifyUri());
+                                                }
+                                            });
+                                        });
+                                        break;
+                                    }
+                                    default:
+                                        ConsoleLogging.warning("Unsupported playlist item type: " + item.getUri());
+                                        break;
+                                }
+                            }
+                            helper.execute(PublicValues.session.api(), ((exception, response) -> ConsoleLogging.Throwable(exception)));
+                        } catch (Exception e1) {
+                            throw new RuntimeException(e1);
+                        }}, "Get playlist tracks");
+                    thread.start();
                 }
             }
         }));
@@ -250,7 +236,7 @@ public class LibraryPlaylists extends JSplitPane {
 
         playlistsPlaylistsTableContextMenu = new ContextMenu(playlistsPlaylistsTable, playlistsUriCache, getClass());
         playlistsPlaylistsTableContextMenu.addItem(PublicValues.language.translate("ui.general.remove.playlist"), () -> {
-            InstanceManager.getSpotifyApi().unfollowPlaylist(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2]);
+            PublicValues.session.api().playlist().remove(PublicValues.session.username(), new String[] {playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())});
             Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
                     playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()),
                     LibraryChange.Type.PLAYLIST,
@@ -265,32 +251,34 @@ public class LibraryPlaylists extends JSplitPane {
                 JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("changeplaylist.dialog.noselected.description"), PublicValues.language.translate("changeplaylist.dialog.noselected.title"), JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            //ToDo: Implement image change functionality
             try {
-                Playlist playlistRec = InstanceManager.getSpotifyApi().getPlaylist(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2]).build().execute();
+                Playlist4ApiProto.SelectedListContent playlistRec = PublicValues.session.api().playlist().get(PlaylistId.fromUri(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())));
                 ChangePlaylistDialog dialog = new ChangePlaylistDialog();
                 dialog.show(
+                        playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2],
                         playlistRec
                         , new ChangePlaylistDialog.ChangedPlaylistRunnable() {
                             @Override
                             public void receive(ChangePlaylistDialog.ChangedPlaylist playlist) {
                                 new Thread(() -> {
                                     try {
-                                        InstanceManager.getSpotifyApi().changePlaylistsDetails(
-                                                        playlistRec.getId()
-                                                )
-                                                .collaborative(playlist.isCollaborative)
-                                                .public_(playlist.isPublic)
-                                                .name(playlist.playlistName)
-                                                .description(playlist.playlistDescription)
-                                                .build().execute();
+                                        PublicValues.session.api().playlist().edit(
+                                                playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()),
+                                                playlist.playlistName,
+                                                playlist.playlistDescription,
+                                                playlist.isPublic ? 1 : 0,
+                                                playlist.isCollaborative ? 1 : 0,
+                                                new byte[0]
+                                        );
                                         new Thread(LibraryPlaylists.this::fetchPlaylists, "Fetch playlists").start();
-                                    } catch (IOException e) {
+                                    } catch (IOException | MercuryClient.MercuryException e) {
                                         ConsoleLogging.Throwable(e);
                                     }
                                 }, "Change playlist").start();
                             }
                         });
-            } catch (IOException e) {
+            } catch (IOException | MercuryClient.MercuryException e) {
                 ConsoleLogging.Throwable(e);
             }
         });
@@ -300,21 +288,15 @@ public class LibraryPlaylists extends JSplitPane {
                 dialog.show((data) -> {
                     new Thread(() -> {
                         try {
-                            String uri = InstanceManager.getSpotifyApi().createPlaylist(
-                                    PublicValues.session.username(),
-                                    data.name
-                            ).public_(data.isPublic).description(data.description).collaborative(data.isCollaborative).build().execute().getUri();
-                            if(!data.imageBase64.isEmpty()) {
-                                try {
-                                    InstanceManager.getSpotifyApi().uploadCustomPlaylistCoverImage(uri.split(":")[2])
-                                            .image_data(data.imageBase64)
-                                            .build().execute();
-                                }catch(IOException e) {
-                                    ConsoleLogging.Throwable(e);
-                                }
-                            }
+                            PublicValues.session.api().playlist().create(
+                                    data.name,
+                                    data.description,
+                                    data.isPublic,
+                                    data.isCollaborative,
+                                    data.imageData
+                            );
                             new Thread(this::fetchPlaylists, "Fetch playlists").start();
-                        } catch (IOException e) {
+                        } catch (IOException | MercuryClient.MercuryException e) {
                             throw new RuntimeException(e);
                         }
                     }, "Create playlist thread").start();
@@ -336,10 +318,10 @@ public class LibraryPlaylists extends JSplitPane {
                         @Override
                         public void run() {
                             try {
-                                Playlist playlist = InstanceManager.getSpotifyApi().getPlaylist(change.getUri().split(":")[2]).build().execute();
-                                playlistsUriCache.add(0, playlist.getUri());
-                                ((DefaultTableModel) playlistsPlaylistsTable.getModel()).insertRow(0, new Object[]{playlist.getName()});
-                            } catch (IOException e) {
+                                Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().playlist().get(PlaylistId.fromUri(change.getUri()));
+                                playlistsUriCache.add(0, change.getUri());
+                                ((DefaultTableModel) playlistsPlaylistsTable.getModel()).insertRow(0, new Object[]{playlist.getAttributes().getName()});
+                            } catch (IOException | MercuryClient.MercuryException e) {
                                 throw new RuntimeException(e);
                             }
                         }

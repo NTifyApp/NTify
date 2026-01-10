@@ -1,7 +1,8 @@
-import shutil, errno
-import os
-import fnmatch
+import errno
 import fileinput
+import fnmatch
+import os
+import shutil
 import sys
 
 

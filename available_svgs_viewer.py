@@ -1,7 +1,7 @@
-from tkinter import *
-import tkinter
 import os
+import tkinter
 import tksvg
+from tkinter import *
 from tkscrolledframe import ScrolledFrame
 
 gui = tkinter.Tk()

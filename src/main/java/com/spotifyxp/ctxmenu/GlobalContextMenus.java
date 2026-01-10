@@ -16,17 +16,16 @@
 package com.spotifyxp.ctxmenu;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.se.michaelthelin.spotify.enums.ModelObjectType;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.TrackSimplified;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.*;
 import com.spotifyxp.dialogs.FollowPlaylist;
 import com.spotifyxp.dialogs.SelectPlaylist;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.panels.Queue;
 import com.spotifyxp.utils.ClipboardUtil;
@@ -83,11 +82,10 @@ public enum GlobalContextMenus {
                                     public void optionSelected(boolean isPublic) {
                                         new Thread(() -> {
                                             try {
-                                                InstanceManager.getSpotifyApi().followPlaylist(
-                                                        uris.get(table.getSelectedRow()).split(":")[2],
-                                                        isPublic
-                                                ).build().execute();
-                                            }catch (IOException e) {
+                                                PublicValues.session.api().playlist().follow(PlaylistId.fromUri(
+                                                        uris.get(table.getSelectedRow())
+                                                ), isPublic);
+                                            }catch (IOException | MercuryClient.MercuryException e) {
                                                 ConsoleLogging.Throwable(e);
                                             }
                                         }, "Follow playlist").start();
@@ -102,10 +100,10 @@ public enum GlobalContextMenus {
                         case "show":
                             new Thread(() -> {
                                 try {
-                                    InstanceManager.getSpotifyApi().saveShowsForCurrentUser(
+                                    PublicValues.session.api().show().follow(ShowId.fromUri(
                                             uris.get(table.getSelectedRow()).split(":")[2]
-                                    ).build().execute();
-                                }catch (IOException e) {
+                                    ));
+                                }catch (IOException | MercuryClient.MercuryException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save album").start();
@@ -114,11 +112,10 @@ public enum GlobalContextMenus {
                         case "artist":
                             new Thread(() -> {
                                 try {
-                                    InstanceManager.getSpotifyApi().followArtistsOrUsers(
-                                            ModelObjectType.ARTIST,
-                                            new String[] {uris.get(table.getSelectedRow()).split(":")[2]}
-                                    ).build().execute();
-                                }catch (IOException e) {
+                                    PublicValues.session.api().artist().follow(
+                                            ArtistId.fromUri(uris.get(table.getSelectedRow()))
+                                    );
+                                }catch (IOException | MercuryClient.MercuryException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save Artist").start();
@@ -127,10 +124,10 @@ public enum GlobalContextMenus {
                         case "track":
                             new Thread(() -> {
                                 try {
-                                    InstanceManager.getSpotifyApi().saveTracksForUser(
-                                            uris.get(table.getSelectedRow()).split(":")[2]
-                                    ).build().execute();
-                                }catch (IOException e) {
+                                    PublicValues.session.api().track().like(
+                                            TrackId.fromUri(uris.get(table.getSelectedRow()))
+                                    );
+                                }catch (IOException | MercuryClient.MercuryException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save track").start();
@@ -138,23 +135,27 @@ public enum GlobalContextMenus {
                             break;
                         case "episode":
                             new Thread(() -> {
-                                try {
+                                /*try {
                                     InstanceManager.getSpotifyApi().saveEpisodesForCurrentUser(
                                             uris.get(table.getSelectedRow()).split(":")[2]
                                     ).build().execute();
                                 }catch (IOException e) {
                                     ConsoleLogging.Throwable(e);
-                                }
+                                }*/
+                                //ToDo: Reverse engineer episode saving
+                                //Problem is that I don't know how the spotify client knows the playlist id when the user
+                                //never saved an episode before
+                                JOptionPane.showMessageDialog(ContentPanel.frame, "Not implemented yet");
                             }, "Save episode").start();
                             libraryChangeType = LibraryChange.Type.EPISODE;
                             break;
                         case "album":
                             new Thread(() -> {
                                 try {
-                                    InstanceManager.getSpotifyApi().saveAlbumsForCurrentUser(
-                                            uris.get(table.getSelectedRow()).split(":")[2]
-                                    ).build().execute();
-                                }catch (IOException e) {
+                                    PublicValues.session.api().album().add(
+                                            AlbumId.fromUri(uris.get(table.getSelectedRow()))
+                                    );
+                                }catch (IOException | MercuryClient.MercuryException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save album").start();
@@ -197,9 +198,6 @@ public enum GlobalContextMenus {
                         SelectPlaylist playlist = new SelectPlaylist(new SelectPlaylist.onPlaylistSelected() {
                             @Override
                             public void playlistSelected(String uri) {
-                                int limit;
-                                int offset;
-                                int total;
                                 try {
                                     ArrayList<String> urisToBeAdded = new ArrayList<>();
                                     switch (uris.get(table.getSelectedRow()).toLowerCase(Locale.ENGLISH).split(":")[1]) {
@@ -208,30 +206,19 @@ public enum GlobalContextMenus {
                                             urisToBeAdded.add(uris.get(table.getSelectedRow()));
                                             break;
                                         case "album":
-                                            limit = 50;
-                                            Paging<TrackSimplified> albumTracks = InstanceManager.getSpotifyApi().getAlbumsTracks(uris.get(table.getSelectedRow()).split(":")[2])
-                                                    .build().execute();
-                                            total = albumTracks.getTotal();
-                                            offset = 0;
-                                            while(offset < total) {
-                                                for(TrackSimplified albumTrack : albumTracks.getItems()) {
-                                                    urisToBeAdded.add(albumTrack.getUri());
-                                                    offset++;
-                                                }
-                                                InstanceManager.getSpotifyApi().getAlbumsTracks(uris.get(table.getSelectedRow()).split(":")[2])
-                                                        .limit(limit)
-                                                        .offset(offset)
-                                                        .build().execute();
-                                            }
+                                            Metadata.Album album = PublicValues.session.api().album().getMetadata(AlbumId.fromUri(
+                                                    uris.get(table.getSelectedRow())
+                                            ));
+                                            for (Metadata.Disc disc : album.getDiscList())
+                                                for (Metadata.Track track : disc.getTrackList())
+                                                    urisToBeAdded.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
                                     }
-                                    offset = 0;
-                                    while(offset < urisToBeAdded.size()) {
-                                        InstanceManager.getSpotifyApi().addItemsToPlaylist(uri.split(":")[2],
-                                                urisToBeAdded.subList(offset, Math.min(offset + 100, urisToBeAdded.size())).toArray(new String[0])
-                                        ).build().execute();
-                                        offset += 100;
-                                    }
-                                }catch (IOException e) {
+
+                                    PublicValues.session.api().playlist().addItems(
+                                            PlaylistId.fromUri(uri),
+                                            urisToBeAdded.toArray(new String[0])
+                                    );
+                                }catch (IOException | MercuryClient.MercuryException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }

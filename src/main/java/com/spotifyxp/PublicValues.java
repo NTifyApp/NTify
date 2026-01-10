@@ -43,6 +43,7 @@ import okhttp3.OkHttpClient;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @SuppressWarnings("CanBeFinal")
@@ -60,16 +61,32 @@ public class PublicValues {
 
     public static ArchitectureDetection.Architecture architecture = ArchitectureDetection.Architecture.x86;
     public static libLanguage language = null;
-    public static String fileslocation = System.getenv("appdata") + File.separator + ApplicationUtils.getName();
+    public static String fileslocation;
+
+    static {
+        try {
+            fileslocation = System.getenv("appdata") + File.separator + ApplicationUtils.getName();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static String configfilepath = fileslocation + File.separator + "config.json";
     public static Config config = null;
     public static Session session;
     public static boolean debug = false;
     public static Quality quality = null;
     public static String[] args = null;
-    @Deprecated
-    public static String appLocation = fileslocation;
-    public static String deviceName = ApplicationUtils.getName();
+    public static String deviceName;
+
+    static {
+        try {
+            deviceName = ApplicationUtils.getName();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Theme theme = null;
     public static libDetect.OSType osType;
     public static boolean foundSetupArgument = false;

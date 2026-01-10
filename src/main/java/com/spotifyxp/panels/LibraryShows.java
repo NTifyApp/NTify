@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,19 @@
  */
 package com.spotifyxp.panels;
 
+import com.google.gson.Gson;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.SavedShow;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Show;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.ShowId;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.swingextension.JDialog;
 
 import javax.swing.*;
@@ -34,7 +35,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOError;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -81,15 +81,15 @@ public class LibraryShows extends JScrollPane {
                 if(showsTable.getSelectedRow() == -1) return;
                 new Thread(() -> {
                     try {
-                        InstanceManager.getSpotifyApi().removeUsersSavedShows(
-                                showsUris.get(showsTable.getSelectedRow()).split(":")[2]
-                        ).build().execute();
+                        PublicValues.session.api().show().follow(ShowId.fromUri(
+                                showsUris.get(showsTable.getSelectedRow())
+                        ));
                         Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
                                 showsUris.get(showsTable.getSelectedRow()),
                                 LibraryChange.Type.SHOW,
                                 LibraryChange.Action.REMOVE
                         ));
-                    }catch (IOException e) {
+                    }catch (IOException | MercuryClient.MercuryException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -101,14 +101,12 @@ public class LibraryShows extends JScrollPane {
                 if(showsTable.getSelectedRow() == -1) return;
                 new Thread(() -> {
                     try {
-                        Show show = InstanceManager.getSpotifyApi().getShow(
-                                showsUris.get(showsTable.getSelectedRow()).split(":")[2]
-                        ).build().execute();
+                        Metadata.Show show = PublicValues.session.api().show().getMetadata(ShowId.fromUri(showsUris.get(showsTable.getSelectedRow())));
                         openDialog(
                                 String.format(PublicValues.language.translate("ui.library.tabs.shows.descdialog.title"), show.getName()),
                                 show.getDescription()
                         );
-                    }catch (IOException e) {
+                    }catch (IOException | MercuryClient.MercuryException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -126,8 +124,8 @@ public class LibraryShows extends JScrollPane {
                         @Override
                         public void run() {
                             try {
-                                Show show = InstanceManager.getSpotifyApi().getShow(change.getUri().split(":")[2]).build().execute();
-                                showsUris.add(0, show.getUri());
+                                Metadata.Show show = PublicValues.session.api().show().getMetadata(ShowId.fromUri(showsUris.get(showsTable.getSelectedRow())));
+                                showsUris.add(0, showsUris.get(showsTable.getSelectedRow()));
                                 showsTable.addModifyAction(new Runnable() {
                                     @Override
                                     public void run() {
@@ -137,7 +135,7 @@ public class LibraryShows extends JScrollPane {
                                         });
                                     }
                                 });
-                            }catch (IOException e) {
+                            }catch (IOException | MercuryClient.MercuryException e) {
                                 throw new RuntimeException(e);
                             }
                         }
@@ -178,29 +176,21 @@ public class LibraryShows extends JScrollPane {
 
     private void fetch() {
         try {
-            int limit = 50;
-            Paging<SavedShow> shows = InstanceManager.getSpotifyApi().getUsersSavedShows()
-                    .limit(limit).build().execute();
-            int total = shows.getTotal();
-            int offset = 0;
-            while(offset < total){
-                for(SavedShow show : shows.getItems()) {
-                    showsUris.add(show.getShow().getUri());
-                    showsTable.addModifyAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            ((DefaultTableModel) showsTable.getModel()).addRow(new Object[]{
-                                    show.getShow().getName(),
-                                    show.getShow().getPublisher()
-                            });
-                        }
+            UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Podcasts & Shows"}, null, 999999, 0);
+
+            Gson gson = new Gson();
+            for (UnofficialSpotifyAPI.LibraryItemEntry item : response.data.me.libraryV3.items) {
+                UnofficialSpotifyAPI.ShowItem show = gson.fromJson(item.item.data, UnofficialSpotifyAPI.ShowItem.class);
+
+                showsUris.add(show.uri);
+                showsTable.addModifyAction(() -> {
+                    ((DefaultTableModel) showsTable.getModel()).addRow(new Object[]{
+                            show.name,
+                            show.publisher
                     });
-                    offset++;
-                }
-                shows = InstanceManager.getSpotifyApi().getUsersSavedShows()
-                        .limit(limit).offset(offset).build().execute();
+                });
             }
-        }catch (IOException e) {
+        }catch (IOException | MercuryClient.MercuryException e) {
             ConsoleLogging.Throwable(e);
         }
     }

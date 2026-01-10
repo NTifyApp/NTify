@@ -16,14 +16,11 @@
 package com.spotifyxp.panels;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
-import com.spotifyxp.guielements.SpotifyBrowseSection;
 import com.spotifyxp.utils.AsyncActionListener;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class SpotifySectionPanel extends JScrollPane implements View {
     public static JButton backButton;

@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 package com.spotifyxp.panels;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.dialogs.FullscreenPlayerDialog;
 import com.spotifyxp.dialogs.LyricsDialog;
 import com.spotifyxp.events.EventSubscriber;
@@ -174,6 +175,10 @@ public class PlayerArea extends JPanel {
                         }
                     }
                 } catch (NullPointerException e2) {
+                    playerAreaLyricsButton.setImage(Graphics.MICROPHONE.getPath());
+                    playerAreaLyricsButton.isFilled = false;
+                } catch (IOException ex) {
+                    ConsoleLogging.Throwable(ex);
                     playerAreaLyricsButton.setImage(Graphics.MICROPHONE.getPath());
                     playerAreaLyricsButton.isFilled = false;
                 }
@@ -332,28 +337,33 @@ public class PlayerArea extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
+                //ToDo: Reverse engineer track liking
                 if (heart.isFilled) {
                     try {
-                        InstanceManager.getSpotifyApi().removeUsersSavedTracks(Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri().split(":")[2]).build().execute();
+                        PublicValues.session.api().track().remove(TrackId.fromUri(
+                                Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
+                        ));
                         Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
                                 Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
                                 LibraryChange.Type.TRACK,
                                 LibraryChange.Action.REMOVE
                         ));
-                    } catch (IOException ex) {
+                    } catch (IOException | MercuryClient.MercuryException ex) {
                         throw new RuntimeException(ex);
                     }
                     heart.setImage(Graphics.HEART.getPath());
                     heart.isFilled = false;
                 } else {
                     try {
-                        InstanceManager.getSpotifyApi().saveTracksForUser(Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri().split(":")[2]).build().execute();
+                        PublicValues.session.api().track().like(TrackId.fromUri(
+                                Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
+                        ));
                         Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
                                 Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
                                 LibraryChange.Type.TRACK,
                                 LibraryChange.Action.ADD
                         ));
-                    } catch (IOException ex) {
+                    } catch (IOException | MercuryClient.MercuryException ex) {
                         throw new RuntimeException(ex);
                     }
                     heart.setImage(Graphics.HEARTFILLED.getPath());
@@ -381,7 +391,11 @@ public class PlayerArea extends JPanel {
             }
         });
 
-        if (PublicValues.vlcPlayer.isVideoPlaybackEnabled()) canvasPlayer = new CanvasPlayer();
+        try {
+            if (PublicValues.vlcPlayer.isVideoPlaybackEnabled()) canvasPlayer = new CanvasPlayer();
+        }catch (IOException exception) {
+            ConsoleLogging.Throwable(exception);
+        }
         canvasPlayerButton = new JSVGPanel();
         canvasPlayerButton.setImage(Graphics.VIDEO.getPath());
         canvasPlayerButton.getJComponent().setBackground(heart.getJComponent().getBackground());
@@ -438,7 +452,11 @@ public class PlayerArea extends JPanel {
         contextMenu.addItem(PublicValues.language.translate("ui.playerarea.ctxmenu.item2"), new Runnable() {
             @Override
             public void run() {
-                new FullscreenPlayerDialog().open();
+                try {
+                    new FullscreenPlayerDialog().open();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
 

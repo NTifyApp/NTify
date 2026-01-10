@@ -39,7 +39,7 @@ public class Events {
             for (EventSubscriber subscriber : new ArrayList<>(subscribers)) {
                 try {
                     subscriber.run(data);
-                }catch (Exception e) {
+                }catch (Throwable e) {
                     ConsoleLogging.Throwable(e);
                 }
             }

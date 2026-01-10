@@ -19,7 +19,8 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Playlist;
+import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.swingextension.JDialog;
 
 import javax.swing.*;
@@ -153,11 +154,12 @@ public class ChangePlaylistDialog extends JDialog {
         return contentPanel;
     }
 
-    public void show(Playlist playlist, ChangedPlaylistRunnable runnable) {
-        playlistName.setText(playlist.getName());
-        playlistDescription.setText(playlist.getDescription());
-        visibility.setSelected(playlist.getIsPublicAccess());
-        collaborative.setSelected(playlist.getIsCollaborative());
+    public void show(String id, Playlist4ApiProto.SelectedListContent playlist, ChangedPlaylistRunnable runnable) throws IOException, MercuryClient.MercuryException {
+        Playlist4ApiProto.Permission permission = PublicValues.session.api().playlist().getPermission(id);
+        playlistName.setText(playlist.getAttributes().getName());
+        playlistDescription.setText(playlist.getAttributes().getDescription());
+        visibility.setSelected(permission.getPermissionLevel().equals(Playlist4ApiProto.PermissionLevel.VIEWER));
+        collaborative.setSelected(playlist.getAttributes().getCollaborative());
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

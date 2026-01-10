@@ -17,11 +17,17 @@ package com.spotifyxp.args;
 
 import com.spotifyxp.PublicValues;
 
+import java.io.IOException;
+
 public class Help implements Argument {
     @Override
     public Runnable runArgument(String parameter1) {
         return () -> {
-            PublicValues.argParser.printHelp();
+            try {
+                PublicValues.argParser.printHelp();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             System.exit(0);
         };
     }

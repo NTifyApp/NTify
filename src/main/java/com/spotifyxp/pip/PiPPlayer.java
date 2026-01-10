@@ -15,6 +15,7 @@
  */
 package com.spotifyxp.pip;
 
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
@@ -29,7 +30,6 @@ import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.swingextension.JImageButton;
 import com.spotifyxp.swingextension.JImagePanel;
 import com.spotifyxp.utils.AsyncActionListener;
-import com.spotifyxp.utils.Resources;
 
 import javax.swing.*;
 import java.awt.*;
@@ -237,7 +237,7 @@ public class PiPPlayer {
             @Override
             public void run(Object... data) {
                 if(frame != null) {
-                    playPause.setImage(new Resources().readToInputStream(pausePath));
+                    playPause.setImage(Initiator.class.getResourceAsStream(pausePath));
                 }
             }
         });
@@ -246,7 +246,7 @@ public class PiPPlayer {
             @Override
             public void run(Object... data) {
                 if(frame != null) {
-                    playPause.setImage(new Resources().readToInputStream(playPath));
+                    playPause.setImage(Initiator.class.getResourceAsStream(playPath));
                 }
             }
         });
@@ -298,7 +298,7 @@ public class PiPPlayer {
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
-            cachePath = new File(PublicValues.appLocation, "cvnscache");
+            cachePath = new File(PublicValues.fileslocation, "cvnscache");
             if(!cachePath.exists()) {
                 if(!cachePath.mkdir()) {
                     ConsoleLogging.error("Failed to create cvnscache directory");
@@ -318,7 +318,7 @@ public class PiPPlayer {
 
         closeButton = new JImageButton();
         closeButton.setBorderPainted(false);
-        closeButton.setImage(new Resources().readToInputStream(closePath));
+        closeButton.setImage(Initiator.class.getResourceAsStream(closePath));
         closeButton.setColor(Color.WHITE);
         closeButton.addActionListener(new AsyncActionListener(new ActionListener() {
             @Override
@@ -332,7 +332,7 @@ public class PiPPlayer {
 
         previousButton = new JImageButton();
         previousButton.setBorderPainted(false);
-        previousButton.setImage(new Resources().readToInputStream(previousPath));
+        previousButton.setImage(Initiator.class.getResourceAsStream(previousPath));
         previousButton.setColor(Color.WHITE);
         previousButton.addActionListener(new AsyncActionListener(new ActionListener() {
             @Override
@@ -345,7 +345,7 @@ public class PiPPlayer {
 
 
         playPause = new JImageButton();
-        playPause.setImage(new Resources().readToInputStream(playPath));
+        playPause.setImage(Initiator.class.getResourceAsStream(playPath));
         playPause.addActionListener(new AsyncActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -364,7 +364,7 @@ public class PiPPlayer {
 
         nextButton = new JImageButton();
         nextButton.setBorderPainted(false);
-        nextButton.setImage(new Resources().readToInputStream(nextPath));
+        nextButton.setImage(Initiator.class.getResourceAsStream(nextPath));
         nextButton.setColor(Color.WHITE);
         nextButton.addActionListener(new AsyncActionListener(new ActionListener() {
             @Override
@@ -392,9 +392,9 @@ public class PiPPlayer {
         resizeComponents();
         frame.setLocation(ContentPanel.frame.getLocation());
         if(InstanceManager.getSpotifyPlayer().isPaused()) {
-            playPause.setImage(new Resources().readToInputStream(playPath));
+            playPause.setImage(Initiator.class.getResourceAsStream(playPath));
         }else{
-            playPause.setImage(new Resources().readToInputStream(pausePath));
+            playPause.setImage(Initiator.class.getResourceAsStream(pausePath));
         }
         songImage.setImage(PlayerArea.playerImage.getImageStream());
     }

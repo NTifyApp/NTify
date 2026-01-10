@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package spotifyxp.extended_metadata;
+
+option java_package = "com.spotifyxp.protogens";
+
+message OnPlatformReputationTrait {
+  int32 monthlyListeners = 4;
+}

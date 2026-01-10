@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 package com.spotifyxp.panels;
 
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.SavedTrack;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Track;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
@@ -40,32 +41,11 @@ import java.util.ArrayList;
 public class LibraryTracks extends JScrollPane implements View {
     public static DefTable librarySongList;
     public static final ArrayList<String> libraryUriCache = new ArrayList<>();
-    private static boolean libraryLoadingInProgress = false;
     public static ContextMenu contextMenu;
-    public static int totalTracks = 0;
     public static Thread libraryThread;
 
     public LibraryTracks() {
         setVisible(false);
-        final boolean[] inProg = {false};
-        addMouseWheelListener(e -> {
-            if (!inProg[0]) {
-                inProg[0] = true;
-                BoundedRangeModel m = getVerticalScrollBar().getModel();
-                int extent = m.getExtent();
-                int maximum = m.getMaximum();
-                int value = m.getValue();
-                if (value + extent >= maximum / 2) {
-                    if (ContentPanel.currentView == Views.LIBRARY) {
-                        if (!libraryLoadingInProgress) {
-                            Thread thread = new Thread(LibraryTracks::loadNext, "Library load next");
-                            thread.start();
-                        }
-                    }
-                }
-                inProg[0] = false;
-            }
-        });
 
         librarySongList = new DefTable();
         librarySongList.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("ui.library.songlist.songname"), PublicValues.language.translate("ui.library.songlist.filesize"), PublicValues.language.translate("ui.library.songlist.bitrate"), PublicValues.language.translate("ui.library.songlist.length")}));
@@ -97,11 +77,11 @@ public class LibraryTracks extends JScrollPane implements View {
                         @Override
                         public void run() {
                             try {
-                                Track track = InstanceManager.getSpotifyApi().getTrack(change.getUri().split(":")[2]).build().execute();
-                                libraryUriCache.add(0, track.getUri());
-                                String a = TrackUtils.getArtists(track.getArtists());
-                                librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).insertRow(0, new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDurationMs())}));
-                            }catch (IOException e) {
+                                Metadata.Track track = PublicValues.session.api().track().getMetadata(TrackId.fromUri(change.getUri()));
+                                libraryUriCache.add(0, change.getUri());
+                                String a = TrackUtils.getArtists(track.getArtistList());
+                                librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).insertRow(0, new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())}));
+                            }catch (IOException | MercuryClient.MercuryException e) {
                                 throw new RuntimeException(e);
                             }
                         }
@@ -122,19 +102,38 @@ public class LibraryTracks extends JScrollPane implements View {
         libraryThread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    libraryLoadingInProgress = true;
-                    int limit = 50;
-                    Paging<SavedTrack> libraryTracks = InstanceManager.getSpotifyApi().getUsersSavedTracks().limit(limit).build().execute();
-                    totalTracks = libraryTracks.getTotal();
-                    for(SavedTrack track : libraryTracks.getItems()) {
-                        libraryUriCache.add(track.getTrack().getUri());
-                        String a = TrackUtils.getArtists(track.getTrack().getArtists());
-                        librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).addRow(new Object[]{track.getTrack().getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getTrack()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getTrack().getDurationMs())}));
+                    UnofficialSpotifyAPI.LibraryTracksResponse response = UnofficialSpotifyAPI.getLibraryTracks(5000, 0);
+
+                    for (UnofficialSpotifyAPI.UserLibraryTrackResponse item : response.data.me.library.tracks.items) {
+                        libraryUriCache.add(item.track.uri);
+                        StringBuilder artists = new StringBuilder();
+                        for (int i = 0; i < item.track.data.artists.items.size(); i++)
+                            artists.append(item.track.data.artists.items.get(i).data.profile.name).append(", ");
+                        if (artists.length() > 0)
+                            artists = new StringBuilder(artists.substring(0, artists.length() - 2));
+                        StringBuilder finalArtists = artists;
+                        librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).addRow(new Object[]{item.track.data.name + " - " + finalArtists, TrackUtils.calculateFileSizeKb(item.track.data.duration.totalMilliseconds), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(item.track.data.duration.totalMilliseconds)}));
                     }
-                    libraryLoadingInProgress = false;
+
+                    if (response.data.me.library.tracks.totalCount > 5000) {
+                        int loaded = 5000;
+                        while (loaded < response.data.me.library.tracks.totalCount) {
+                            UnofficialSpotifyAPI.LibraryTracksResponse pagedResponse = UnofficialSpotifyAPI.getLibraryTracks(5000, loaded);
+                            for (UnofficialSpotifyAPI.UserLibraryTrackResponse item : pagedResponse.data.me.library.tracks.items) {
+                                libraryUriCache.add(item.track.uri);
+                                StringBuilder artists = new StringBuilder();
+                                for (int i = 0; i < item.track.data.artists.items.size(); i++)
+                                    artists.append(item.track.data.artists.items.get(i).data.profile.name).append(", ");
+                                if (artists.length() > 0)
+                                    artists = new StringBuilder(artists.substring(0, artists.length() - 2));
+                                StringBuilder finalArtists = artists;
+                                librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).addRow(new Object[]{item.track.data.name + " - " + finalArtists, TrackUtils.calculateFileSizeKb(item.track.data.duration.totalMilliseconds), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(item.track.data.duration.totalMilliseconds)}));
+                            }
+                            loaded += pagedResponse.data.me.library.tracks.items.size();
+                        }
+                    }
                 } catch (Exception e) {
                     ConsoleLogging.error("Error loading users library! Library now locked");
-                    libraryLoadingInProgress = true;
                     throw new RuntimeException(e);
                 }
             }
@@ -154,37 +153,21 @@ public class LibraryTracks extends JScrollPane implements View {
             Events.triggerEvent(SpotifyXPEvents.addtoqueue.getName(), libraryUriCache.get(librarySongList.getSelectedRow()));
         });
         contextMenu.addItem(PublicValues.language.translate("ui.general.remove"), () -> {
-            InstanceManager.getSpotifyApi().removeUsersSavedTracks(libraryUriCache.get(librarySongList.getSelectedRow()).split(":")[2]);
-            Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
-                    libraryUriCache.get(librarySongList.getSelectedRow()),
-                    LibraryChange.Type.TRACK,
-                    LibraryChange.Action.REMOVE
-            ));
-        });
-    }
+            //ToDo: Reverse engineer track removal
+            try {
+                PublicValues.session.api().track().remove(TrackId.fromUri(
+                        libraryUriCache.get(librarySongList.getSelectedRow())
+                ));
 
-    public static void loadNext() {
-        if (libraryLoadingInProgress) {
-            return;
-        }
-        if(libraryUriCache.size() == totalTracks) return;
-        try {
-            libraryLoadingInProgress = true;
-            int limit = 50;
-            Paging<SavedTrack> libraryTracks = InstanceManager.getSpotifyApi().getUsersSavedTracks()
-                    .offset(libraryUriCache.size()).limit(limit).build().execute();
-            totalTracks = libraryTracks.getTotal();
-            for(SavedTrack track : libraryTracks.getItems()) {
-                libraryUriCache.add(track.getTrack().getUri());
-                String a = TrackUtils.getArtists(track.getTrack().getArtists());
-                librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).addRow(new Object[]{track.getTrack().getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getTrack()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getTrack().getDurationMs())}));
+                Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                        libraryUriCache.get(librarySongList.getSelectedRow()),
+                        LibraryChange.Type.TRACK,
+                        LibraryChange.Action.REMOVE
+                ));
+            } catch (IOException | MercuryClient.MercuryException e) {
+                throw new RuntimeException(e);
             }
-            libraryLoadingInProgress = false;
-        } catch (Exception e) {
-            libraryLoadingInProgress = true;
-            ConsoleLogging.error("Error loading users library! Library now locked");
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     @Override

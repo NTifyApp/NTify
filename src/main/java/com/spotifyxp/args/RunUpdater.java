@@ -17,7 +17,6 @@ package com.spotifyxp.args;
 
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.se.michaelthelin.spotify.Base64;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.lib.libDetect;
@@ -26,6 +25,7 @@ import com.spotifyxp.support.SupportModuleLoader;
 import com.spotifyxp.updater.Updater;
 import com.spotifyxp.updater.UpdaterUI;
 import okhttp3.OkHttpClient;
+import org.apache.commons.net.util.Base64;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -46,7 +46,7 @@ public class RunUpdater implements Argument {
                 PublicValues.language.setLanguageFolder("lang");
                 PublicValues.defaultHttpClient = new OkHttpClient();
                 try {
-                    ByteArrayInputStream stream = new ByteArrayInputStream(Base64.decode(commands));
+                    ByteArrayInputStream stream = new ByteArrayInputStream(Base64.decodeBase64(commands));
                     new UpdaterUI().open((Updater.UpdateInfo) new ObjectInputStream(stream).readObject());
                 } catch (IOException | ClassNotFoundException e) {
                     throw new RuntimeException(e);

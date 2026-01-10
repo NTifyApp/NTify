@@ -26,6 +26,7 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.logging.ConsoleLoggingModules;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -40,6 +41,27 @@ public final class TokenProvider {
     private final static int TOKEN_EXPIRE_THRESHOLD = 10;
     private final Session session;
     private final List<StoredToken> tokens = new ArrayList<>();
+    private final String[] availableScopes = new String[] {
+            "ugc-image-upload",
+            "user-read-playback-state",
+            "user-modify-playback-state",
+            "user-read-currently-playing",
+            "app-remote-control",
+            "streaming",
+            "playlist-read-private",
+            "playlist-read-collaborative",
+            "playlist-modify-private",
+            "playlist-modify-public",
+            "user-follow-modify",
+            "user-follow-read",
+            "user-read-playback-position",
+            "user-top-read",
+            "user-read-recently-played",
+            "user-library-modify",
+            "user-library-read",
+            "user-read-email",
+            "user-read-private"
+    };
 
     TokenProvider(@NotNull Session session) {
         this.session = session;
@@ -54,9 +76,17 @@ public final class TokenProvider {
         return null;
     }
 
+    public synchronized StoredToken someToken() throws IOException, MercuryClient.MercuryException {
+        if (!tokens.isEmpty()) {
+            return tokens.get(0);
+        } else {
+            return getToken(availableScopes);
+        }
+    }
+
     @NotNull
     public synchronized StoredToken getToken(@NotNull String... scopes) throws IOException, MercuryClient.MercuryException {
-        if (scopes.length == 0) throw new IllegalArgumentException();
+        if (scopes.length == 0) scopes = availableScopes;
 
         StoredToken token = findTokenWithAllScopes(scopes);
         if (token != null) {

@@ -15,11 +15,11 @@
  */
 package com.spotifyxp.swingextension;
 
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.utils.GraphicalMessage;
-import com.spotifyxp.utils.Resources;
 import com.spotifyxp.utils.Utils;
 
 import javax.imageio.ImageIO;
@@ -30,7 +30,7 @@ public class JFrame extends javax.swing.JFrame {
     public JFrame(String title) {
         super.setTitle(title);
         try {
-            setIconImage(ImageIO.read(new Resources().readToInputStream("ntify.png")));
+            setIconImage(ImageIO.read(Initiator.class.getResourceAsStream("/ntify.png")));
         } catch (IOException e) {
             GraphicalMessage.openException(e);
             ConsoleLogging.Throwable(e);
@@ -39,7 +39,7 @@ public class JFrame extends javax.swing.JFrame {
 
     public JFrame() {
         try {
-            setIconImage(ImageIO.read(new Resources().readToInputStream("ntify.png")));
+            setIconImage(ImageIO.read(Initiator.class.getResourceAsStream("/ntify.png")));
         } catch (IOException e) {
             GraphicalMessage.openException(e);
             ConsoleLogging.Throwable(e);

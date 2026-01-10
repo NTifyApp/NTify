@@ -22,7 +22,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import java.awt.*;
-import java.util.Arrays;
 
 public class Library extends JScrollPane implements View {
     public static LibraryTracks libraryTracks;

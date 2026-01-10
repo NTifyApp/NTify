@@ -2,8 +2,8 @@ import os.path
 import subprocess
 import sys
 import zipfile
-from init import doInit
 
+from init import doInit
 
 JAR_PATH = "target/NTify.jar"
 

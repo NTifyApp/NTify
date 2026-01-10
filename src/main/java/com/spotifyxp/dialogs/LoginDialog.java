@@ -25,8 +25,8 @@ import com.spotifyxp.guielements.Settings;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.ClipboardUtil;
-import com.spotifyxp.utils.ConnectionUtils;
 import com.spotifyxp.utils.GraphicalMessage;
+import com.spotifyxp.utils.Utils;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
@@ -121,7 +121,7 @@ public class LoginDialog {
                 public void run(Object... data) {
                     oAuthCallbackURL = (String) data[0];
                     try {
-                        ConnectionUtils.openBrowser(oAuthCallbackURL);
+                        Utils.openBrowser(oAuthCallbackURL);
                     } catch (URISyntaxException | IOException ex) {
                         GraphicalMessage.sorryError("Could not open OAuth URL! Press 'Copy' and open it manually");
                         throw new RuntimeException(ex);
@@ -186,7 +186,7 @@ public class LoginDialog {
             EventSubscriber onZeroconfExecute,
             EventSubscriber onOauthCancel,
             EventSubscriber onOauthExecute
-    ) {
+    ) throws IOException {
         if (frame != null) {
             return;
         }

@@ -16,13 +16,13 @@
 package com.spotifyxp.background;
 
 
+import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.tray.SystemTrayDialog;
 import com.spotifyxp.utils.ApplicationUtils;
-import com.spotifyxp.utils.Resources;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -46,7 +46,7 @@ public class BackgroundService {
         }
         try {
             trayDialog = new SystemTrayDialog();
-            trayDialog.add(new ImageIcon(ImageIO.read(new Resources().readToInputStream("ntify.png"))), ApplicationUtils.getName());
+            trayDialog.add(new ImageIcon(ImageIO.read(Initiator.class.getResourceAsStream("/ntify.png"))), ApplicationUtils.getName());
             trayDialog.open(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {

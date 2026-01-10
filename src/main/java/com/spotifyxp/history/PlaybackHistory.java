@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.concurrent.FutureTask;
 
 @SuppressWarnings("Duplicates")
 public class PlaybackHistory {
@@ -364,5 +363,9 @@ public class PlaybackHistory {
                 new SQLInsert(t.getAlbum().getName(), SQLEntryTypes.STRING),
                 new SQLInsert(albumUri, SQLEntryTypes.STRING),
                 new SQLInsert(sqlTable.getRowCount(), SQLEntryTypes.INTEGER));
+    }
+
+    public int getSize() {
+        return sqlTable.tryGetRowCount();
     }
 }

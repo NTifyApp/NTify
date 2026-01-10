@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,18 @@
  */
 package com.spotifyxp.panels;
 
+import com.google.gson.Gson;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Episode;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.EpisodeWrapped;
-import com.spotifyxp.deps.se.michaelthelin.spotify.model_objects.specification.Paging;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotifyxp.deps.com.spotify.metadata.Metadata;
+import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
+import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
+import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlaylistId;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
@@ -82,7 +89,7 @@ public class LibraryEpisodes extends JScrollPane {
             public void run() {
                 if(episodesTable.getSelectedRow() == -1) return;
                 new Thread(() -> {
-                    try {
+                    /*try {
                         InstanceManager.getSpotifyApi().removeUsersSavedEpisodes(
                                 episodesUris.get(episodesTable.getSelectedRow()).split(":")[2]
                         ).build().execute();
@@ -93,7 +100,8 @@ public class LibraryEpisodes extends JScrollPane {
                         ));
                     }catch (IOException e) {
                         ConsoleLogging.Throwable(e);
-                    }
+                    }*/
+                    JOptionPane.showMessageDialog(ContentPanel.frame, "Not implemented yet");
                 }).start();
             }
         });
@@ -102,14 +110,12 @@ public class LibraryEpisodes extends JScrollPane {
             public void run() {
                 new Thread(() -> {
                     try {
-                        Episode episode = InstanceManager.getSpotifyApi().getEpisode(
-                                episodesUris.get(episodesTable.getSelectedRow()).split(":")[2]
-                        ).build().execute();
+                        Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(episodesUris.get(episodesTable.getSelectedRow())));
                         openDialog(
                                 String.format(PublicValues.language.translate("ui.library.tabs.episodes.epdescdialog.title"), episode.getName()),
                                 episode.getDescription()
                         );
-                    }catch (IOException e) {
+                    }catch (IOException | MercuryClient.MercuryException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -120,14 +126,12 @@ public class LibraryEpisodes extends JScrollPane {
             public void run() {
                 new Thread(() -> {
                     try {
-                        Episode episode = InstanceManager.getSpotifyApi().getEpisode(
-                                episodesUris.get(episodesTable.getSelectedRow()).split(":")[2]
-                        ).build().execute();
+                        Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(episodesUris.get(episodesTable.getSelectedRow())));
                         openDialog(
                                 String.format(PublicValues.language.translate("ui.library.tabs.episodes.showdescdialog.title"), episode.getShow().getName()),
                                 episode.getShow().getDescription()
                         );
-                    }catch (IOException e) {
+                    }catch (IOException | MercuryClient.MercuryException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -145,20 +149,20 @@ public class LibraryEpisodes extends JScrollPane {
                         @Override
                         public void run() {
                             try {
-                                Episode episode = InstanceManager.getSpotifyApi().getEpisode(change.getUri().split(":")[2]).build().execute();
-                                episodesUris.add(0, episode.getUri());
+                                Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(change.getUri()));
+                                episodesUris.add(0, change.getUri());
                                 episodesTable.addModifyAction(new Runnable() {
                                     @Override
                                     public void run() {
                                         ((DefaultTableModel) episodesTable.getModel()).insertRow(0, new Object[]{
                                                 episode.getName(),
                                                 episode.getShow().getName(),
-                                                TrackUtils.calculateFileSizeKb(episode),
-                                                TrackUtils.getHHMMSSOfTrack(episode.getDurationMs())
+                                                TrackUtils.calculateFileSizeKb(episode.getDuration()),
+                                                TrackUtils.getHHMMSSOfTrack(episode.getDuration())
                                         });
                                     }
                                 });
-                            }catch (IOException e) {
+                            }catch (IOException | MercuryClient.MercuryException e) {
                                 throw new RuntimeException(e);
                             }
                         }
@@ -180,31 +184,47 @@ public class LibraryEpisodes extends JScrollPane {
 
     private void fetch() {
         try {
-            int limit = 50;
-            Paging<EpisodeWrapped> episodes = InstanceManager.getSpotifyApi().getUsersSavedEpisodes()
-                    .limit(limit).build().execute();
-            int total = episodes.getTotal();
-            int offset = 0;
-            while (offset < total) {
-                for (EpisodeWrapped episode : episodes.getItems()) {
-                    episodesUris.add(episode.getEpisode().getUri());
+            UnofficialSpotifyAPI.LibraryResponse userLibraryResponse = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Playlists"}, new String[] {"YOUR_EPISODES_V2"}, 10, 0);
+            String episodePlaylistUri = null;
+            for(UnofficialSpotifyAPI.LibraryItemEntry item : userLibraryResponse.data.me.libraryV3.items) {
+                UnofficialSpotifyAPI.PlaylistItem playlistItem = new Gson().fromJson(item.item.data.toString(), UnofficialSpotifyAPI.PlaylistItem.class);
+                if(playlistItem.format != null && playlistItem.format.equals("listen-later")) {
+                    episodePlaylistUri = item.item.uri;
+                    break;
+                }
+            }
+
+            if (episodePlaylistUri == null) {
+                ConsoleLogging.warning("No episodes playlist found in user library.");
+                return;
+            }
+
+            Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().playlist().get(PlaylistId.fromUri(episodePlaylistUri));
+            ApiClient.BatchedRequestHelper requestHelper = new ApiClient.BatchedRequestHelper();
+            for (Playlist4ApiProto.Item episodeItem : listContent.getContents().getItemsList()) {
+                requestHelper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                        .setEntityUri(episodeItem.getUri())
+                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.EPISODE_V4)
+                                .build())
+                        .build(), data -> {
+                    Metadata.Episode episode = Metadata.Episode.parseFrom(data[0].getValue());
+                    episodesUris.add(episodeItem.getUri());
                     episodesTable.addModifyAction(new Runnable() {
                         @Override
                         public void run() {
                             ((DefaultTableModel) episodesTable.getModel()).addRow(new Object[]{
-                                    episode.getEpisode().getName(),
-                                    episode.getEpisode().getShow().getName(),
-                                    TrackUtils.calculateFileSizeKb(episode.getEpisode()),
-                                    TrackUtils.getHHMMSSOfTrack(episode.getEpisode().getDurationMs())
+                                    episode.getName(),
+                                    episode.getShow().getName(),
+                                    TrackUtils.calculateFileSizeKb(episode.getDuration()),
+                                    TrackUtils.getHHMMSSOfTrack(episode.getDuration())
                             });
                         }
                     });
-                    offset++;
-                }
-                episodes = InstanceManager.getSpotifyApi().getUsersSavedEpisodes()
-                        .limit(limit).offset(offset).build().execute();
+                });
             }
-        } catch (IOException e) {
+            requestHelper.execute(PublicValues.session.api(), (exception, response) -> ConsoleLogging.Throwable(exception));
+        } catch (IOException | MercuryClient.MercuryException e) {
             ConsoleLogging.Throwable(e);
         }
     }

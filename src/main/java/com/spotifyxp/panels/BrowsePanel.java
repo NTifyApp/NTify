@@ -18,6 +18,7 @@ package com.spotifyxp.panels;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.configuration.ConfigValues;
+import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.guielements.ArtistEventView;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.guielements.SpotifyBrowseModule;
@@ -261,15 +262,15 @@ public class BrowsePanel extends JScrollPane implements View {
             switch (id) {
                 case "spotify:concerts":
                     try {
-                        ContentPanel.sectionPanel.fillWith(concertsToViewDescriptor(UnofficialSpotifyAPI.getConcerts()));
-                    } catch (IOException e) {
+                        ContentPanel.sectionPanel.fillWith(concertsToViewDescriptor(PublicValues.session.api().getConcerts()));
+                    } catch (IOException | MercuryClient.MercuryException e) {
                         throw new RuntimeException(e);
                     }
                     break;
                 default:
                     try {
                         ContentPanel.sectionPanel.fillWith(browseSectionToViewDescriptor(UnofficialSpotifyAPI.getSpotifyBrowseSection(id)));
-                    } catch (IOException e) {
+                    } catch (IOException | MercuryClient.MercuryException e) {
                         throw new RuntimeException(e);
                     }
             }
@@ -384,14 +385,14 @@ public class BrowsePanel extends JScrollPane implements View {
                             new Thread(() -> {
                                 try {
                                     backButton.setVisible(true);
-                                    eventView.set(new ArtistEventView(UnofficialSpotifyAPI.getConcert(concerts.get(0).getConcertUri().split(":")[2])));
+                                    eventView.set(new ArtistEventView(PublicValues.session.api().getConcert(concerts.get(0).getConcertUri().split(":")[2])));
                                     eventsTableScrollPane.setVisible(false);
                                     alternateTablesTableContainer.add(eventView.get());
                                     contentPanel.setBorder(new LineBorder(Color.GRAY, 1));
                                     contentPanel.revalidate();
                                     contentPanel.repaint();
                                     isOnTicketView.set(true);
-                                } catch (IOException ex) {
+                                } catch (IOException | MercuryClient.MercuryException ex) {
                                     ConsoleLogging.Throwable(ex);
                                 }
                             }).start();
@@ -417,13 +418,13 @@ public class BrowsePanel extends JScrollPane implements View {
                             try {
                                 backButton.setVisible(true);
                                 eventsListTableScrollPane.setVisible(false);
-                                eventView.set(new ArtistEventView(UnofficialSpotifyAPI.getConcert(eventsList.get(eventsListTable.getSelectedRow()))));
+                                eventView.set(new ArtistEventView(PublicValues.session.api().getConcert(eventsList.get(eventsListTable.getSelectedRow()))));
                                 alternateTablesTableContainer.add(eventView.get());
                                 contentPanel.setBorder(new LineBorder(Color.GRAY, 1));
                                 contentPanel.revalidate();
                                 contentPanel.repaint();
                                 isOnTicketView.set(true);
-                            } catch (IOException ex) {
+                            } catch (IOException | MercuryClient.MercuryException ex) {
                                 ConsoleLogging.Throwable(ex);
                             }
                         }).start();
@@ -552,7 +553,7 @@ public class BrowsePanel extends JScrollPane implements View {
                 });
                 try {
                     spotifyBrowse = UnofficialSpotifyAPI.getSpotifyBrowse();
-                }catch (IOException e) {
+                }catch (IOException | MercuryClient.MercuryException e) {
                     throw new RuntimeException(e);
                 }
                 if(PublicValues.config.getInt(ConfigValues.browse_view_style.name) == 1) {
