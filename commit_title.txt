@@ -1,1 +1,1 @@
-Update MPRIS support
+Switch to internal spotify api
