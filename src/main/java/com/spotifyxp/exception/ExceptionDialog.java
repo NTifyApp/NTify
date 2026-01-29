@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,9 +58,6 @@ public class ExceptionDialog {
      * Opens a real exception window
      */
     public void openReal() {
-        if (PublicValues.config.getBoolean(ConfigValues.hideExceptions.name)) {
-            return;
-        }
         if (SplashPanel.frame.isVisible()) {
             SplashPanel.frame.setAlwaysOnTop(false);
         }

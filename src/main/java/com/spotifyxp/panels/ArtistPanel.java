@@ -281,7 +281,7 @@ public class ArtistPanel extends JScrollPane implements View {
         artistalbumcontextmenu = new ContextMenu(artistAlbumTable, albumUriCache, getClass());
     }
 
-    private class ArtistResponse {
+    private static class ArtistResponse {
         public Metadata.Artist artist;
         public ExtendedMetadataStuff.OnPlatformReputationTrait reputationTrait;
     }

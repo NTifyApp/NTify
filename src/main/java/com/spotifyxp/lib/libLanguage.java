@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -329,7 +329,7 @@ public class libLanguage {
         final String[] ret = {key};
         if(jsoncache == null) {
             try {
-                jsoncache = new Gson().fromJson(removeComment(IOUtils.toString(Initiator.class.getResourceAsStream("/" + lf + "/" + languageCode + ".json"), StandardCharsets.UTF_8)), JsonObject.class);
+                jsoncache = new Gson().fromJson(removeComment(IOUtils.toString(clazz.getResourceAsStream("/" + lf + "/" + languageCode + ".json"), StandardCharsets.UTF_8)), JsonObject.class);
             } catch (Exception e) {
                 // Can be too early in init. So no ConsoleLogging.Throwable
                 ConsoleLogging.error("Failed to get translation for: " + key);
@@ -361,7 +361,7 @@ public class libLanguage {
             if (languages.contains(language.getName())) {
                 continue;
             }
-            if (Initiator.class.getResourceAsStream("/lang/" + language.getCode() + ".json") != null) {
+            if (clazz.getResourceAsStream("/lang/" + language.getCode() + ".json") != null) {
                 languages.add(language.getName());
             }
         }

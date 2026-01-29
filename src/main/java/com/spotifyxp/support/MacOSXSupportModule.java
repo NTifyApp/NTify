@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,8 @@ public class MacOSXSupportModule implements SupportModule {
                 setDockIconImage.invoke(application, image);
             } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
                      InvocationTargetException e) {
+                ConsoleLogging.warning("Failed to set image for MacOS taskbar");
+                e.printStackTrace();
             }
         }
     }

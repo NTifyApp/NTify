@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.spotifyxp.args.ArgParser;
 import com.spotifyxp.audio.Quality;
 import com.spotifyxp.cache.Cache;
 import com.spotifyxp.configuration.Config;
+import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
 import com.spotifyxp.dialogs.LyricsDialog;
@@ -72,7 +73,8 @@ public class PublicValues {
     }
 
     public static String configfilepath = fileslocation + File.separator + "config.json";
-    public static Config config = null;
+    public static Config.RuntimeConfig<ConfigValues> config = null;
+
     public static Session session;
     public static boolean debug = false;
     public static Quality quality = null;

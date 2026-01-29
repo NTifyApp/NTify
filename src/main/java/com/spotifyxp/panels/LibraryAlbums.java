@@ -146,12 +146,12 @@ public class LibraryAlbums extends JScrollPane{
                     albumsTable.addModifyAction(new Runnable() {
                         @Override
                         public void run() {
-                            String artists = "";
+                            StringBuilder artists = new StringBuilder();
                             for(UnofficialSpotifyAPI.ArtistItem artist : album.artists.items) {
-                                artists += artist.data.profile.name + ", ";
+                                artists.append(artist.data.profile.name).append(", ");
                             }
-                            if (!artists.isEmpty())
-                                artists = artists.substring(0, artists.length() - 2);
+                            if (artists.length() != 0)
+                                artists.append(artists, 0, artists.length() - 2);
                             ((DefaultTableModel) albumsTable.getModel()).addRow(new Object[]{
                                     album.name,
                                     artists,

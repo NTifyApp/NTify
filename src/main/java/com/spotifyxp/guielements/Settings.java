@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,57 +16,48 @@
 package com.spotifyxp.guielements;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValueTypes;
-import com.spotifyxp.configuration.ConfigValues;
-import com.spotifyxp.configuration.CustomConfigValue;
+import com.spotifyxp.configuration.*;
+import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.swingextension.JFrame;
-import org.jetbrains.annotations.NotNull;
-
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.awt.event.*;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.List;
 
 public class Settings extends JFrame {
-    JTabbedPane tabbedPane;
+    public JTabbedPane tabbedPane;
     HashMap<String, JPanel> tabs;
+    HashMap<String, Config.RuntimeConfig<?>> configInstanceMap;
     ArrayList<String> categories;
     boolean settingsChanged = false;
-    HashMap<String, String[]> warnings;
-    HashMap<String, ArrayList<Object>> custom_settings;
+    HashMap<String, Object> custom_settings;
     Settings itself;
-    ArrayList<OnWrite> injected_settings_onwrite;
 
     @FunctionalInterface
     public interface OnWrite {
         void run(Object data);
     }
 
-    public Settings() {
+    /**
+     * You may not instantiate this class yourself
+     */
+    public Settings(boolean initializeDefault) {
         tabbedPane = new JTabbedPane();
-        tabs = new HashMap<>();
-        warnings = new HashMap<>();
+        configInstanceMap = new HashMap<>();
         categories = new ArrayList<>();
-        custom_settings = new HashMap<>();
         itself = this;
-        injected_settings_onwrite = new ArrayList<>();
+        custom_settings = new HashMap<>();
+        tabs = new HashMap<>();
 
-        tabbedPane.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                if(warnings.containsKey(categories.get(tabbedPane.getSelectedIndex()))) {
-                    String[] message = warnings.get(categories.get(tabbedPane.getSelectedIndex()));
-                    JOptionPane.showMessageDialog(itself, message[0], message[1], JOptionPane.WARNING_MESSAGE);
-                }
-            }
-        });
         tabbedPane.setForeground(PublicValues.globalFontColor);
         setContentPane(tabbedPane);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -74,7 +65,11 @@ public class Settings extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 e.getWindow().dispose();
-                onClose();
+                try {
+                    onClose();
+                } catch (NoSuchFieldException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
 
             @Override
@@ -83,147 +78,170 @@ public class Settings extends JFrame {
             }
         });
         setTitle(PublicValues.language.translate("ui.settings.title"));
+
+        if (!initializeDefault) return;
+
+        try {
+            addSettings(PublicValues.config);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | NoSuchFieldException |
+                 InstantiationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void addSetting(
-            String category,
-            String name,
-            ConfigValueTypes type,
-            Object defaultValue,
-            Object currentValue,
-            @NotNull OnWrite onWrite
-    ) {
-        if(
-                !(defaultValue instanceof CustomConfigValue)
-                && !(defaultValue instanceof String)
-                && !(defaultValue instanceof Integer)
-                && !(defaultValue instanceof Boolean)
-        ) throw new IllegalArgumentException("Default value must be either a CustomConfigValue, String, Integer, or Boolean");
-        injected_settings_onwrite.add(onWrite);
+    public void addSettings(
+            String pluginUUID,
+            Config.RuntimeConfig<?> config
+    ) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException {
+        if (!configInstanceMap.containsKey(pluginUUID))
+            configInstanceMap.put(pluginUUID, config);
+
+        if (pluginUUID == null)
+            throw new IllegalArgumentException("Plugin UUID is required");
+
+        IConfig configClassInstance = (IConfig) config.getFields();
+
+        for(Field field : configClassInstance.getClass().getFields()) {
+            addSetting(config, field, pluginUUID);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addSetting(Config.RuntimeConfig<?> config, Field field, String pluginUUID) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException, NoSuchFieldException, InstantiationException {
+        if (field.getAnnotations().length == 0) {
+            ConsoleLogging.warning("[Settings] Skipping field without annotation");
+            return;
+        }
+
+        if (field.getAnnotations()[0].annotationType() == Config.HiddenConfigValue.class) {
+            ConsoleLogging.debug("[Settings] Skipping field with hidden annotation");
+            return;
+        }
+
+        IConfig configClassInstance = (IConfig) config.getFields();
+
+        Annotation annotation = field.getAnnotations()[0];
+        Class<?> annotationClass = annotation.annotationType();
+        String id = (String) annotationClass.getDeclaredMethod("id").invoke(annotation);
+        String category = (String) annotationClass.getDeclaredMethod("category").invoke(annotation);
+        Object currentValue = field.get(configClassInstance);
+        Object defaultValue = field.get(configClassInstance);
+
         if(!tabs.containsKey(category)) {
             JPanel panel = new JPanel();
-            panel.setName("unofficial");
+            if (pluginUUID != null)
+                panel.setName("unofficial/" + pluginUUID);
             panel.setLayout(new GridBagLayout());
             tabs.put(category, panel);
             categories.add(category);
-            custom_settings.put(category, new ArrayList<>());
-            tabbedPane.addTab(category, new JScrollPane(panel));
+            tabbedPane.addTab(configClassInstance.translate(category), new JScrollPane(panel));
         }
+
         JPanel panel = tabs.get(category);
-        JLabel label = new JLabel(name, SwingConstants.RIGHT);
+        JLabel label = new JLabel(configClassInstance.translate(id), SwingConstants.RIGHT);
         label.setForeground(PublicValues.globalFontColor);
         panel.add(label, createGbc(0, panel.getComponentCount() + 1, -1));
-        switch(type) {
-            case BOOLEAN:
-                JCheckBox checkBox = new JCheckBox();
-                checkBox.setSelected((boolean) currentValue);
-                checkBox.addChangeListener(e -> {
-                    if(checkBox.isSelected() != (boolean) defaultValue) settingsChanged = true;
-                });
-                panel.add(checkBox, createGbc(1, panel.getComponentCount(), -1));
-                custom_settings.get(category).add(0);
-                break;
-            case STRING:
-                JTextField textField = new JTextField();
-                textField.setForeground(PublicValues.globalFontColor);
-                textField.setText((String) currentValue);
-                textField.addKeyListener(new KeyAdapter() {
-                    @Override
-                    public void keyTyped(KeyEvent e) {
-                        if (textField.getText() != defaultValue) settingsChanged = true;
-                    }
-                });
-                panel.add(textField, createGbc(1, panel.getComponentCount(), -1));
-                custom_settings.get(category).add(0);
-                break;
-            case INT:
-                JSpinner spinner = new JSpinner();
-                spinner.setForeground(PublicValues.globalFontColor);
-                spinner.setValue(currentValue);
-                spinner.addChangeListener(e -> {
-                    if(spinner.getValue() != defaultValue) settingsChanged = true;
-                });
-                panel.add(spinner, createGbc(1, panel.getComponentCount(), -1));
-                custom_settings.get(category).add(0);
-                break;
-            case CUSTOM:
-                if(!(defaultValue instanceof CustomConfigValue)) throw new IllegalArgumentException("Default value must be either CustomConfigValue when the value type is CUSTOM");
-                panel.add(((CustomConfigValue<?>) defaultValue).getComponent(), createGbc(1, panel.getComponentCount(), -1));
-                ((CustomConfigValue<?>) defaultValue).getComponent().setForeground(PublicValues.globalFontColor);
-                ((CustomConfigValue<?>) defaultValue).setOnClickListener(e -> {
-                    if(((CustomConfigValue<?>) defaultValue).getDefaultValue() != ((CustomConfigValue<?>) defaultValue).getValue()) settingsChanged = true;
-                });
-                custom_settings.get(category).add(defaultValue);
+
+        if (annotationClass.equals(Config.CheckBox.class)) {
+            JCheckBox checkBox = new JCheckBox();
+            checkBox.setSelected((boolean) field.get(configClassInstance));
+            checkBox.addChangeListener(e -> {
+                if(checkBox.isSelected() != (boolean) defaultValue) settingsChanged = true;
+            });
+            checkBox.setName(field.getName());
+            panel.add(checkBox, createGbc(1, panel.getComponentCount(), -1));
+        } else if (annotationClass.equals(Config.Text.class)) {
+            com.spotifyxp.swingextension.JTextField textField = new com.spotifyxp.swingextension.JTextField(
+                    (int) annotationClass.getDeclaredMethod("characterLimit").invoke(annotation)
+            );
+            List<String> allowedValues = config.getAllowedValuesFor(field.getName());
+            boolean emptyAllowed = (boolean) annotationClass.getDeclaredMethod("allowEmpty").invoke(annotation);
+            textField.setForeground(PublicValues.globalFontColor);
+            textField.setText((String) currentValue);
+            textField.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyTyped(KeyEvent e) {
+                    if (textField.getText() != defaultValue) settingsChanged = true;
+                    if (!allowedValues.isEmpty())
+                        if (allowedValues.contains(textField.getText()))
+                            textField.setForeground(Color.RED);
+                        else textField.setForeground(PublicValues.globalFontColor);
+
+                    if (textField.getText().isEmpty() && !emptyAllowed)
+                        textField.setForeground(Color.RED);
+                    else textField.setForeground(PublicValues.globalFontColor);
+                }
+            });
+            textField.setName(field.getName());
+            panel.add(textField, createGbc(1, panel.getComponentCount(), -1));
+        } else if (annotationClass.equals(Config.Numbers.class)) {
+            int minValue = (int) annotationClass.getDeclaredMethod("min").invoke(annotation);
+            int maxValue = (int) annotationClass.getDeclaredMethod("max").invoke(annotation);
+            SpinnerNumberModel model = new SpinnerNumberModel((int) currentValue, minValue, maxValue, 1);
+            JSpinner spinner = new JSpinner(model);
+            spinner.setForeground(PublicValues.globalFontColor);
+            spinner.addChangeListener(e -> {
+                if(spinner.getValue() != defaultValue) settingsChanged = true;
+            });
+            spinner.setName(field.getName());
+            panel.add(spinner, createGbc(1, panel.getComponentCount(), -1));
+        } else if (annotationClass.equals(Config.Dropdown.class)) {
+            List<String> values = config.getAllowedValuesFor(field.getName());
+            List<Object> mappings = (List<Object>) config.getMappingValuesFor(field.getName());
+            JComboBox<String> comboBox = new JComboBox<>(values.toArray(new String[0]));
+            comboBox.setRenderer(new ColoredComboBoxRenderer());
+            comboBox.addItemListener(e -> {
+                if (comboBox.getSelectedItem() != currentValue) settingsChanged = true;
+            });
+            comboBox.setName(field.getName());
+            comboBox.setForeground(PublicValues.globalFontColor);
+            panel.add(comboBox, createGbc(1, panel.getComponentCount(), -1));
+            if (mappings.isEmpty()) {
+                mappings = Arrays.asList(values.toArray());
+                comboBox.setSelectedItem(currentValue);
+            } else comboBox.setSelectedItem(values.get(mappings.indexOf(currentValue)));
+            custom_settings.put(field.getName(), mappings);
+        } else if (annotationClass.equals(Config.CustomComponent.class)) {
+            Method method = annotationClass.getMethod("component");
+            method.setAccessible(true);
+            Class<?> providerClass = (Class<?>) method.invoke(annotation);
+            Constructor<?> constructor = providerClass.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            Config.CustomComponentCallback componentCallback = (Config.CustomComponentCallback) constructor.newInstance();
+            JComponent component = componentCallback.component();
+            component.setName(field.getName());
+            panel.add(component, createGbc(1, panel.getComponentCount(), -1));
+            custom_settings.put(field.getName(), componentCallback);
+        } else {
+            ConsoleLogging.error("[Settings] Unsupported annotation in config class");
         }
     }
 
-    protected void addSetting(ConfigValues value, int i) {
-        if(!tabs.containsKey(value.category)) {
-            JPanel panel = new JPanel();
-            panel.setLayout(new GridBagLayout());
-            tabs.put(value.category, panel);
-            categories.add(value.category);
-            tabbedPane.addTab(PublicValues.language.translate(value.category), new JScrollPane(panel));
-            custom_settings.put(value.category, new ArrayList<>());
+    private static class ColoredComboBoxRenderer implements ListCellRenderer<String> {
+        private final DefaultListCellRenderer defaultRenderer;
+
+        public ColoredComboBoxRenderer() {
+            defaultRenderer = new DefaultListCellRenderer();
         }
-        JPanel panel = tabs.get(value.category);
-        JLabel label = new JLabel(PublicValues.language.translate(value.name), SwingConstants.RIGHT);
-        label.setForeground(PublicValues.globalFontColor);
-        panel.add(label, createGbc(0, i, -1));
-        switch(value.type) {
-            case BOOLEAN:
-                JCheckBox checkBox = new JCheckBox();
-                checkBox.setName(value.name);
-                checkBox.setSelected(PublicValues.config.getBoolean(value.name));
-                checkBox.addChangeListener(e -> {
-                    if(checkBox.isSelected() != (boolean) value.defaultValue) settingsChanged = true;
-                });
-                panel.add(checkBox, createGbc(1, i, -1));
-                custom_settings.get(value.category).add(0);
-                break;
-            case STRING:
-                JTextField textField = new JTextField();
-                textField.setName(value.name);
-                textField.setForeground(PublicValues.globalFontColor);
-                textField.setText(PublicValues.config.getString(value.name));
-                textField.addKeyListener(new KeyAdapter() {
-                    @Override
-                    public void keyTyped(KeyEvent e) {
-                        if (textField.getText() != value.defaultValue) settingsChanged = true;
-                    }
-                });
-                panel.add(textField, createGbc(1, i, -1));
-                custom_settings.get(value.category).add(0);
-                break;
-            case INT:
-                JSpinner spinner = new JSpinner();
-                spinner.setName(value.name);
-                spinner.setForeground(PublicValues.globalFontColor);
-                spinner.setValue(PublicValues.config.getInt(value.name));
-                spinner.addChangeListener(e -> {
-                    if(spinner.getValue() != value.defaultValue) settingsChanged = true;
-                });
-                panel.add(spinner, createGbc(1, i, -1));
-                custom_settings.get(value.category).add(0);
-                break;
-            case CUSTOM:
-                panel.add(((CustomConfigValue<?>) value.defaultValue).getComponent(), createGbc(1, i, -1));
-                ((CustomConfigValue<?>) value.defaultValue).getComponent().setName(value.name);
-                ((CustomConfigValue<?>) value.defaultValue).getComponent().setForeground(PublicValues.globalFontColor);
-                ((CustomConfigValue<?>) value.defaultValue).setOnClickListener(e -> {
-                    if(((CustomConfigValue<?>) value.defaultValue).getDefaultValue() != ((CustomConfigValue<?>) value.defaultValue).getValue()) settingsChanged = true;
-                });
-                custom_settings.get(value.category).add(value.defaultValue);
+
+        @Override
+        public Component getListCellRendererComponent(JList<? extends String> list, String value, int index, boolean isSelected, boolean cellHasFocus) {
+            Component defaultComponent = defaultRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            defaultComponent.setForeground(PublicValues.globalFontColor);
+            return defaultComponent;
+        }
+    }
+
+    protected void addSettings(Config.RuntimeConfig<?> config) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchFieldException, InstantiationException {
+        IConfig configClassInstance = (IConfig) config.getFields();
+
+        for(Field field : configClassInstance.getClass().getFields()) {
+            addSetting(config, field, null);
         }
     }
 
     @Override
     public void open() {
-        for(int i = 0; i < ConfigValues.values().length; i++) {
-            ConfigValues value = ConfigValues.values()[i];
-            addSetting(value, i);
-        }
-
         for(JPanel panel : tabs.values()) {
             panel.add(new JLabel(), createGbc(0, panel.getComponentCount() + 1, 1));
         }
@@ -242,63 +260,40 @@ public class Settings extends JFrame {
         return gbc;
     }
 
-    public void addWarningToCategory(String category, String title, String message) {
-        warnings.put(category, new String[] {message, title});
-    }
-
-    void onClose() {
+    @SuppressWarnings("unchecked")
+    void onClose() throws NoSuchFieldException {
         if(settingsChanged) {
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                 JPanel panel = (JPanel) ((JScrollPane)tabbedPane.getComponentAt(i)).getViewport().getView();
+                Config.RuntimeConfig<?> config = PublicValues.config;
                 if(panel.getName() != null && panel.getName().equals("unofficial")) {
                     //Injected settings tab
-                    int counter = 0;
-                    for (int j = 0; j < panel.getComponents().length; j++) {
-                        Component component = panel.getComponents()[j];
-                        if (component instanceof JLabel) {
-                            continue;
-                        }
-                        if (component instanceof JCheckBox) {
-                            //Boolean
-                            injected_settings_onwrite.get(counter).run(((JCheckBox) component).isSelected());
-                        }
-                        if (component instanceof JTextField) {
-                            //String
-                            injected_settings_onwrite.get(counter).run(((JTextField) component).getText());
-                        }
-                        if (component instanceof JSpinner) {
-                            //Integer
-                            injected_settings_onwrite.get(counter).run(((JSpinner) component).getValue());
-                        }
-                        if (component instanceof JComboBox) {
-                            //Custom
-                            injected_settings_onwrite.get(counter).run(((CustomConfigValue<?>)custom_settings.get(categories.get(i)).get(counter)).getValue());
-                        }
-                        counter++;
+                    config = configInstanceMap.get(panel.getName().split("/")[1]);
+                }
+                for (Component component : panel.getComponents()) {
+                    if (component instanceof JLabel) {
+                        continue;
                     }
-                }else {
-                    int counter = 0;
-                    for (Component component : panel.getComponents()) {
-                        if (component instanceof JLabel) {
-                            continue;
-                        }
-                        if (component instanceof JCheckBox) {
-                            //Boolean
-                            PublicValues.config.write(component.getName(), ((JCheckBox) component).isSelected());
-                        }
-                        if (component instanceof JTextField) {
-                            //String
-                            PublicValues.config.write(component.getName(), ((JTextField) component).getText());
-                        }
-                        if (component instanceof JSpinner) {
-                            //Integer
-                            PublicValues.config.write(component.getName(), ((JSpinner) component).getValue());
-                        }
-                        if (component instanceof JComboBox) {
-                            //Custom
-                            PublicValues.config.write(component.getName(), ((CustomConfigValue<?>) custom_settings.get(categories.get(i)).get(counter)).getValue());
-                        }
-                        counter++;
+                    if (component instanceof JCheckBox) {
+                        //Boolean
+                        config.write(component.getName(), ((JCheckBox) component).isSelected());
+                    }
+                    if (component instanceof JTextField) {
+                        //String
+                        config.write(component.getName(), ((JTextField) component).getText());
+                    }
+                    if (component instanceof JSpinner) {
+                        //Integer
+                        config.write(component.getName(), ((JSpinner) component).getValue());
+                    }
+                    if (component instanceof JComboBox) {
+                        //Custom
+                        config.write(component.getName(), ((List<Object>) custom_settings.get(component.getName())).get(((JComboBox<?>) component).getSelectedIndex()));
+                    }
+                    if (component instanceof JPanel) {
+                        ((Config.CustomComponentCallback) custom_settings.get(component.getName())).onSave(
+                                (JComponent) component
+                        );
                     }
                 }
             }

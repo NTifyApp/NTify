@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.configuration.Config;
 import com.spotifyxp.configuration.ConfigValues;
+import com.spotifyxp.configuration.IConfig;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.guielements.Settings;
 import com.spotifyxp.swingextension.JFrame;
@@ -37,6 +39,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.Proxy;
 import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.Objects;
@@ -63,17 +67,36 @@ public class LoginDialog {
     private static JFrame frame;
     private String oAuthCallbackURL;
 
-    private class CustomSettingsDialog extends Settings {
-        @Override
-        public void addSetting(ConfigValues value, int i) {
-            super.addSetting(value, i);
-        }
-    }
-
     private enum Views {
         MAIN,
         ZEROCONF,
         OAUTH
+    }
+
+    public static class ProxySettingsConfig implements IConfig {
+
+        @Override
+        public String translate(String id) {
+            return PublicValues.language.translate(id);
+        }
+
+        @Config.CheckBox(id = "proxy.enable", category = "ui.settings.proxy")
+        public boolean enableProxy = false;
+
+        @Config.Dropdown(id = "proxy.type", category = "ui.settings.proxy", values = ConfigValues.ProxyTypeProvider.class)
+        public String proxyType = Proxy.Type.HTTP.name();
+
+        @Config.Text(id = "proxy.address", category = "ui.settings.proxy")
+        public String proxyAddress = "";
+
+        @Config.Text(id = "proxy.username", category = "ui.settings.proxy")
+        public String proxyUsername = "";
+
+        @Config.Text(id = "proxy.password", category = "ui.settings.proxy")
+        public String proxyPassword = "";
+
+        @Config.CheckBox(id = "proxy.trustall", category = "ui.settings.proxy")
+        public boolean proxyTrustAll = false;
     }
 
     private LoginDialog(
@@ -93,16 +116,16 @@ public class LoginDialog {
         proxysettings.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                CustomSettingsDialog dialog = new CustomSettingsDialog();
-                int counter = 0;
-                for (ConfigValues values : ConfigValues.values()) {
-                    if (values.category.equalsIgnoreCase("ui.settings.proxy")) {
-                        dialog.addSetting(values, counter);
-                        counter++;
-                    }
+                Settings settings = new Settings(false);
+
+                try {
+                    settings.addSettings("ntify-login-proxy-settings", Config.newInstance(PublicValues.configfilepath, ProxySettingsConfig.class, null));
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
+                         NoSuchFieldException | InstantiationException | IOException ex) {
+                    throw new RuntimeException(ex);
                 }
-                dialog.pack();
-                dialog.setVisible(true);
+
+                settings.open();
             }
         });
 

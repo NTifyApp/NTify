@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2024] [Gianluca Beil]
+ * Copyright [2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,4 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-## Do not use these classes in your extension
+
+package com.spotifyxp.configuration;
+
+public interface IConfig {
+    String translate(String id);
+}

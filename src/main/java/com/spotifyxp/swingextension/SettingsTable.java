@@ -1,5 +1,5 @@
 /*
- * Copyright [2024] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.spotifyxp.swingextension;
 import com.spotifyxp.PublicValues;
 
 import javax.swing.*;
+import javax.swing.JTextField;
 
 public class SettingsTable extends JPanel {
     int ycache = 10;
@@ -27,7 +28,7 @@ public class SettingsTable extends JPanel {
     }
 
     public void addSetting(String name, JComponent component) {
-        JTextField field = new JTextField(name);
+        JTextField field = new javax.swing.JTextField(name);
         field.setHorizontalAlignment(SwingConstants.RIGHT);
         field.setEditable(false);
         field.setBorder(BorderFactory.createEmptyBorder());

@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.spotifyxp.logging.LogsViewer;
 import com.spotifyxp.theming.themes.DarkGreen;
 
 import javax.swing.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class LogViewer implements Argument {
     @Override
@@ -34,7 +36,13 @@ public class LogViewer implements Argument {
                 PublicValues.language.setLanguageFolder("lang");
                 PublicValues.language.setNoAutoFindLanguage("en");
                 LogsViewer viewer = new LogsViewer();
-                viewer.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+                viewer.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+                viewer.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        System.exit(0);
+                    }
+                });
                 viewer.open();
                 while(true) {}
             }

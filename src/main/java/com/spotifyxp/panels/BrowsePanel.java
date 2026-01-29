@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,13 +84,12 @@ public class BrowsePanel extends JScrollPane implements View {
         popupMenu = new JPopupMenu();
         metroLayout = new JCheckBoxMenuItem(PublicValues.language.translate("ui.browse.ctxmenu.metro"));
         tableLayout = new JCheckBoxMenuItem(PublicValues.language.translate("ui.browse.ctxmenu.table"));
-        metroLayout.setSelected(PublicValues.config.getInt(ConfigValues.browse_view_style.name) == 0);
+        metroLayout.setSelected(PublicValues.config.getFields().browseViewStyle == 0);
         tableLayout.setSelected(!metroLayout.isSelected());
         metroLayout.addActionListener(e -> {
             tableLayout.setSelected(false);
             metroLayout.setSelected(true);
-            PublicValues.config.write(ConfigValues.browse_view_style.name, 0);
-            PublicValues.config.save();
+            PublicValues.config.write("browseViewStyle", 0);
             contentPanel.removeAll();
             contentPanel.revalidate();
             contentPanel.repaint();
@@ -100,8 +99,7 @@ public class BrowsePanel extends JScrollPane implements View {
         tableLayout.addActionListener(e -> {
             metroLayout.setSelected(false);
             tableLayout.setSelected(true);
-            PublicValues.config.write(ConfigValues.browse_view_style.name, 1);
-            PublicValues.config.save();
+            PublicValues.config.write("browseViewStyle", 1);
             contentPanel.removeAll();
             contentPanel.revalidate();
             contentPanel.repaint();
@@ -556,7 +554,7 @@ public class BrowsePanel extends JScrollPane implements View {
                 }catch (IOException | MercuryClient.MercuryException e) {
                     throw new RuntimeException(e);
                 }
-                if(PublicValues.config.getInt(ConfigValues.browse_view_style.name) == 1) {
+                if(PublicValues.config.getFields().browseViewStyle == 1) {
                     displayBrowseTable();
                 } else {
                     displayBrowseMetro();

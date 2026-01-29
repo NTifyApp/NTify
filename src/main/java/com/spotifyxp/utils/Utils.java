@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,8 +113,8 @@ public class Utils {
         return -1;
     }
 
-    public static ArrayList<Object> enumToObjectArray(Enum<?>[] enums) {
-        ArrayList<Object> objects = new ArrayList<>();
+    public static ArrayList<String> enumToObjectArray(Enum<?>[] enums) {
+        ArrayList<String> objects = new ArrayList<>();
         for (Enum<?> e : enums) {
             objects.add(e.name());
         }
@@ -147,7 +147,7 @@ public class Utils {
     public static void openBrowser(String url) throws URISyntaxException, IOException {
         String browserpath = "";
         if(new File(PublicValues.fileslocation, "credentials.json").exists()) {
-            browserpath = PublicValues.config.getString(ConfigValues.mypalpath.name);
+            browserpath = PublicValues.config.getFields().mypalPath;
             if(!browserpath.isEmpty()) {
                 ProcessBuilder builder = new ProcessBuilder("\"" + browserpath + "\"", url);
                 try {

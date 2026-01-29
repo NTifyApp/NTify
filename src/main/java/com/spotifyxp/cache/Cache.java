@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class Cache {
     private boolean cacheEnabled = true;
 
     public Cache() throws IOException {
-        if(PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
+        if(PublicValues.config.getFields().cacheDisabled) {
             cacheDir = null;
             cacheEnabled = false;
             return;

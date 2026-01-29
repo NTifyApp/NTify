@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class CanvasPlayer extends JFrame {
     public CanvasPlayer() throws IOException {
         setTitle(PublicValues.language.translate("ui.canvasplayer.title").replace("%APPNAME%", ApplicationUtils.getName()));
         setPreferredSize(new Dimension(290, 460));
-        if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
+        if (!PublicValues.config.getFields().cacheDisabled) {
             cachePath = new File(PublicValues.fileslocation, "cvnscache");
             if(!cachePath.exists()) {
                 if(!cachePath.mkdir()) {
@@ -100,7 +100,7 @@ public class CanvasPlayer extends JFrame {
 
     public void loadCanvas(String uri) {
         try {
-            if(!PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
+            if (!PublicValues.config.getFields().cacheDisabled) {
                 clearCache();
                 String cvnsUrl = PublicValues.session.api().track().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
                         .addEntities(CanvazOuterClass.EntityCanvazRequest.Entity.newBuilder()

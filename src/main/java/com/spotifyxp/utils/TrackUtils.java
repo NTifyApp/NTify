@@ -70,7 +70,7 @@ public class TrackUtils {
     }
 
     public static void addAllToQueue(ArrayList<String> cache, DefTable addintable) {
-        if(PublicValues.config.getBoolean(ConfigValues.disable_autoqueue.name)) {
+        if(PublicValues.config.getFields().disableAutoQueue) {
             return;
         }
         try {

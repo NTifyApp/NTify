@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,9 +74,7 @@ public class SplashPanel {
             frame.setIconImage(img);
         } catch (Exception e) {
             ConsoleLogging.Throwable(e);
-            if (PublicValues.config.getString(ConfigValues.hideExceptions.name).equals("false")) {
-                GraphicalMessage.openException(e);
-            }
+            GraphicalMessage.openException(e);
         }
         frame.getContentPane().add(image);
         frame.setPreferredSize(new Dimension(290, 300));

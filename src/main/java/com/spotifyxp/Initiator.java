@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.spotifyxp;
 
 
+import com.google.gson.Gson;
 import com.spotifyxp.audio.Quality;
 import com.spotifyxp.background.BackgroundService;
 import com.spotifyxp.cache.Cache;
@@ -59,6 +60,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URISyntaxException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -77,6 +79,7 @@ public class Initiator {
             detectArchitecture();
             checkSetup();
             initLanguageSupport(); //Initializing the language support
+            PublicValues.themeLoader = new ThemeLoader();
             initConfig(); //Initializing the configuration
             try {
                 PublicValues.cache = new Cache(); //Initialize cache
@@ -90,7 +93,7 @@ public class Initiator {
                     .addNetworkInterceptor(new Interceptor() {
                         @Override
                         public @NotNull Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
-                            if (chain.request().headers().get("User-Agent").contains("Spotify/"))
+                            if (Objects.requireNonNull(chain.request().headers().get("User-Agent")).contains("Spotify/"))
                                 return chain.proceed(chain.request());
                             return chain.proceed(chain.request().newBuilder()
                                     .header("User-Agent", ApplicationUtils.getUserAgent())
@@ -147,17 +150,16 @@ public class Initiator {
     }
 
     static void initProxy() {
-        if (PublicValues.config.getBoolean(ConfigValues.proxy_enable.name)) {
+        if (PublicValues.config.getFields().enableProxy) {
             SplashPanel.linfo.setText("Initializing proxy...");
             try {
                 OkHttpClient.Builder clientBuilder = PublicValues.defaultHttpClient.newBuilder();
                 clientBuilder.setProxyAuthenticator$okhttp(new Authenticator() {
-                    @Nullable
                     @Override
-                    public Request authenticate(@Nullable Route route, @NotNull Response response) throws IOException {
+                    public @NotNull Request authenticate(@Nullable Route route, @NotNull Response response) throws IOException {
                         String credential = Credentials.basic(
-                                PublicValues.config.getString(ConfigValues.proxy_username.name),
-                                PublicValues.config.getString(ConfigValues.proxy_password.name)
+                                PublicValues.config.getFields().proxyUsername,
+                                PublicValues.config.getFields().proxyPassword
                         );
                         return response.request().newBuilder()
                                 .header("Proxy-Authorization", credential)
@@ -165,32 +167,34 @@ public class Initiator {
                     }
                 });
                 clientBuilder.setProxy$okhttp(new Proxy(
-                        Proxy.Type.valueOf(PublicValues.config.getString(ConfigValues.proxy_type.name)),
+                        Proxy.Type.valueOf(PublicValues.config.getFields().proxyType),
                         new InetSocketAddress(
-                                InetAddress.getByName(PublicValues.config.getString(ConfigValues.proxy_address.name).split(":")[0]),
-                                Integer.parseInt(PublicValues.config.getString(ConfigValues.proxy_address.name).split(":")[1])
+                                InetAddress.getByName(PublicValues.config.getFields().proxyAddress.split(":")[0]),
+                                Integer.parseInt(PublicValues.config.getFields().proxyAddress.split(":")[1])
                         )
                 ));
-                TrustManager[] trustAllCerts = new TrustManager[]{
-                        new X509TrustManager() {
-                            @Override
-                            public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
-                            }
+                if (PublicValues.config.getFields().proxyTrustAll) {
+                    TrustManager[] trustAllCerts = new TrustManager[]{
+                            new X509TrustManager() {
+                                @Override
+                                public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                                }
 
-                            @Override
-                            public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
-                            }
+                                @Override
+                                public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                                }
 
-                            @Override
-                            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                                return new java.security.cert.X509Certificate[]{};
+                                @Override
+                                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                                    return new java.security.cert.X509Certificate[]{};
+                                }
                             }
-                        }
-                };
-                SSLContext sslContext = SSLContext.getInstance("SSL");
-                sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-                clientBuilder.sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCerts[0]);
-                clientBuilder.hostnameVerifier((hostname, session) -> true);
+                    };
+                    SSLContext sslContext = SSLContext.getInstance("SSL");
+                    sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+                    clientBuilder.sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCerts[0]);
+                    clientBuilder.hostnameVerifier((hostname, session) -> true);
+                }
                 PublicValues.defaultHttpClient = clientBuilder.build();
             } catch (Exception e) {
                 ConsoleLogging.Throwable(e);
@@ -247,7 +251,7 @@ public class Initiator {
     }
 
     static void checkLogPrintStream() {
-        PublicValues.logPrintStream.setLogging(PublicValues.config.getBoolean(ConfigValues.logging_enable.name));
+        PublicValues.logPrintStream.setLogging(PublicValues.config.getFields().enableLogging);
         PublicValues.logPrintStream.checkLogFiles();
     }
 
@@ -289,8 +293,11 @@ public class Initiator {
 
     static void initConfig() {
         SplashPanel.linfo.setText("Initializing config...");
-        PublicValues.config = new Config();
-        PublicValues.config.checkConfig();
+        try {
+            PublicValues.config = Config.newInstance(PublicValues.configfilepath, ConfigValues.class, new Gson());
+        } catch (IOException | IllegalAccessException | InstantiationException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static void loadExtensions() {
@@ -316,13 +323,13 @@ public class Initiator {
 
     static void setLanguage() {
         SplashPanel.linfo.setText("Setting language...");
-        PublicValues.language.setNoAutoFindLanguage(libLanguage.Language.getCodeFromName(PublicValues.config.getString(ConfigValues.language.name)));
+        PublicValues.language.setNoAutoFindLanguage(libLanguage.Language.getCodeFromName(PublicValues.config.getFields().language));
     }
 
     static void parseAudioQuality() {
         SplashPanel.linfo.setText("Parsing audio quality info...");
         try {
-            PublicValues.quality = Quality.valueOf(PublicValues.config.getString(ConfigValues.audioquality.name));
+            PublicValues.quality = Quality.valueOf(PublicValues.config.getFields().audioQuality);
         } catch (Exception exception) {
             //This should not happen but when it happens don't crash SpotifyXP
             PublicValues.quality = Quality.NORMAL;
@@ -346,11 +353,11 @@ public class Initiator {
         SplashPanel.linfo.setText("Init Themes...");
         ThemeLoader loader = PublicValues.themeLoader;
         try {
-            loader.loadTheme(PublicValues.config.getString(ConfigValues.theme.name));
+            loader.loadTheme(PublicValues.config.getFields().theme);
         } catch (ThemeLoader.UnknownThemeException e) {
-            ConsoleLogging.warning("Unknown Theme: '" + PublicValues.config.getString(ConfigValues.theme.name) + "'! Trying to load theme differently");
+            ConsoleLogging.warning("Unknown Theme: '" + PublicValues.config.getFields().theme + "'! Trying to load theme differently");
             try {
-                loader.tryLoadTheme(PublicValues.config.getString(ConfigValues.theme.name));
+                loader.tryLoadTheme(PublicValues.config.getFields().theme);
             } catch (Exception e2) {
                 ConsoleLogging.warning("Failed loading theme! SpotifyXP is now ugly");
             }

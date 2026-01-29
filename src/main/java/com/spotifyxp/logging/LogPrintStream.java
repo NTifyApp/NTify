@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,9 +51,9 @@ public class LogPrintStream {
                 return name.toLowerCase(Locale.ENGLISH).endsWith(".log");
             }
         });
-        if(foundLogs != null && foundLogs.length > PublicValues.config.getInt(ConfigValues.logging_maxkept.name)) {
+        if(foundLogs != null && foundLogs.length > PublicValues.config.getFields().maxKeptLogFiles) {
             Arrays.sort(foundLogs, Comparator.comparing(f -> LocalDateTime.parse(f.getName().replace(".log", ""), DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))));
-            for(int i = 0; i < (foundLogs.length - PublicValues.config.getInt(ConfigValues.logging_maxkept.name) + 1); i++) {
+            for(int i = 0; i < (foundLogs.length - PublicValues.config.getFields().maxKeptLogFiles + 1); i++) {
                 if(!foundLogs[i].delete()) {
                     ConsoleLogging.error("Failed to delete log: " + foundLogs[i].getName());
                 }
@@ -389,7 +389,8 @@ public class LogPrintStream {
             public void println(char[] x) {
                 if(enableLogging) {
                     try {
-                        writer.write(x + "\n");
+                        writer.write(x);
+                        writer.write('\n');
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

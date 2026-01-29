@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,11 @@ public class InjectorStore extends JFrame {
     public JPanel availableTab;
     public JPanel installedTab;
     public byte[] refreshImageBytes;
-    private MouseListener onRefresh;
+    private final MouseListener onRefresh;
     private Rectangle refreshRect;
     private boolean wasInRefresh = false;
 
-    private Map<String, InjectorAPI.JarExtension> installedExtensions;
+    private final Map<String, InjectorAPI.JarExtension> installedExtensions;
 
     private final String cacheID = "8a17048c";
     private int cacheState = 0;

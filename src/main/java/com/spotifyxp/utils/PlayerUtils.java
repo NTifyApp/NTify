@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class PlayerUtils {
     Session authViaZeroconf(Session.Configuration configuration, EventSubscriber cancelCallback) throws InterruptedException, ExecutionException {
         CompletableFuture<Session> sessionFuture = new CompletableFuture<>();
         try (ZeroconfServer zeroconfServer = new ZeroconfServer.Builder(configuration)
-                .setPreferredLocale(PublicValues.config.getString(ConfigValues.other_preferredlocale.name))
+                .setPreferredLocale(PublicValues.config.getFields().preferredLocale)
                 .setDeviceType(Connect.DeviceType.COMPUTER)
                 .setDeviceName(PublicValues.deviceName)
                 .setDeviceId(Utils.randomHexString(new SecureRandom(), 40).toLowerCase())
@@ -89,7 +89,7 @@ public class PlayerUtils {
 
     Session authViaOauth(Session.Configuration configuration, OAuth.CallbackURLReceiver receiver, EventSubscriber onCancelCallback) throws Session.SpotifyAuthenticationException, GeneralSecurityException, IOException, MercuryClient.MercuryException, CancellationException {
         return new Session.Builder(configuration)
-                .setPreferredLocale(PublicValues.config.getString(ConfigValues.other_preferredlocale.name))
+                .setPreferredLocale(PublicValues.config.getFields().preferredLocale)
                 .setDeviceType(Connect.DeviceType.COMPUTER)
                 .setDeviceName(PublicValues.deviceName)
                 .setDeviceId(Utils.randomHexString(new SecureRandom(), 40).toLowerCase())
@@ -99,7 +99,7 @@ public class PlayerUtils {
 
     Session authViaStored(Session.Configuration configuration) throws IOException, Session.SpotifyAuthenticationException, GeneralSecurityException, MercuryClient.MercuryException {
         return new Session.Builder(configuration)
-                .setPreferredLocale(PublicValues.config.getString(ConfigValues.other_preferredlocale.name))
+                .setPreferredLocale(PublicValues.config.getFields().preferredLocale)
                 .setDeviceType(Connect.DeviceType.COMPUTER)
                 .setDeviceName(PublicValues.deviceName)
                 .setDeviceId(Utils.randomHexString(new SecureRandom(), 40).toLowerCase())
@@ -109,29 +109,29 @@ public class PlayerUtils {
 
     public Player buildPlayer() {
         PlayerConfiguration playerconfig = new PlayerConfiguration.Builder()
-                .setAutoplayEnabled(PublicValues.config.getBoolean(ConfigValues.other_autoplayenabled.name))
-                .setCrossfadeDuration(PublicValues.config.getInt(ConfigValues.other_crossfadeduration.name))
-                .setEnableNormalisation(PublicValues.config.getBoolean(ConfigValues.other_enablenormalization.name))
+                .setAutoplayEnabled(PublicValues.config.getFields().autoplayEnabled)
+                .setCrossfadeDuration(PublicValues.config.getFields().crossfadeDuration)
+                .setEnableNormalisation(PublicValues.config.getFields().enableNormalization)
                 .setInitialVolume(65536)
                 .setLogAvailableMixers(true)
                 .setMetadataPipe(new File(PublicValues.fileslocation, "metapipe"))
-                .setMixerSearchKeywords(PublicValues.config.getString(ConfigValues.other_mixersearchkeywords.name).split(","))
-                .setNormalisationPregain(PublicValues.config.getInt(ConfigValues.other_normalizationpregain.name))
+                .setMixerSearchKeywords(PublicValues.config.getFields().mixerSearchKeywords.split(","))
+                .setNormalisationPregain(PublicValues.config.getFields().normalizationPregain)
                 .setOutput(PlayerConfiguration.AudioOutput.MIXER)
                 .setOutputClass("")
                 .setOutputPipe(new File(PublicValues.fileslocation, "outputpipe"))
-                .setPreferredQuality(AudioQuality.valueOf(PublicValues.config.getString(ConfigValues.audioquality.name)))
-                .setPreloadEnabled(PublicValues.config.getBoolean(ConfigValues.other_preloadenabled.name))
-                .setReleaseLineDelay(PublicValues.config.getInt(ConfigValues.other_releaselinedelay.name))
+                .setPreferredQuality(AudioQuality.valueOf(PublicValues.config.getFields().audioQuality))
+                .setPreloadEnabled(PublicValues.config.getFields().preloadEnabled)
+                .setReleaseLineDelay(PublicValues.config.getFields().releaseLineDelay)
                 .setVolumeSteps(64)
-                .setBypassSinkVolume(PublicValues.config.getBoolean(ConfigValues.other_bypasssinkvolume.name))
+                .setBypassSinkVolume(PublicValues.config.getFields().bypassSinkVolume)
                 .setLocalFilesPath(new File(PublicValues.fileslocation))
                 .build();
         Session.Configuration.Builder configurationBuilder = new Session.Configuration.Builder()
                 .setConnectionTimeout(6)
                 .setCacheDir(new File(PublicValues.fileslocation, "cache"))
                 .setStoredCredentialsFile(new File(PublicValues.fileslocation, "credentials.json"));
-        if(PublicValues.config.getBoolean(ConfigValues.cache_disabled.name)) {
+        if(PublicValues.config.getFields().cacheDisabled) {
             if(new File(PublicValues.fileslocation, "cache").exists()) {
                 FileUtils.deleteDir(new File(PublicValues.fileslocation, "cache"));
             }

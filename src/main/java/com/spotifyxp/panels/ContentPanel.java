@@ -18,6 +18,7 @@ package com.spotifyxp.panels;
 import com.neovisionaries.i18n.CountryCode;
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
+import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.GlobalContextMenus;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.dev.ErrorSimulator;
@@ -49,6 +50,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
@@ -174,7 +176,7 @@ public class ContentPanel extends JPanel {
     }
 
     void createSettings() {
-        settings = new Settings();
+        settings = new Settings(true);
     }
 
     @Override

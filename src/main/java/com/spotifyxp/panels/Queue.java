@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
+import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -88,6 +89,7 @@ public class Queue extends JScrollPane implements View {
         queueList.setBackground(getBackground());
 
         setViewportView(queueList);
+        Events.triggerEvent(SpotifyXPEvents.playerpause.getName(), "Hallo");
         Events.subscribe(SpotifyXPEvents.addtoqueue.getName(), data -> {
             if(!queueUriCache.isEmpty()) {
                 queueUriCache.add((String) data[0]);
