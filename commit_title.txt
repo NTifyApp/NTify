@@ -1,1 +1,1 @@
-Switch to internal spotify api
+Improvements
