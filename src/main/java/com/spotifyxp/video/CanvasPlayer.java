@@ -16,15 +16,13 @@
 package com.spotifyxp.video;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.deps.com.spotify.canvaz.CanvazOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
+import com.spotifyxp.events.Playable;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.graphics.Graphics;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -65,20 +63,14 @@ public class CanvasPlayer extends JFrame {
         });
     }
 
-    EventSubscriber onPause = new EventSubscriber() {
-        @Override
-        public void run(Object... data) {
-            if(!videoLoaded) return;
-            PublicValues.vlcPlayer.pause();
-        }
+    EventSubscriber<Object> onPause = data -> {
+        if(!videoLoaded) return;
+        PublicValues.vlcPlayer.pause();
     };
 
-    EventSubscriber onPlay = new EventSubscriber() {
-        @Override
-        public void run(Object... data) {
-            if(!videoLoaded) return;
-            PublicValues.vlcPlayer.resume();
-        }
+    EventSubscriber<Object> onPlay = data -> {
+        if(!videoLoaded) return;
+        PublicValues.vlcPlayer.resume();
     };
 
     private String convertUrlToName(String url) {
@@ -138,20 +130,15 @@ public class CanvasPlayer extends JFrame {
         }
     }
 
-    EventSubscriber onNextTrack = new EventSubscriber() {
-        @Override
-        public void run(Object... data) {
-            PublicValues.vlcPlayer.stop();
-            String uri = "";
-            if (data[0] instanceof Metadata.Track) {
-                uri = TrackId.fromHex(Utils.bytesToHex(((Metadata.Track) data[0]).getGid()).toLowerCase()).toSpotifyUri();
-            } else if (data[0] instanceof Metadata.Episode) {
-                uri = EpisodeId.fromHex(Utils.bytesToHex(((Metadata.Episode) data[0]).getGid()).toLowerCase()).toSpotifyUri();
-            } else {
-                ConsoleLogging.error("Invalid object type in next track: " + data[0].getClass().getSimpleName());
-            }
-            loadCanvas(uri);
+    EventSubscriber<Playable> onNextTrack = data -> {
+        PublicValues.vlcPlayer.stop();
+        String uri = "";
+        if (data.playableType == Playable.Type.TRACK) {
+            uri = TrackId.fromHex(Utils.bytesToHex(data.track.getGid()).toLowerCase()).toSpotifyUri();
+        } else {
+            uri = EpisodeId.fromHex(Utils.bytesToHex(data.episode.getGid()).toLowerCase()).toSpotifyUri();
         }
+        loadCanvas(uri);
     };
 
     @Override
@@ -161,9 +148,9 @@ public class CanvasPlayer extends JFrame {
         PlayerArea.canvasPlayerButton.setImage(Graphics.VIDEO.getPath());
         PublicValues.vlcPlayer.stop();
         PublicValues.vlcPlayer.release();
-        Events.unsubscribe(SpotifyXPEvents.trackNext.getName(), onNextTrack);
-        Events.unsubscribe(SpotifyXPEvents.playerpause.getName(), onPause);
-        Events.unsubscribe(SpotifyXPEvents.playerresume.getName(), onPlay);
+        SpotifyXPEvents.trackNext.unsubscribe(onNextTrack);
+        SpotifyXPEvents.playerPause.unsubscribe(onPause);
+        SpotifyXPEvents.playerResume.unsubscribe(onPlay);
         PublicValues.vlcPlayer.removeOnTakeOver();
         dispose();
     }
@@ -172,9 +159,9 @@ public class CanvasPlayer extends JFrame {
     public void open() throws NullPointerException {
         add(PublicValues.vlcPlayer.getComponent());
         super.open();
-        Events.subscribe(SpotifyXPEvents.trackNext.getName(), onNextTrack);
-        Events.subscribe(SpotifyXPEvents.playerpause.getName(), onPause);
-        Events.subscribe(SpotifyXPEvents.playerresume.getName(), onPlay);
+        SpotifyXPEvents.trackNext.subscribe(onNextTrack);
+        SpotifyXPEvents.playerPause.subscribe(onPause);
+        SpotifyXPEvents.playerResume.subscribe(onPlay);
         PublicValues.vlcPlayer.init(this::close);
         PublicValues.vlcPlayer.setLooping(true);
         loadCanvas(Objects.requireNonNull(InstanceManager.getSpotifyPlayer().currentMetadata()).id.toSpotifyUri());

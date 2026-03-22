@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.spotifyxp.injector;
 
 import com.google.gson.Gson;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.utils.GraphicalMessage;
@@ -89,7 +88,7 @@ public class Injector {
                 }
                 firstGoThrough = false;
             }
-            Events.triggerEvent(SpotifyXPEvents.injectorAPIReady.getName());
+            SpotifyXPEvents.pluginsInjected.trigger();
         }
     }
 

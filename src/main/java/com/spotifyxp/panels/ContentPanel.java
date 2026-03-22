@@ -18,14 +18,12 @@ package com.spotifyxp.panels;
 import com.neovisionaries.i18n.CountryCode;
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.GlobalContextMenus;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.dev.ErrorSimulator;
 import com.spotifyxp.dev.LocationFinder;
 import com.spotifyxp.dialogs.ErrorDisplay;
 import com.spotifyxp.dialogs.HTMLDialog;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.Settings;
 import com.spotifyxp.injector.InjectorStore;
@@ -50,7 +48,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
@@ -91,7 +88,7 @@ public class ContentPanel extends JPanel {
     public ContentPanel() throws IOException {
         PublicValues.contentPanel = this;
         ConsoleLogging.info(PublicValues.language.translate("debug.buildcontentpanelbegin"));
-        Events.subscribe(SpotifyXPEvents.trackLoadFinished.getName(), (Object... data) -> PublicValues.blockLoading = false);
+        SpotifyXPEvents.trackLoadFinished.subscribe((data) -> PublicValues.blockLoading = false);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
@@ -154,7 +151,7 @@ public class ContentPanel extends JPanel {
             // Defaulting to United States
             PublicValues.countryCode = CountryCode.US;
         }
-        Events.subscribe(SpotifyXPEvents.addtoqueue.getName(), data -> InstanceManager.getPlayer().getPlayer().addToQueue((String)data[0]));
+        SpotifyXPEvents.addToQueue.subscribe((data) -> InstanceManager.getSpotifyPlayer().addToQueue(data));
         SplashPanel.linfo.setText("Done building contentPanel");
         ConsoleLogging.info(PublicValues.language.translate("debug.buildcontentpanelend"));
     }
@@ -461,7 +458,7 @@ public class ContentPanel extends JPanel {
                 if(!(uri.split(":").length > 2)) return;
             }
             InstanceManager.getSpotifyPlayer().load(uri, true, PublicValues.shuffle);
-            Events.triggerEvent(SpotifyXPEvents.queueUpdate.getName());
+            SpotifyXPEvents.queueUpdate.trigger();
         }));
     }
 
@@ -555,7 +552,7 @@ public class ContentPanel extends JPanel {
             }
         });
         mainframe.setForeground(Color.blue);
-        Events.triggerEvent(SpotifyXPEvents.onFrameReady.getName());
+        SpotifyXPEvents.onFrameReady.trigger();
         JMenu helpMenu = null;
         for (int i = 0; i < bar.getMenuCount(); i++) {
             JMenu menu = bar.getMenu(i);
@@ -579,10 +576,10 @@ public class ContentPanel extends JPanel {
                 Toolkit.getDefaultToolkit().getScreenSize().width / 2 - PublicValues.applicationWidth / 2,
                 Toolkit.getDefaultToolkit().getScreenSize().height / 2 - PublicValues.applicationHeight / 2)
         ;
-        Events.subscribe(SpotifyXPEvents.recalculateSizes.getName(), (Object... data) -> fixSize());
-        Events.triggerEvent(SpotifyXPEvents.recalculateSizes.getName());
+        SpotifyXPEvents.recalcSizes.subscribe((data) -> fixSize());
+        SpotifyXPEvents.recalcSizes.trigger();
         mainframe.requestFocus();
         mainframe.setAlwaysOnTop(false);
-        Events.triggerEvent(SpotifyXPEvents.onFrameVisible.getName());
+        SpotifyXPEvents.onFrameVisible.trigger();
     }
 }

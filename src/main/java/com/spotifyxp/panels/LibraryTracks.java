@@ -21,8 +21,6 @@ import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
@@ -66,32 +64,26 @@ public class LibraryTracks extends JScrollPane implements View {
         }));
         setViewportView(librarySongList);
 
-        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                LibraryChange change = (LibraryChange) data[0];
-                if(libraryUriCache.isEmpty()) return;
-                if(change.getType() != LibraryChange.Type.TRACK) return;
-                if(change.getAction() == LibraryChange.Action.ADD) {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                Metadata.Track track = PublicValues.session.api().track().getMetadata(TrackId.fromUri(change.getUri()));
-                                libraryUriCache.add(0, change.getUri());
-                                String a = TrackUtils.getArtists(track.getArtistList());
-                                librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).insertRow(0, new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())}));
-                            }catch (IOException | MercuryClient.MercuryException e) {
-                                throw new RuntimeException(e);
-                            }
+        SpotifyXPEvents.libraryChange.subscribe((change) -> {
+            if(libraryUriCache.isEmpty()) return;
+            if(change.getType() != LibraryChange.Type.TRACK) return;
+            if(change.getAction() == LibraryChange.Action.ADD) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Metadata.Track track = PublicValues.session.api().track().getMetadata(TrackId.fromUri(change.getUri()));
+                            libraryUriCache.add(0, change.getUri());
+                            String a = TrackUtils.getArtists(track.getArtistList());
+                            librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).insertRow(0, new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())}));
+                        }catch (IOException | MercuryClient.MercuryException e) {
+                            throw new RuntimeException(e);
                         }
-                    }, "Library add track").start();
-                }else {
-                    for(int uri = 0; uri < libraryUriCache.size(); uri++) {
-                        libraryUriCache.remove(uri);
-                        ((DefaultTableModel) librarySongList.getModel()).removeRow(uri);
                     }
-                }
+                }, "Library add track").start();
+            }else {
+                ((DefaultTableModel) librarySongList.getModel()).removeRow(libraryUriCache.indexOf(change.getUri()));
+                libraryUriCache.remove(change.getUri());
             }
         });
 
@@ -150,16 +142,15 @@ public class LibraryTracks extends JScrollPane implements View {
         });
         contextMenu.addItem("Add to queue", () -> {
             if(librarySongList.getSelectedRow() == -1) return;
-            Events.triggerEvent(SpotifyXPEvents.addtoqueue.getName(), libraryUriCache.get(librarySongList.getSelectedRow()));
+            SpotifyXPEvents.addToQueue.trigger(libraryUriCache.get(librarySongList.getSelectedRow()));
         });
         contextMenu.addItem(PublicValues.language.translate("ui.general.remove"), () -> {
-            //ToDo: Reverse engineer track removal
             try {
                 PublicValues.session.api().track().remove(TrackId.fromUri(
                         libraryUriCache.get(librarySongList.getSelectedRow())
                 ));
 
-                Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                         libraryUriCache.get(librarySongList.getSelectedRow()),
                         LibraryChange.Type.TRACK,
                         LibraryChange.Action.REMOVE

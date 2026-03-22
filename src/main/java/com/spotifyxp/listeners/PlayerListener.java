@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlayableId;
 import com.spotifyxp.deps.xyz.gianlu.librespot.player.Player;
-import com.spotifyxp.events.Events;
+import com.spotifyxp.events.Playable;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.graphics.Graphics;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -79,7 +79,7 @@ public class PlayerListener implements Player.EventsListener {
     @Override
     public void onTrackChanged(@NotNull Player player, @NotNull PlayableId playableId, @Nullable MetadataWrapper metadataWrapper, boolean b) {
         try {
-            Events.triggerEvent(SpotifyXPEvents.queueUpdate.getName(), playableId.toSpotifyUri());
+            SpotifyXPEvents.queueUpdate.trigger(playableId.toSpotifyUri());
             if (!TrackUtils.isTrackLiked(playableId.toSpotifyUri().split(":")[2])) {
                 PlayerArea.heart.isFilled = false;
                 PlayerArea.heart.setImage(Graphics.HEART.getPath());
@@ -91,7 +91,6 @@ public class PlayerListener implements Player.EventsListener {
                 PublicValues.lyricsDialog.open(playableId.toSpotifyUri());
             }
             locked = false;
-            Events.triggerEvent(SpotifyXPEvents.playerLockRelease.getName());
         }catch (Exception e) {
             ConsoleLogging.Throwable(e);
         }
@@ -105,13 +104,13 @@ public class PlayerListener implements Player.EventsListener {
     @Override
     public void onPlaybackPaused(@NotNull Player player, long l) {
         PlayerArea.playerPlayPauseButton.setImage(Graphics.PLAYERPlAY.getPath());
-        Events.triggerEvent(SpotifyXPEvents.playerpause.getName());
+        SpotifyXPEvents.playerPause.trigger();
     }
 
     @Override
     public void onPlaybackResumed(@NotNull Player player, long l) {
         PlayerArea.playerPlayPauseButton.setImage(Graphics.PLAYERPAUSE.getPath());
-        Events.triggerEvent(SpotifyXPEvents.playerresume.getName());
+        SpotifyXPEvents.playerResume.trigger();
     }
 
     @Override
@@ -128,14 +127,13 @@ public class PlayerListener implements Player.EventsListener {
     public void onTrackSeeked(@NotNull Player player, long l) {
         if (PlayerArea.playerCurrentTime.getValue() < TrackUtils.getSecondsFromMS(InstanceManager.getPlayer().getPlayer().time())) {
             //Backwards
-            Events.triggerEvent(SpotifyXPEvents.playerSeekedBackwards.getName());
+            SpotifyXPEvents.playerSeekedBackwards.trigger();
         } else {
             //Forwards
-            Events.triggerEvent(SpotifyXPEvents.playerSeekedForwards.getName());
+            SpotifyXPEvents.playerSeekedForwards.trigger();
         }
         PlayerArea.playerCurrentTime.setValue(TrackUtils.getSecondsFromMS(l));
         locked = false;
-        Events.triggerEvent(SpotifyXPEvents.playerLockRelease.getName());
     }
 
     @Override
@@ -143,7 +141,11 @@ public class PlayerListener implements Player.EventsListener {
         if (metadataWrapper.isTrack()) {
             Metadata.Track track = metadataWrapper.track;
             StringBuilder artists = new StringBuilder();
-            Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), track);
+            SpotifyXPEvents.trackNext.trigger(new Playable(
+                    Playable.Type.TRACK,
+                    track,
+                    null
+            ));
             PlayerArea.playerPlayTimeTotal.setText(TrackUtils.getHHMMSSOfTrack(track.getDuration()));
             PlayerArea.playerTitle.setText(track.getName());
             for (Metadata.Artist artist : track.getArtistList()) {
@@ -166,7 +168,11 @@ public class PlayerListener implements Player.EventsListener {
             }
         } else if (metadataWrapper.isEpisode()) {
             Metadata.Episode episode = metadataWrapper.episode;
-            Events.triggerEvent(SpotifyXPEvents.trackNext.getName(), episode);
+            SpotifyXPEvents.trackNext.trigger(new Playable(
+                    Playable.Type.EPISODE,
+                    null,
+                    episode
+            ));
             PlayerArea.playerPlayTimeTotal.setText(TrackUtils.getHHMMSSOfTrack(episode.getDuration()));
             PlayerArea.playerTitle.setText(episode.getName());
             PlayerArea.playerDescription.setText(episode.getShow().getPublisher());
@@ -179,10 +185,6 @@ public class PlayerListener implements Player.EventsListener {
                 ConsoleLogging.warning("Failed to load cover for episode");
                 PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
             }
-        } else {
-            Events.triggerEvent(SpotifyXPEvents.trackNext.getName());
-            PlayerArea.playerTitle.setText(metadataWrapper.getName());
-            PlayerArea.playerDescription.setText(metadataWrapper.getArtist());
         }
     }
 
@@ -220,6 +222,6 @@ public class PlayerListener implements Player.EventsListener {
 
     @Override
     public void onFinishedLoading(@NotNull Player player) {
-        Events.triggerEvent(SpotifyXPEvents.trackLoadFinished.getName());
+        SpotifyXPEvents.trackLoadFinished.trigger();
     }
 }

@@ -40,9 +40,6 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.crypto.PBKDF2;
 import com.spotifyxp.deps.xyz.gianlu.librespot.crypto.Packet;
 import com.spotifyxp.deps.xyz.gianlu.librespot.dealer.DealerClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
-import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLoggingModules;
 import okhttp3.*;
 import okhttp3.Authenticator;
@@ -757,8 +754,6 @@ public final class Session implements Closeable {
             synchronized (reconnectionListeners) {
                 reconnectionListeners.forEach(ReconnectionListener::onConnectionEstablished);
             }
-
-            Events.triggerEvent(SpotifyXPEvents.apikeyrefresh.getName());
         } catch (IOException | GeneralSecurityException | SpotifyAuthenticationException ex) {
             if (closing)
                 return;
@@ -988,7 +983,7 @@ public final class Session implements Closeable {
         /**
          * Authenticates via OAuth flow, will prompt to open a link in the browser. This locks until completion.
          */
-        public Builder oauth(OAuth.CallbackURLReceiver receiver, EventSubscriber onCancelCallback) throws IOException {
+        public Builder oauth(OAuth.CallbackURLReceiver receiver, OAuth.CancelCallback onCancelCallback) throws IOException {
             try {
                 oAuth = new OAuth(KEYMASTER_CLIENT_ID, "http://127.0.0.1:5588/login", onCancelCallback);
                 loginCredentials = oAuth.flow(receiver);

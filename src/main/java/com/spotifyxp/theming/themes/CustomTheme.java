@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.args.CustomSaveDir;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.swingextension.JFrame;
@@ -247,7 +246,7 @@ public class CustomTheme implements Theme {
             throw new RuntimeException(e);
         }
         PublicValues.globalFontColor = Color.decode(config.get("fontcolor"));
-        Events.subscribe(SpotifyXPEvents.onFrameReady.getName(), (Object... data) -> {
+        SpotifyXPEvents.onFrameReady.subscribe((data) -> {
             JMenu menu = new JMenu(PublicValues.language.translate("ui.theme.menu"));
             JMenuItem change = new JMenuItem(PublicValues.language.translate("ui.theme.change"));
             menu.add(change);

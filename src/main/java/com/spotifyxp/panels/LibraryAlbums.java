@@ -24,8 +24,6 @@ import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.AlbumId;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
@@ -80,7 +78,7 @@ public class LibraryAlbums extends JScrollPane{
                         PublicValues.session.api().album().add(AlbumId.fromUri(
                                 albumsUris.get(albumsTable.getSelectedRow())
                         ));
-                        Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                        SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                                 albumsUris.get(albumsTable.getSelectedRow()),
                                 LibraryChange.Type.ALBUM,
                                 LibraryChange.Action.REMOVE
@@ -92,37 +90,33 @@ public class LibraryAlbums extends JScrollPane{
             }
         });
 
-        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                LibraryChange change = (LibraryChange) data[0];
-                if(albumsUris.isEmpty()) return;
-                if(change.getType() != LibraryChange.Type.ALBUM) return;
-                if(change.getAction() == LibraryChange.Action.ADD) {
-                    new Thread(() -> {
-                        try {
-                            Metadata.Album album = PublicValues.session.api().album().getMetadata(AlbumId.fromUri(change.getUri()));
-                            albumsUris.add(0, AlbumId.fromHex(Utils.bytesToHex(album.getGid())).toSpotifyUri());
-                            albumsTable.addModifyAction(() -> {
-                                ((DefaultTableModel) albumsTable.getModel()).insertRow(0, new Object[] {
-                                        album.getName(),
-                                        TrackUtils.getArtists(album.getArtistList())
-                                });
+        SpotifyXPEvents.libraryChange.subscribe((change) -> {
+            if(albumsUris.isEmpty()) return;
+            if(change.getType() != LibraryChange.Type.ALBUM) return;
+            if(change.getAction() == LibraryChange.Action.ADD) {
+                new Thread(() -> {
+                    try {
+                        Metadata.Album album = PublicValues.session.api().album().getMetadata(AlbumId.fromUri(change.getUri()));
+                        albumsUris.add(0, AlbumId.fromHex(Utils.bytesToHex(album.getGid())).toSpotifyUri());
+                        albumsTable.addModifyAction(() -> {
+                            ((DefaultTableModel) albumsTable.getModel()).insertRow(0, new Object[] {
+                                    album.getName(),
+                                    TrackUtils.getArtists(album.getArtistList())
                             });
-                        }catch (IOException | MercuryClient.MercuryException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }, "Library add album").start();
-                }else {
-                    for(int uri = 0; uri < albumsUris.size(); uri++) {
-                        if(albumsUris.get(uri).equals(change.getUri())) {
-                            albumsUris.remove(uri);
-                            int finalUri = uri;
-                            albumsTable.addModifyAction(() -> {
-                                ((DefaultTableModel) albumsTable.getModel()).removeRow(finalUri);
-                            });
-                            return;
-                        }
+                        });
+                    }catch (IOException | MercuryClient.MercuryException e) {
+                        throw new RuntimeException(e);
+                    }
+                }, "Library add album").start();
+            }else {
+                for(int uri = 0; uri < albumsUris.size(); uri++) {
+                    if(albumsUris.get(uri).equals(change.getUri())) {
+                        albumsUris.remove(uri);
+                        int finalUri = uri;
+                        albumsTable.addModifyAction(() -> {
+                            ((DefaultTableModel) albumsTable.getModel()).removeRow(finalUri);
+                        });
+                        return;
                     }
                 }
             }

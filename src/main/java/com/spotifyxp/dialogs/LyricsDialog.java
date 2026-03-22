@@ -20,10 +20,8 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -48,6 +46,7 @@ public class LyricsDialog extends JDialog {
     public JScrollPane pane;
     public JPanel paintPanel;
     private final ArrayList<ColoredLyricsLine> displayedLines = new ArrayList<>();
+    private final ArrayList<ColoredLyricsLine> coloredLines = new ArrayList<>();
 
     public LyricsDialog() throws IOException {
         $$$setupUI$$$();
@@ -55,8 +54,21 @@ public class LyricsDialog extends JDialog {
         setContentPane(contentPanel);
     }
 
-    UnofficialSpotifyAPI.Lyrics lyrics;
+    UnofficialSpotifyAPI.Lyrics lyrics = null;
     String uri;
+
+    private static class ColoredLyricsLine extends RAWTextArea.ColoredLine {
+        private final long startTimeMS;
+
+        public ColoredLyricsLine(Color textColor, String textContent, long startTimeMS) {
+            super(textColor, textContent);
+            this.startTimeMS = startTimeMS;
+        }
+
+        public long getStartTimeMS() {
+            return this.startTimeMS;
+        }
+    }
 
     public boolean open(String uri) {
         try {
@@ -77,8 +89,8 @@ public class LyricsDialog extends JDialog {
                             PlayerArea.playerAreaLyricsButton.setImage(Initiator.class.getResourceAsStream("/icons/microphonewhite.svg"));
                         }
                         PlayerArea.playerAreaLyricsButton.isFilled = false;
-                        Events.unsubscribe(SpotifyXPEvents.playerSeekedBackwards.getName(), seekedBackwards());
-                        Events.unsubscribe(SpotifyXPEvents.playerSeekedForwards.getName(), seekedForwards());
+                        SpotifyXPEvents.playerSeekedBackwards.unsubscribe(seekedBackwards);
+                        SpotifyXPEvents.playerSeekedForwards.unsubscribe(seekedForwards);
                     }
                 });
                 try {
@@ -110,8 +122,8 @@ public class LyricsDialog extends JDialog {
                 append(line.words, PublicValues.globalFontColor, line.startTimeMs);
             }
             triggerRefresh();
-            Events.subscribe(SpotifyXPEvents.playerSeekedBackwards.getName(), seekedBackwards());
-            Events.subscribe(SpotifyXPEvents.playerSeekedForwards.getName(), seekedForwards());
+            SpotifyXPEvents.playerSeekedBackwards.subscribe(seekedBackwards);
+            SpotifyXPEvents.playerSeekedForwards.subscribe(seekedForwards);
             this.uri = uri;
             return true;
         } catch (NullPointerException e) {
@@ -120,43 +132,33 @@ public class LyricsDialog extends JDialog {
         }
     }
 
-    EventSubscriber seekedForwards() {
-        return new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                triggerRefresh();
-            }
-        };
-    }
+    EventSubscriber<Object> seekedForwards = (data) -> {
+        triggerRefresh();
+    };
 
-    EventSubscriber seekedBackwards() {
-        return new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                lyrics = InstanceManager.getUnofficialSpotifyApi().getLyrics(uri);
-                coloredLines.clear();
-                for (UnofficialSpotifyAPI.LyricsLine line : lyrics.lines) {
-                    coloredLines.add(new LyricsDialog.ColoredLyricsLine(PublicValues.globalFontColor, line.words, line.startTimeMs));
-                }
-                int activeLine = 0;
-                for (LyricsDialog.ColoredLyricsLine line : new ArrayList<>(coloredLines)) {
-                    if (line.startTimeMS < InstanceManager.getPlayer().getPlayer().time()) {
-                        activeLine++;
-                        break;
-                    }
-                }
-                try {
-                    coloredLines.set(activeLine, new LyricsDialog.ColoredLyricsLine(
-                            PublicValues.globalFontColor.brighter().brighter(),
-                            coloredLines.get(activeLine).getTextContent(),
-                            coloredLines.get(activeLine).getStartTimeMS()
-                    ));
-                } catch (IndexOutOfBoundsException ignored) {
-                }
-                repaint();
+    EventSubscriber<Object> seekedBackwards = (data) -> {
+        lyrics = InstanceManager.getUnofficialSpotifyApi().getLyrics(uri);
+        coloredLines.clear();
+        for (UnofficialSpotifyAPI.LyricsLine line : lyrics.lines) {
+            coloredLines.add(new LyricsDialog.ColoredLyricsLine(PublicValues.globalFontColor, line.words, line.startTimeMs));
+        }
+        int activeLine = 0;
+        for (LyricsDialog.ColoredLyricsLine line : new ArrayList<>(coloredLines)) {
+            if (line.startTimeMS < InstanceManager.getPlayer().getPlayer().time()) {
+                activeLine++;
+                break;
             }
-        };
-    }
+        }
+        try {
+            coloredLines.set(activeLine, new LyricsDialog.ColoredLyricsLine(
+                    PublicValues.globalFontColor.brighter().brighter(),
+                    coloredLines.get(activeLine).getTextContent(),
+                    coloredLines.get(activeLine).getStartTimeMS()
+            ));
+        } catch (IndexOutOfBoundsException ignored) {
+        }
+        repaint();
+    };
 
     private void createUIComponents() {
         paintPanel = new PaintPanel(this::paintLines);
@@ -185,29 +187,15 @@ public class LyricsDialog extends JDialog {
         return contentPanel;
     }
 
-    private static class ColoredLyricsLine extends RAWTextArea.ColoredLine {
-        private final long startTimeMS;
-
-        public ColoredLyricsLine(Color textColor, String textContent, long startTimeMS) {
-            super(textColor, textContent);
-            this.startTimeMS = startTimeMS;
-        }
-
-        public long getStartTimeMS() {
-            return this.startTimeMS;
-        }
-    }
-
     public void append(String textContent, Color textColor, long startTimeMS) {
         coloredLines.add(new LyricsDialog.ColoredLyricsLine(textColor, textContent, startTimeMS));
         repaint();
     }
 
-    private final ArrayList<ColoredLyricsLine> coloredLines = new ArrayList<>();
 
     public void close() {
-        Events.unsubscribe(SpotifyXPEvents.playerSeekedBackwards.getName(), seekedBackwards());
-        Events.unsubscribe(SpotifyXPEvents.playerSeekedForwards.getName(), seekedForwards());
+        SpotifyXPEvents.playerSeekedBackwards.unsubscribe(seekedBackwards);
+        SpotifyXPEvents.playerSeekedForwards.unsubscribe(seekedForwards);
         setVisible(false);
     }
 

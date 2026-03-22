@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.*;
 import com.spotifyxp.dialogs.FollowPlaylist;
 import com.spotifyxp.dialogs.SelectPlaylist;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -162,7 +161,7 @@ public enum GlobalContextMenus {
                             libraryChangeType = LibraryChange.Type.ALBUM;
                             break;
                     }
-                    Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                    SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                             uris.get(table.getSelectedRow()).toLowerCase(Locale.ENGLISH),
                             libraryChangeType,
                             LibraryChange.Action.ADD
@@ -255,7 +254,7 @@ public enum GlobalContextMenus {
                 @Override
                 public void run() {
                     for(String s : uris) {
-                        Events.triggerEvent(SpotifyXPEvents.addtoqueue.getName(), s);
+                        SpotifyXPEvents.addToQueue.trigger(s);
                     }
                 }
             };
@@ -292,7 +291,7 @@ public enum GlobalContextMenus {
                 @Override
                 public void run() {
                     if(((JTable) component).getSelectedRow() == -1) return;
-                    Events.triggerEvent(SpotifyXPEvents.addtoqueue.getName(), uris.get(((JTable) component).getSelectedRow()));
+                    SpotifyXPEvents.addToQueue.trigger(uris.get(((JTable) component).getSelectedRow()));
                 }
             };
         }

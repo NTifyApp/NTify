@@ -16,7 +16,6 @@
 package com.spotifyxp.utils;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.deps.com.spotify.connectstate.Connect;
 import com.spotifyxp.deps.xyz.gianlu.librespot.ZeroconfServer;
 import com.spotifyxp.deps.xyz.gianlu.librespot.audio.decoders.AudioQuality;
@@ -27,9 +26,6 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.player.Player;
 import com.spotifyxp.deps.xyz.gianlu.librespot.player.PlayerConfiguration;
 import com.spotifyxp.dialogs.LoginDialog;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
-import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,7 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerUtils {
-    Session authViaZeroconf(Session.Configuration configuration, EventSubscriber cancelCallback) throws InterruptedException, ExecutionException {
+    Session authViaZeroconf(Session.Configuration configuration, ZeroconfServer.CancelCallback cancelCallback) throws InterruptedException, ExecutionException {
         CompletableFuture<Session> sessionFuture = new CompletableFuture<>();
         try (ZeroconfServer zeroconfServer = new ZeroconfServer.Builder(configuration)
                 .setPreferredLocale(PublicValues.config.getFields().preferredLocale)
@@ -87,7 +83,7 @@ public class PlayerUtils {
         return null;
     }
 
-    Session authViaOauth(Session.Configuration configuration, OAuth.CallbackURLReceiver receiver, EventSubscriber onCancelCallback) throws Session.SpotifyAuthenticationException, GeneralSecurityException, IOException, MercuryClient.MercuryException, CancellationException {
+    Session authViaOauth(Session.Configuration configuration, OAuth.CallbackURLReceiver receiver, OAuth.CancelCallback onCancelCallback) throws Session.SpotifyAuthenticationException, GeneralSecurityException, IOException, MercuryClient.MercuryException, CancellationException {
         return new Session.Builder(configuration)
                 .setPreferredLocale(PublicValues.config.getFields().preferredLocale)
                 .setDeviceType(Connect.DeviceType.COMPUTER)
@@ -149,8 +145,8 @@ public class PlayerUtils {
             session.connectionInit();
             player.waitReady();
             PublicValues.session = session;
-            Events.subscribe(SpotifyXPEvents.internetConnectionDropped.getName(), connectionDroppedListener());
-            Events.subscribe(SpotifyXPEvents.internetConnectionReconnected.getName(), connectionReconnectedListener());
+
+            PublicValues.session.addReconnectionListener(connectionListener);
             return player;
         } catch (ConnectException | Session.SpotifyAuthenticationException | IllegalArgumentException | EOFException e) {
             try {
@@ -173,14 +169,12 @@ public class PlayerUtils {
         CompletableFuture<Session> sessionFuture = new CompletableFuture<>();
         final Runnable[] cancelRunnable = new Runnable[1];
         LoginDialog.open(
-                data -> {
-                    cancelRunnable[0].run();
-                },
+                cancelRunnable[0],
                 data -> {
                     Thread zeroconfthread = new Thread(() -> {
                         try {
                             Session session = authViaZeroconf(configuration, data2 -> {
-                                cancelRunnable[0] = (Runnable) data2[0];
+                                cancelRunnable[0] = data2;
                             });
                             sessionFuture.complete(session);
                         }catch (Exception e) {
@@ -189,17 +183,15 @@ public class PlayerUtils {
                     });
                     zeroconfthread.start();
                 },
-                data -> {
-                    cancelRunnable[0].run();
-                },
+                cancelRunnable[0],
                 data -> {
                     Thread oauthThread = new Thread(() -> {
                         try {
-                            Session session = authViaOauth(configuration, callbackURL ->  {
-                                ((EventSubscriber) data[0]).run(callbackURL);
-                            }, data1 -> cancelRunnable[0] = (Runnable) data1[0]);
+                            Session session = authViaOauth(configuration, callbackURL -> {
+                                data.run(callbackURL);
+                            }, data1 -> cancelRunnable[0] = data1);
                             sessionFuture.complete(session);
-                        }catch (Exception e) {
+                        } catch (Exception e) {
                             sessionFuture.completeExceptionally(e);
                         }
                     });
@@ -216,17 +208,15 @@ public class PlayerUtils {
         }
     }
 
-    EventSubscriber connectionReconnectedListener() {
-        return data -> {
+    Session.ReconnectionListener connectionListener = new Session.ReconnectionListener() {
+        @Override
+        public void onConnectionDropped() {
             PublicValues.wasOffline = false;
-            System.out.println("Connection re established!");
-        };
-    }
+        }
 
-    EventSubscriber connectionDroppedListener() {
-        return data -> {
+        @Override
+        public void onConnectionEstablished() {
             PublicValues.wasOffline = true;
-            System.out.println("Connection dropped! Reconnecting...");
-        };
-    }
+        }
+    };
 }

@@ -17,10 +17,7 @@ package com.spotifyxp.pip;
 
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -233,30 +230,21 @@ public class PiPPlayer {
             }
         });
 
-        Events.subscribe(SpotifyXPEvents.playerresume.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                if(frame != null) {
-                    playPause.setImage(Initiator.class.getResourceAsStream(pausePath));
-                }
+        SpotifyXPEvents.playerResume.subscribe((data -> {
+            if(frame != null) {
+                playPause.setImage(Initiator.class.getResourceAsStream(pausePath));
+            }
+        }));
+
+        SpotifyXPEvents.playerPause.subscribe((data) -> {
+            if(frame != null) {
+                playPause.setImage(Initiator.class.getResourceAsStream(playPath));
             }
         });
 
-        Events.subscribe(SpotifyXPEvents.playerpause.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                if(frame != null) {
-                    playPause.setImage(Initiator.class.getResourceAsStream(playPath));
-                }
-            }
-        });
-
-        Events.subscribe(SpotifyXPEvents.playerLockRelease.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                if(frame != null) {
-                    songImage.setImage(PlayerArea.playerImage.getImageStream());
-                }
+        SpotifyXPEvents.trackNext.subscribe((data) -> {
+            if(frame != null) {
+                songImage.setImage(PlayerArea.playerImage.getImageStream());
             }
         });
     }

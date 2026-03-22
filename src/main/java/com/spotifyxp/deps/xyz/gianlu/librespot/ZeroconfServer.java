@@ -25,7 +25,6 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.crypto.DiffieHellman;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.zeroconf.Service;
 import com.spotifyxp.deps.xyz.gianlu.zeroconf.Zeroconf;
-import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.logging.ConsoleLoggingModules;
 import com.spotifyxp.utils.GraphicalMessage;
 import okhttp3.HttpUrl;
@@ -116,12 +115,12 @@ public class ZeroconfServer implements Closeable {
     private volatile Session session;
     private String connectingUsername = null;
 
-    private ZeroconfServer(@NotNull Inner inner, int listenPort, boolean listenAllInterfaces, String[] interfacesList, EventSubscriber cancelCallback) throws IOException {
+    private ZeroconfServer(@NotNull Inner inner, int listenPort, boolean listenAllInterfaces, String[] interfacesList, CancelCallback cancelCallback) throws IOException {
         this.inner = inner;
         this.keys = new DiffieHellman(inner.random);
         this.sessionListeners = new ArrayList<>();
 
-        cancelCallback.run((Runnable) () -> {
+        cancelCallback.run(() -> {
             try {
                 cancel();
             } catch (IOException e) {
@@ -440,11 +439,16 @@ public class ZeroconfServer implements Closeable {
         void cancelled();
     }
 
+    @FunctionalInterface
+    public interface CancelCallback {
+        void run(Runnable cancelFunction);
+    }
+
     public static class Builder extends Session.AbsBuilder<Builder> {
         private boolean listenAll = true;
         private int listenPort = -1;
         private String[] listenInterfaces = null;
-        private EventSubscriber cancelCallback = null;
+        private CancelCallback cancelCallback = null;
 
         public Builder(Session.@NotNull Configuration conf) {
             super(conf);
@@ -470,7 +474,7 @@ public class ZeroconfServer implements Closeable {
             return this;
         }
 
-        public Builder setCancelCallback(EventSubscriber cancelCallback) {
+        public Builder setCancelCallback(CancelCallback cancelCallback) {
             this.cancelCallback = cancelCallback;
             return this;
         }

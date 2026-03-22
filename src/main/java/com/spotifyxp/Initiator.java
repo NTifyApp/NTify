@@ -22,7 +22,6 @@ import com.spotifyxp.background.BackgroundService;
 import com.spotifyxp.cache.Cache;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.configuration.ConfigValues;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.injector.Injector;
 import com.spotifyxp.lib.libDetect;
@@ -71,7 +70,6 @@ public class Initiator {
     public static void main(String[] args) {
         try {
             PublicValues.argParser.parseArguments(args); //Parsing the arguments
-            initEvents(); //Initializing the event support
             new SplashPanel().show(); //Initializing the splash panel
             System.setProperty("http.agent", ApplicationUtils.getUserAgent()); //Setting the user agent string that SpotifyXP uses
             checkDebug(); //Checking if debug is enabled
@@ -264,12 +262,6 @@ public class Initiator {
                 ex.printStackTrace();
                 ConsoleLogging.info(ApplicationUtils.getName() + " was built without video playback support");
             }
-        }
-    }
-
-    static void initEvents() {
-        for (SpotifyXPEvents s : SpotifyXPEvents.values()) {
-            Events.register(s.getName(), true);
         }
     }
 

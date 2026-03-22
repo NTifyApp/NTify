@@ -16,10 +16,8 @@
 package com.spotifyxp.utils;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -102,7 +100,7 @@ public class TrackUtils {
             if (PublicValues.shuffle) {
                 Shuffle.makeShuffle();
             }
-            Events.triggerEvent(SpotifyXPEvents.queueUpdate.getName());
+            SpotifyXPEvents.queueUpdate.trigger();
         } catch (IndexOutOfBoundsException ignored) {
         }
     }

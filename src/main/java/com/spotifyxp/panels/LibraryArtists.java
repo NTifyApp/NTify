@@ -25,8 +25,6 @@ import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.ArtistId;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
@@ -83,7 +81,7 @@ public class LibraryArtists extends JScrollPane {
                         PublicValues.session.api().artist().unfollow(
                                 ArtistId.fromUri(artistsUris.get(artistsTable.getSelectedRow()))
                         );
-                        Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                        SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                                 artistsUris.get(artistsTable.getSelectedRow()),
                                 LibraryChange.Type.ARTIST,
                                 LibraryChange.Action.REMOVE
@@ -95,56 +93,52 @@ public class LibraryArtists extends JScrollPane {
             }
         });
 
-        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                LibraryChange change = (LibraryChange) data[0];
-                if(artistsUris.isEmpty()) return;
-                if(change.getType() != LibraryChange.Type.ARTIST) return;
-                if(change.getAction() == LibraryChange.Action.ADD) {
-                    new Thread(() -> {
-                        try {
-                            ExtendedMetadata.BatchedExtensionResponse response = PublicValues.session.api().getExtendedMetadata(ExtendedMetadata.BatchedEntityRequest.newBuilder()
-                                            .addEntityRequest(ExtendedMetadata.EntityRequest.newBuilder()
-                                                    .setEntityUri(change.getUri())
-                                                    .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
-                                                            .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ARTIST_V4)
-                                                            .build())
-                                                    .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
-                                                            .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ON_PLATFORM_REPUTATION_TRAIT)
-                                                            .build())
-                                                    .build())
-                                    .build());
-                            Metadata.Artist artist = Metadata.Artist.parseFrom(response.getExtendedMetadata(0).getExtensionData(1).getExtensionData().getValue());
-                            ExtendedMetadataStuff.OnPlatformReputationTrait reputationTrait = ExtendedMetadataStuff.OnPlatformReputationTrait.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
-                            artistsUris.add(0, change.getUri());
-                            artistsTable.addModifyAction(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((DefaultTableModel) artistsTable.getModel()).insertRow(0, new Object[]{
-                                            artist.getName(),
-                                            SpotifyUtils.formatMonthlyListeners(reputationTrait.getMonthlyListeners()),
-                                            String.join(", ", artist.getGenreList())
-                                    });
-                                }
-                            });
-                        } catch (IOException | MercuryClient.MercuryException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }, "Library add artist").start();
-                }else{
-                    for(int uri = 0; uri < artistsUris.size(); uri++) {
-                        if(artistsUris.get(uri).equals(change.getUri())) {
-                            artistsUris.remove(uri);
-                            int finalUri = uri;
-                            artistsTable.addModifyAction(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((DefaultTableModel) artistsTable.getModel()).removeRow(finalUri);
-                                }
-                            });
-                            return;
-                        }
+        SpotifyXPEvents.libraryChange.subscribe((change) -> {
+            if(artistsUris.isEmpty()) return;
+            if(change.getType() != LibraryChange.Type.ARTIST) return;
+            if(change.getAction() == LibraryChange.Action.ADD) {
+                new Thread(() -> {
+                    try {
+                        ExtendedMetadata.BatchedExtensionResponse response = PublicValues.session.api().getExtendedMetadata(ExtendedMetadata.BatchedEntityRequest.newBuilder()
+                                .addEntityRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                        .setEntityUri(change.getUri())
+                                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ARTIST_V4)
+                                                .build())
+                                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ON_PLATFORM_REPUTATION_TRAIT)
+                                                .build())
+                                        .build())
+                                .build());
+                        Metadata.Artist artist = Metadata.Artist.parseFrom(response.getExtendedMetadata(0).getExtensionData(1).getExtensionData().getValue());
+                        ExtendedMetadataStuff.OnPlatformReputationTrait reputationTrait = ExtendedMetadataStuff.OnPlatformReputationTrait.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
+                        artistsUris.add(0, change.getUri());
+                        artistsTable.addModifyAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                ((DefaultTableModel) artistsTable.getModel()).insertRow(0, new Object[]{
+                                        artist.getName(),
+                                        SpotifyUtils.formatMonthlyListeners(reputationTrait.getMonthlyListeners()),
+                                        String.join(", ", artist.getGenreList())
+                                });
+                            }
+                        });
+                    } catch (IOException | MercuryClient.MercuryException e) {
+                        throw new RuntimeException(e);
+                    }
+                }, "Library add artist").start();
+            }else{
+                for(int uri = 0; uri < artistsUris.size(); uri++) {
+                    if(artistsUris.get(uri).equals(change.getUri())) {
+                        artistsUris.remove(uri);
+                        int finalUri = uri;
+                        artistsTable.addModifyAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                ((DefaultTableModel) artistsTable.getModel()).removeRow(finalUri);
+                            }
+                        });
+                        return;
                     }
                 }
             }

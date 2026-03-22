@@ -24,8 +24,6 @@ import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -89,12 +87,11 @@ public class Queue extends JScrollPane implements View {
         queueList.setBackground(getBackground());
 
         setViewportView(queueList);
-        Events.triggerEvent(SpotifyXPEvents.playerpause.getName(), "Hallo");
-        Events.subscribe(SpotifyXPEvents.addtoqueue.getName(), data -> {
+        SpotifyXPEvents.addToQueue.subscribe((data) -> {
             if(!queueUriCache.isEmpty()) {
-                queueUriCache.add((String) data[0]);
+                queueUriCache.add(data);
                 try {
-                    Metadata.Track track = PublicValues.session.api().track().getMetadata(TrackId.fromUri((String) data[0]));
+                    Metadata.Track track = PublicValues.session.api().track().getMetadata(TrackId.fromUri(data));
                     String a = TrackUtils.getArtists(track.getArtistList());
                     queueListModel.addElement(track.getName() + " - " + a);
                 } catch (ArrayIndexOutOfBoundsException e) {
@@ -104,7 +101,7 @@ public class Queue extends JScrollPane implements View {
                 }
             }
         });
-        Events.subscribe(SpotifyXPEvents.queueUpdate.getName(), (Object... data) -> {
+        SpotifyXPEvents.queueUpdate.subscribe((data) -> {
             if(queueUriCache.isEmpty()) return;
             if(InstanceManager.getPlayer().getPlayer().tracks(true).next.size() > queueUriCache.size()) {
                 queueUriCache.clear();
@@ -113,10 +110,10 @@ public class Queue extends JScrollPane implements View {
                     ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
                     for (ContextTrackOuterClass.ContextTrack t : InstanceManager.getSpotifyPlayer().tracks(true).next) {
                         helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
-                                        .setEntityUri(t.getUri())
-                                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
-                                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
-                                                .build())
+                                .setEntityUri(t.getUri())
+                                .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                        .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                        .build())
                                 .build(), dataRet -> {
                             Metadata.Track track = Metadata.Track.parseFrom(dataRet[0].getValue());
                             queueUriCache.add(t.getUri());
@@ -134,11 +131,11 @@ public class Queue extends JScrollPane implements View {
                 }
                 return;
             }
-            if (!queueListModel.isEmpty() && !queueUriCache.isEmpty() && data.length == 1 && data[0] != null && (data[0] instanceof String)) {
-                if(queueUriCache.get(0).equals(data[0])) {
-                    Events.triggerEvent(SpotifyXPEvents.queueAdvance.getName());
+            if (!queueListModel.isEmpty() && !queueUriCache.isEmpty() && data != null) {
+                if(queueUriCache.get(0).equals(data)) {
+                    SpotifyXPEvents.queueAdvance.trigger();
                 } else {
-                    Events.triggerEvent(SpotifyXPEvents.queueRegress.getName());
+                    SpotifyXPEvents.queueRegress.trigger();
                 }
                 return;
             }
@@ -152,10 +149,10 @@ public class Queue extends JScrollPane implements View {
                 for (ContextTrackOuterClass.ContextTrack t : InstanceManager.getSpotifyPlayer().tracks(true).next) {
                     // Metadata map??
                     helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
-                                    .setEntityUri(t.getUri())
-                                    .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
-                                            .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
-                                            .build())
+                            .setEntityUri(t.getUri())
+                            .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                    .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                    .build())
                             .build(), dataRet -> {
                         Metadata.Track track = Metadata.Track.parseFrom(dataRet[0].getValue());
                         queueUriCache.add(t.getUri());
@@ -172,14 +169,14 @@ public class Queue extends JScrollPane implements View {
                 throw new RuntimeException("Failed to list tracks in queue");
             }
         });
-        Events.subscribe(SpotifyXPEvents.queueAdvance.getName(), (Object... data) -> {
+        SpotifyXPEvents.queueAdvance.subscribe((data) -> {
             if (queueListModel.isEmpty()) {
                 return;
             }
             queueUriCache.remove(0);
             queueListModel.remove(0);
         });
-        Events.subscribe(SpotifyXPEvents.queueRegress.getName(), (Object... data) -> {
+        SpotifyXPEvents.queueRegress.subscribe((data) -> {
             if (queueListModel.isEmpty()) {
                 return;
             }

@@ -31,8 +31,6 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlaylistId;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.dialogs.AddPlaylistDialog;
 import com.spotifyxp.dialogs.ChangePlaylistDialog;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
@@ -237,7 +235,7 @@ public class LibraryPlaylists extends JSplitPane {
         playlistsPlaylistsTableContextMenu = new ContextMenu(playlistsPlaylistsTable, playlistsUriCache, getClass());
         playlistsPlaylistsTableContextMenu.addItem(PublicValues.language.translate("ui.general.remove.playlist"), () -> {
             PublicValues.session.api().playlist().remove(PublicValues.session.username(), new String[] {playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())});
-            Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+            SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                     playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()),
                     LibraryChange.Type.PLAYLIST,
                     LibraryChange.Action.REMOVE
@@ -307,34 +305,25 @@ public class LibraryPlaylists extends JSplitPane {
             }
         });
 
-        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                LibraryChange change = (LibraryChange) data[0];
-                if(playlistsUriCache.isEmpty()) return;
-                if(change.getType() != LibraryChange.Type.PLAYLIST) return;
-                if(change.getAction() == LibraryChange.Action.ADD) {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().playlist().get(PlaylistId.fromUri(change.getUri()));
-                                playlistsUriCache.add(0, change.getUri());
-                                ((DefaultTableModel) playlistsPlaylistsTable.getModel()).insertRow(0, new Object[]{playlist.getAttributes().getName()});
-                            } catch (IOException | MercuryClient.MercuryException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                    }, "Library add playlist").start();
-                }else {
-                    for(int uri = 0; uri < playlistsUriCache.size(); uri++) {
-                        if(playlistsUriCache.get(uri).equals(change.getUri())) {
-                            playlistsUriCache.remove(uri);
-                            ((DefaultTableModel) playlistsPlaylistsTable.getModel()).removeRow(uri);
-                            return;
+        SpotifyXPEvents.libraryChange.subscribe((change) -> {
+            if(playlistsUriCache.isEmpty()) return;
+            if(change.getType() != LibraryChange.Type.PLAYLIST) return;
+            if(change.getAction() == LibraryChange.Action.ADD) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().playlist().get(PlaylistId.fromUri(change.getUri()));
+                            playlistsUriCache.add(0, change.getUri());
+                            ((DefaultTableModel) playlistsPlaylistsTable.getModel()).insertRow(0, new Object[]{playlist.getAttributes().getName()});
+                        } catch (IOException | MercuryClient.MercuryException e) {
+                            throw new RuntimeException(e);
                         }
                     }
-                }
+                }, "Library add playlist").start();
+            }else {
+                ((DefaultTableModel) playlistsPlaylistsTable.getModel()).removeRow(playlistsUriCache.indexOf(change.getUri()));
+                playlistsUriCache.remove(change.getUri());
             }
         });
     }

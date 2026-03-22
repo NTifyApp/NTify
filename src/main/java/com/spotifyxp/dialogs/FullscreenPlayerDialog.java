@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
+import com.spotifyxp.events.Playable;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.graphics.Graphics;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -92,43 +91,40 @@ public class FullscreenPlayerDialog {
             }
         });
 
-        Events.subscribe(SpotifyXPEvents.trackNext.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                if (data[0] instanceof Metadata.Track) {
-                    Metadata.Track track = (Metadata.Track) data[0];
-                    StringBuilder artists = new StringBuilder();
-                    for (Metadata.Artist artist : track.getArtistList()) {
-                        if (artists.toString().isEmpty()) {
-                            artists.append(artist.getName());
-                        } else {
-                            artists.append(", ").append(artist.getName());
-                        }
+        SpotifyXPEvents.trackNext.subscribe((data) -> {
+            if (data.playableType == Playable.Type.TRACK) {
+                Metadata.Track track = data.track;
+                StringBuilder artists = new StringBuilder();
+                for (Metadata.Artist artist : track.getArtistList()) {
+                    if (artists.toString().isEmpty()) {
+                        artists.append(artist.getName());
+                    } else {
+                        artists.append(", ").append(artist.getName());
                     }
-                    playerTitleDesc.setText(track.getName() + " - " + artists);
-                    try {
-                       image.setImage(new URL(
-                                "https://i.scdn.co/image/" +
-                                        com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(track.getAlbum().getCoverGroup().getImageList()).getFileId()).toLowerCase()
-                        ).openStream());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        ConsoleLogging.warning("Failed to load cover for track");
-                        PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
-                    }
-                } else if (data[0] instanceof Metadata.Episode) {
-                    Metadata.Episode episode = (Metadata.Episode) data[0];
-                    playerTitleDesc.setText(episode.getName() + " - " + episode.getShow().getName());
-                    try {
-                        image.setImage(new URL(
-                                "https://i.scdn.co/image/" +
-                                        com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(episode.getCoverImage().getImageList()).getFileId()).toLowerCase()
-                        ).openStream());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        ConsoleLogging.warning("Failed to load cover for episode");
-                        PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
-                    }
+                }
+                playerTitleDesc.setText(track.getName() + " - " + artists);
+                try {
+                    image.setImage(new URL(
+                            "https://i.scdn.co/image/" +
+                                    com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(track.getAlbum().getCoverGroup().getImageList()).getFileId()).toLowerCase()
+                    ).openStream());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    ConsoleLogging.warning("Failed to load cover for track");
+                    PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
+                }
+            } else {
+                Metadata.Episode episode = data.episode;
+                playerTitleDesc.setText(episode.getName() + " - " + episode.getShow().getName());
+                try {
+                    image.setImage(new URL(
+                            "https://i.scdn.co/image/" +
+                                    com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(episode.getCoverImage().getImageList()).getFileId()).toLowerCase()
+                    ).openStream());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    ConsoleLogging.warning("Failed to load cover for episode");
+                    PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
                 }
             }
         });

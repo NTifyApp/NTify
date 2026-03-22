@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ package com.spotifyxp.args;
 
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.events.Events;
-import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.lib.libLanguage;
 import com.spotifyxp.support.SupportModuleLoader;
@@ -37,9 +35,6 @@ public class RunUpdater implements Argument {
         return new Runnable() {
             @Override
             public void run() {
-                for(SpotifyXPEvents event : SpotifyXPEvents.values()) {
-                    Events.register(event.getName(), true);
-                }
                 PublicValues.osType = libDetect.getDetectedOS();
                 new SupportModuleLoader().loadModules();
                 PublicValues.language = new libLanguage(Initiator.class);

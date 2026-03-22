@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.protobuf.ByteString;
 import com.spotifyxp.deps.com.spotify.Authentication;
-import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.logging.ConsoleLoggingModules;
 import com.sun.net.httpserver.HttpServer;
 
@@ -52,11 +51,11 @@ public class OAuth implements Closeable {
     private boolean cancelled = false;
 
 
-    public OAuth(String clientId, String redirectUrl, EventSubscriber onCancelCallback) {
+    public OAuth(String clientId, String redirectUrl, CancelCallback onCancelCallback) {
         this.clientId = clientId;
         this.redirectUrl = redirectUrl;
-        onCancelCallback.run(
-                (Runnable) () -> {
+        onCancelCallback.cancel(
+                () -> {
                     try {
                         cancel();
                     } catch (IOException e) {
@@ -64,6 +63,10 @@ public class OAuth implements Closeable {
                     }
                 }
         );
+    }
+
+    public interface CancelCallback {
+        void cancel(Runnable cancelFunction);
     }
 
     private String generateCodeVerifier() {

@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.spotifyxp.theming.themes;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
@@ -45,7 +44,7 @@ public class Legacy implements Theme {
                  InstantiationException | IllegalAccessException e) {
             ConsoleLogging.Throwable(e);
         }
-        Events.subscribe(SpotifyXPEvents.onFrameReady.getName(), (Object... data) -> {
+        SpotifyXPEvents.onFrameReady.subscribe((data) -> {
             ContentPanel.legacySwitch.setBackgroundAt(0, Color.white);
             ContentPanel.legacySwitch.setBackgroundAt(1, Color.white);
             ContentPanel.legacySwitch.setBackgroundAt(2, Color.white);

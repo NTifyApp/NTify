@@ -27,8 +27,6 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlaylistId;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
@@ -138,42 +136,38 @@ public class LibraryEpisodes extends JScrollPane {
             }
         });
 
-        Events.subscribe(SpotifyXPEvents.librarychange.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                LibraryChange change = (LibraryChange) data[0];
-                if(episodesUris.isEmpty()) return;
-                if(change.getType() != LibraryChange.Type.EPISODE) return;
-                if(change.getAction() == LibraryChange.Action.ADD) {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(change.getUri()));
-                                episodesUris.add(0, change.getUri());
-                                episodesTable.addModifyAction(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        ((DefaultTableModel) episodesTable.getModel()).insertRow(0, new Object[]{
-                                                episode.getName(),
-                                                episode.getShow().getName(),
-                                                TrackUtils.calculateFileSizeKb(episode.getDuration()),
-                                                TrackUtils.getHHMMSSOfTrack(episode.getDuration())
-                                        });
-                                    }
-                                });
-                            }catch (IOException | MercuryClient.MercuryException e) {
-                                throw new RuntimeException(e);
-                            }
+        SpotifyXPEvents.libraryChange.subscribe((change) -> {
+            if(episodesUris.isEmpty()) return;
+            if(change.getType() != LibraryChange.Type.EPISODE) return;
+            if(change.getAction() == LibraryChange.Action.ADD) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(change.getUri()));
+                            episodesUris.add(0, change.getUri());
+                            episodesTable.addModifyAction(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((DefaultTableModel) episodesTable.getModel()).insertRow(0, new Object[]{
+                                            episode.getName(),
+                                            episode.getShow().getName(),
+                                            TrackUtils.calculateFileSizeKb(episode.getDuration()),
+                                            TrackUtils.getHHMMSSOfTrack(episode.getDuration())
+                                    });
+                                }
+                            });
+                        }catch (IOException | MercuryClient.MercuryException e) {
+                            throw new RuntimeException(e);
                         }
-                    }, "Library add episode").start();
-                }else {
-                    for(int uri = 0; uri < episodesUris.size(); uri++) {
-                        if(episodesUris.get(uri).equals(change.getUri())) {
-                            episodesUris.remove(uri);
-                            ((DefaultTableModel) episodesTable.getModel()).removeRow(uri);
-                            return;
-                        }
+                    }
+                }, "Library add episode").start();
+            }else {
+                for(int uri = 0; uri < episodesUris.size(); uri++) {
+                    if(episodesUris.get(uri).equals(change.getUri())) {
+                        episodesUris.remove(uri);
+                        ((DefaultTableModel) episodesTable.getModel()).removeRow(uri);
+                        return;
                     }
                 }
             }

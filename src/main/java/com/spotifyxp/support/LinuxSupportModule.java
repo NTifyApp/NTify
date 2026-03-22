@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
 import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlayableId;
 import com.spotifyxp.deps.xyz.gianlu.librespot.player.Player;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -157,124 +155,121 @@ public class LinuxSupportModule implements SupportModule {
             }
         };
         Timer timer = new Timer();
-        Events.subscribe(SpotifyXPEvents.onFrameReady.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                InstanceManager.getPlayer().getPlayer().addEventsListener(new Player.EventsListener() {
-                    @Override
-                    public void onContextChanged(@NotNull Player player, @NotNull String newUri) {
+        SpotifyXPEvents.onFrameReady.subscribe(data -> {
+            InstanceManager.getPlayer().getPlayer().addEventsListener(new Player.EventsListener() {
+                @Override
+                public void onContextChanged(@NotNull Player player, @NotNull String newUri) {
 
+                }
+
+                @Override
+                public void onTrackChanged(@NotNull Player player, @NotNull PlayableId id, @Nullable MetadataWrapper metadata, boolean userInitiated) {
+                    mpris.setPosition(0);
+                    try {
+                        mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
+                    } catch (DBusException e) {
+                        throw new RuntimeException("Failed setting mpris playback status", e);
                     }
+                }
 
-                    @Override
-                    public void onTrackChanged(@NotNull Player player, @NotNull PlayableId id, @Nullable MetadataWrapper metadata, boolean userInitiated) {
-                        mpris.setPosition(0);
-                        try {
-                            mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
-                        } catch (DBusException e) {
-                            throw new RuntimeException("Failed setting mpris playback status", e);
-                        }
+                @Override
+                public void onPlaybackEnded(@NotNull Player player) {
+                    try {
+                        mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                    } catch (DBusException e) {
+                        throw new RuntimeException("Failed setting mpris playback status", e);
                     }
+                }
 
-                    @Override
-                    public void onPlaybackEnded(@NotNull Player player) {
-                        try {
-                            mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
-                        } catch (DBusException e) {
-                            throw new RuntimeException("Failed setting mpris playback status", e);
-                        }
+                @Override
+                public void onPlaybackPaused(@NotNull Player player, long trackTime) {
+                    try {
+                        mpris.setPlaybackStatus(PlaybackStatus.PAUSED);
+                    } catch (DBusException e) {
+                        throw new RuntimeException("Failed setting mpris playback status", e);
                     }
+                }
 
-                    @Override
-                    public void onPlaybackPaused(@NotNull Player player, long trackTime) {
-                        try {
-                            mpris.setPlaybackStatus(PlaybackStatus.PAUSED);
-                        } catch (DBusException e) {
-                            throw new RuntimeException("Failed setting mpris playback status", e);
-                        }
+                @Override
+                public void onPlaybackResumed(@NotNull Player player, long trackTime) {
+                    try {
+                        mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
+                    } catch (DBusException e) {
+                        throw new RuntimeException("Failed setting mpris playback status", e);
                     }
+                }
 
-                    @Override
-                    public void onPlaybackResumed(@NotNull Player player, long trackTime) {
-                        try {
-                            mpris.setPlaybackStatus(PlaybackStatus.PLAYING);
-                        } catch (DBusException e) {
-                            throw new RuntimeException("Failed setting mpris playback status", e);
-                        }
+                @Override
+                public void onPlaybackFailed(@NotNull Player player, @NotNull Exception e) {
+                    try {
+                        mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                    } catch (DBusException ex) {
+                        throw new RuntimeException("Failed setting mpris playback status", e);
                     }
+                }
 
-                    @Override
-                    public void onPlaybackFailed(@NotNull Player player, @NotNull Exception e) {
-                        try {
-                            mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
-                        } catch (DBusException ex) {
-                            throw new RuntimeException("Failed setting mpris playback status", e);
-                        }
+                @Override
+                public void onTrackSeeked(@NotNull Player player, long trackTime) {
+                    try {
+                        mpris.emitSeeked((int) TimeUnit.MILLISECONDS.toMicros(trackTime));
+                    } catch (DBusException e) {
+                        throw new RuntimeException("Failed to emit mpris seeked", e);
                     }
+                }
 
-                    @Override
-                    public void onTrackSeeked(@NotNull Player player, long trackTime) {
-                        try {
-                            mpris.emitSeeked((int) TimeUnit.MILLISECONDS.toMicros(trackTime));
-                        } catch (DBusException e) {
-                            throw new RuntimeException("Failed to emit mpris seeked", e);
-                        }
+                @Override
+                public void onMetadataAvailable(@NotNull Player player, @NotNull MetadataWrapper metadata) {
+                    try {
+                        assert metadata.id != null;
+                        mpris.setMetadata(new Metadata.Builder()
+                                .setTrackID(new DBusPath("/NTify/Track/Current"))
+                                .setTitle(metadata.getName())
+                                .setArtURL(URI.create("https://i.scdn.co/image/" +
+                                        Utils.bytesToHex(SpotifyUtils.getImageForSystem(metadata.getCoverImage().getImageList()).getFileId()).toLowerCase()))
+                                .setLength((int) TimeUnit.MILLISECONDS.toMicros(metadata.duration()))
+                                .setArtists(Collections.singletonList(metadata.getArtist()))
+                                .setAlbumName(metadata.getAlbumName())
+                                .build());
+                    } catch (DBusException ex) {
+                        throw new RuntimeException(ex);
                     }
+                }
 
-                    @Override
-                    public void onMetadataAvailable(@NotNull Player player, @NotNull MetadataWrapper metadata) {
-                        try {
-                            assert metadata.id != null;
-                            mpris.setMetadata(new Metadata.Builder()
-                                    .setTrackID(new DBusPath("/NTify/Track/Current"))
-                                    .setTitle(metadata.getName())
-                                    .setArtURL(URI.create("https://i.scdn.co/image/" +
-                                            Utils.bytesToHex(SpotifyUtils.getImageForSystem(metadata.getCoverImage().getImageList()).getFileId()).toLowerCase()))
-                                    .setLength((int) TimeUnit.MILLISECONDS.toMicros(metadata.duration()))
-                                    .setArtists(Collections.singletonList(metadata.getArtist()))
-                                    .setAlbumName(metadata.getAlbumName())
-                                    .build());
-                        } catch (DBusException ex) {
-                            throw new RuntimeException(ex);
-                        }
+                @Override
+                public void onPlaybackHaltStateChanged(@NotNull Player player, boolean halted, long trackTime) {
+
+                }
+
+                @Override
+                public void onInactiveSession(@NotNull Player player, boolean timeout) {
+
+                }
+
+                @Override
+                public void onVolumeChanged(@NotNull Player player, @Range(from = 0, to = 1) float volume) {
+
+                }
+
+                @Override
+                public void onPanicState(@NotNull Player player) {
+                    try {
+                        mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
+                    } catch (DBusException ex) {
+                        throw new RuntimeException("Failed setting mpris playback status", ex);
                     }
+                }
 
-                    @Override
-                    public void onPlaybackHaltStateChanged(@NotNull Player player, boolean halted, long trackTime) {
+                @Override
+                public void onStartedLoading(@NotNull Player player) {
 
-                    }
+                }
 
-                    @Override
-                    public void onInactiveSession(@NotNull Player player, boolean timeout) {
+                @Override
+                public void onFinishedLoading(@NotNull Player player) {
 
-                    }
-
-                    @Override
-                    public void onVolumeChanged(@NotNull Player player, @Range(from = 0, to = 1) float volume) {
-
-                    }
-
-                    @Override
-                    public void onPanicState(@NotNull Player player) {
-                        try {
-                            mpris.setPlaybackStatus(PlaybackStatus.STOPPED);
-                        } catch (DBusException ex) {
-                            throw new RuntimeException("Failed setting mpris playback status", ex);
-                        }
-                    }
-
-                    @Override
-                    public void onStartedLoading(@NotNull Player player) {
-
-                    }
-
-                    @Override
-                    public void onFinishedLoading(@NotNull Player player) {
-
-                    }
-                });
-                if(mpris != null) timer.schedule(task, 0, 1000);
-            }
+                }
+            });
+            if(mpris != null) timer.schedule(task, 0, 1000);
         });
     }
 }

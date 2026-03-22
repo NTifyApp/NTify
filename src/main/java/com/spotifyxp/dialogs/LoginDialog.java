@@ -22,6 +22,7 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.configuration.IConfig;
+import com.spotifyxp.deps.xyz.gianlu.librespot.core.OAuth;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.guielements.Settings;
 import com.spotifyxp.swingextension.JFrame;
@@ -100,10 +101,10 @@ public class LoginDialog {
     }
 
     private LoginDialog(
-            EventSubscriber onZeroconfCancel,
-            EventSubscriber onZeroconfExecute,
-            EventSubscriber onOauthCancel,
-            EventSubscriber onOauthExecute
+            Runnable onZeroconfCancel,
+            EventSubscriber<Runnable> onZeroconfExecute,
+            Runnable onOauthCancel,
+            EventSubscriber<EventSubscriber<String>> onOauthExecute
     ) {
         ImageIcon icon = new ImageIcon(Objects.requireNonNull(LoginDialog.class.getResource("/ntify.png")));
         Dimension defaultDimension = new Dimension(296, 384);
@@ -139,10 +140,10 @@ public class LoginDialog {
         zeroconfbackbutton.setForeground(PublicValues.globalFontColor);
 
         oauthloginmethodbutton.addActionListener(e -> {
-            onOauthExecute.run(new EventSubscriber() {
+            onOauthExecute.run(new EventSubscriber<String>() {
                 @Override
-                public void run(Object... data) {
-                    oAuthCallbackURL = (String) data[0];
+                public void run(String data) {
+                    oAuthCallbackURL = data;
                     try {
                         Utils.openBrowser(oAuthCallbackURL);
                     } catch (URISyntaxException | IOException ex) {
@@ -169,7 +170,7 @@ public class LoginDialog {
             back();
         });
         zeroconfloginmethodbutton.addActionListener(e -> {
-            onZeroconfExecute.run();
+            onZeroconfExecute.run(null);
             switchTo(Views.ZEROCONF);
         });
 
@@ -205,10 +206,10 @@ public class LoginDialog {
     }
 
     public static void open(
-            EventSubscriber onZeroconfCancel,
-            EventSubscriber onZeroconfExecute,
-            EventSubscriber onOauthCancel,
-            EventSubscriber onOauthExecute
+            Runnable onZeroconfCancel,
+            EventSubscriber<Runnable> onZeroconfExecute,
+            Runnable onOauthCancel,
+            EventSubscriber<EventSubscriber<String>> onOauthExecute
     ) throws IOException {
         if (frame != null) {
             return;

@@ -19,7 +19,6 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -41,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class HomePanel extends JScrollPane implements View {
     public static JPanel content;
-    public static Optional<UnofficialSpotifyAPI.HomeTab> tab;
+    public static UnofficialSpotifyAPI.HomeTab tab;
     public static ContextMenu menu;
     public static Timer reloadTimer;
     public static TimerTask nextReload;
@@ -64,7 +63,7 @@ public class HomePanel extends JScrollPane implements View {
 
         CompletableFuture<Boolean> homeFuture = loadHome();
 
-        Events.subscribe(SpotifyXPEvents.onFrameVisible.getName(), (args) -> {
+        SpotifyXPEvents.onFrameVisible.subscribe((data) -> {
             Thread thread = new Thread(() -> {
                 try {
                     homeFuture.join();
@@ -110,7 +109,7 @@ public class HomePanel extends JScrollPane implements View {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         Thread requestTabThread = new Thread(() -> {
             try {
-                tab = InstanceManager.getUnofficialSpotifyApi().getHomeTab();
+                tab = InstanceManager.getUnofficialSpotifyApi().getHomeTab().orElse(null);
                 future.complete(null);
             } catch (IOException | MercuryClient.MercuryException e) {
                 future.cancel(false);
@@ -195,13 +194,12 @@ public class HomePanel extends JScrollPane implements View {
                 if (e.getClickCount() == 2) {
                     ContentTypes ct = ContentTypes.valueOf(uricache.get(homepanelmodulecontenttable.getSelectedRow()).split(":")[1]);
                     String uri = uricache.get(homepanelmodulecontenttable.getSelectedRow());
-                    String id = uri.split(":")[2];
                     try {
                         switch (ct) {
                             case episode:
                             case track:
                                 InstanceManager.getSpotifyPlayer().load(uri, true, PublicValues.shuffle);
-                                Events.triggerEvent(SpotifyXPEvents.queueUpdate.getName());
+                                SpotifyXPEvents.queueUpdate.trigger(uri);
                                 break;
                             case artist:
                                 setVisible(false);
@@ -240,7 +238,7 @@ public class HomePanel extends JScrollPane implements View {
 
 
     public void initializeContent() {
-        if(!tab.isPresent()) return;
+        if(tab == null) return;
 
         int width = getWidth() - 32;
         int height = 261;
@@ -250,31 +248,29 @@ public class HomePanel extends JScrollPane implements View {
         int yCache = titleHeight + 55;
         int titleSpacing = 5;
 
-        UnofficialSpotifyAPI.HomeTab tabCopy = tab.get();
-
         JPanel homepanelgreetings = new JPanel();
         homepanelgreetings.setBounds(0, 11, getWidth(), getFontMetrics(new Font("Tahoma", Font.PLAIN, 20)).getHeight());
         homepanelgreetings.setLayout(new BorderLayout());
-        JLabel homepanelgreetingstext = new JLabel(tabCopy.getGreeting());
+        JLabel homepanelgreetingstext = new JLabel(tab.getGreeting());
         homepanelgreetingstext.setFont(new Font("Tahoma", Font.PLAIN, 20));
         homepanelgreetingstext.setHorizontalAlignment(SwingConstants.CENTER);
         homepanelgreetingstext.setForeground(PublicValues.globalFontColor);
         homepanelgreetings.add(homepanelgreetingstext);
         content.add(homepanelgreetings);
 
-        for (UnofficialSpotifyAPI.HomeTabSection section : tabCopy.getSections()) {
+        for (UnofficialSpotifyAPI.HomeTabSection section : tab.getSections()) {
             addModule(section, titleHeight, xCache, yCache, yCache - titleHeight - titleSpacing, width, height);
             yCache += height + spacing;
         }
 
-        tab = Optional.empty();
+        tab = null;
     }
 
     void fill() {
         Thread t = new Thread(this::initializeContent, "Get home");
         t.start();
-        if(!tab.isPresent()) return;
-        content.setPreferredSize(new Dimension(content.getWidth(), (261 + getFontMetrics(getFont()).getHeight() + 55) * tab.get().getSections().size()));
+        if(tab == null) return;
+        content.setPreferredSize(new Dimension(content.getWidth(), (261 + getFontMetrics(getFont()).getHeight() + 55) * tab.getSections().size()));
         content.revalidate();
         content.repaint();
     }

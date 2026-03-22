@@ -23,9 +23,8 @@ import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.dialogs.FullscreenPlayerDialog;
 import com.spotifyxp.dialogs.LyricsDialog;
-import com.spotifyxp.events.EventSubscriber;
-import com.spotifyxp.events.Events;
 import com.spotifyxp.events.LibraryChange;
+import com.spotifyxp.events.Playable;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.graphics.Graphics;
 import com.spotifyxp.history.PlaybackHistory;
@@ -144,11 +143,8 @@ public class PlayerArea extends JPanel {
         playerImage.setBounds(10, 11, 78, 78);
         add(playerImage);
         playerImage.setImage(Graphics.NOTHINGPLAYING.getPath());
-        Events.subscribe(SpotifyXPEvents.onFrameReady.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(getClass().getResourceAsStream(Graphics.NOTHINGPLAYING.getPath()), new Dimension(78, 78)));
-            }
+        SpotifyXPEvents.onFrameReady.subscribe((data) -> {
+            playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(getClass().getResourceAsStream(Graphics.NOTHINGPLAYING.getPath()), new Dimension(78, 78)));
         });
 
         playerAreaLyricsButton = new JSVGPanel();
@@ -337,17 +333,18 @@ public class PlayerArea extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                //ToDo: Reverse engineer track liking
                 if (heart.isFilled) {
                     try {
                         PublicValues.session.api().track().remove(TrackId.fromUri(
                                 Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
                         ));
-                        Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
-                                Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
-                                LibraryChange.Type.TRACK,
-                                LibraryChange.Action.REMOVE
-                        ));
+                        SpotifyXPEvents.libraryChange.trigger(
+                                new LibraryChange(
+                                        Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
+                                        LibraryChange.Type.TRACK,
+                                        LibraryChange.Action.REMOVE
+                                )
+                        );
                     } catch (IOException | MercuryClient.MercuryException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -358,7 +355,7 @@ public class PlayerArea extends JPanel {
                         PublicValues.session.api().track().like(TrackId.fromUri(
                                 Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
                         ));
-                        Events.triggerEvent(SpotifyXPEvents.librarychange.getName(), new LibraryChange(
+                        SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                                 Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
                                 LibraryChange.Type.TRACK,
                                 LibraryChange.Action.ADD
@@ -375,12 +372,12 @@ public class PlayerArea extends JPanel {
         add(heart.getJComponent());
 
         PublicValues.history = new PlaybackHistory();
-        Events.subscribe(SpotifyXPEvents.trackNext.getName(), (Object... data) -> {
+        SpotifyXPEvents.trackNext.subscribe((data) -> {
             if (InstanceManager.getSpotifyPlayer().currentPlayable() == null) return;
             if (!doneLastParsing) return;
             if (Objects.requireNonNull(InstanceManager.getSpotifyPlayer().currentPlayable()).toSpotifyUri().split(":")[1].equals("track")) {
-                if (data[0] instanceof Metadata.Track) {
-                    Metadata.Track track = (Metadata.Track) data[0];
+                if (data.playableType == Playable.Type.TRACK) {
+                    Metadata.Track track = data.track;
                     try {
                         PublicValues.history.addSong(track);
                     }catch (SQLException e) {
@@ -469,45 +466,42 @@ public class PlayerArea extends JPanel {
             }
         });
 
-        Events.subscribe(SpotifyXPEvents.onFrameReady.getName(), new EventSubscriber() {
-            @Override
-            public void run(Object... data) {
-                if (new File(PublicValues.fileslocation, "play.state").exists()) {
-                    parseLastPlayState();
-                    try {
-                        if (!lastPlayState.uri.isEmpty()) {
-                            playerPlayTime.setText(lastPlayState.playtime);
-                            playerPlayTimeTotal.setText(lastPlayState.playtimetotal);
-                            InstanceManager.getSpotifyPlayer().load(lastPlayState.uri, false, PublicValues.shuffle);
-                            InstanceManager.getSpotifyPlayer().seek(lastPlayState.playerslider * 1000);
-                            playerAreaVolumeSlider.setValue(Integer.parseInt(lastPlayState.playervolume));
-                            doneLastParsing = true;
-                        }
-                        if (!lastPlayState.history.isEmpty()) {
-                            try {
-                                InstanceManager.getSpotifyPlayer().tracks(true).previous.clear();
-                                for (String s : lastPlayState.history) {
-                                    InstanceManager.getSpotifyPlayer().addToQueue(s);
-                                }
-                                InstanceManager.getSpotifyPlayer().updated();
-                            } catch (Exception ignored) {
-                                ConsoleLogging.warning("Failed to restore player history");
-                            }
-                        }
-                        if (!lastPlayState.queue.isEmpty()) {
-                            try {
-                                InstanceManager.getSpotifyPlayer().tracks(true).next.clear();
-                                for (String s : lastPlayState.queue) {
-                                    InstanceManager.getSpotifyPlayer().addToQueue(s);
-                                }
-                                InstanceManager.getSpotifyPlayer().updated();
-                            } catch (Exception ignored) {
-                                ConsoleLogging.warning("Failed to restore player queue");
-                            }
-                        }
-                    } catch (Exception e) {
-                        //Failed to load last play state! Don't notify user because it's not that important
+        SpotifyXPEvents.onFrameReady.subscribe((data) -> {
+            if (new File(PublicValues.fileslocation, "play.state").exists()) {
+                parseLastPlayState();
+                try {
+                    if (!lastPlayState.uri.isEmpty()) {
+                        playerPlayTime.setText(lastPlayState.playtime);
+                        playerPlayTimeTotal.setText(lastPlayState.playtimetotal);
+                        InstanceManager.getSpotifyPlayer().load(lastPlayState.uri, false, PublicValues.shuffle);
+                        InstanceManager.getSpotifyPlayer().seek(lastPlayState.playerslider * 1000);
+                        playerAreaVolumeSlider.setValue(Integer.parseInt(lastPlayState.playervolume));
+                        doneLastParsing = true;
                     }
+                    if (!lastPlayState.history.isEmpty()) {
+                        try {
+                            InstanceManager.getSpotifyPlayer().tracks(true).previous.clear();
+                            for (String s : lastPlayState.history) {
+                                InstanceManager.getSpotifyPlayer().addToQueue(s);
+                            }
+                            InstanceManager.getSpotifyPlayer().updated();
+                        } catch (Exception ignored) {
+                            ConsoleLogging.warning("Failed to restore player history");
+                        }
+                    }
+                    if (!lastPlayState.queue.isEmpty()) {
+                        try {
+                            InstanceManager.getSpotifyPlayer().tracks(true).next.clear();
+                            for (String s : lastPlayState.queue) {
+                                InstanceManager.getSpotifyPlayer().addToQueue(s);
+                            }
+                            InstanceManager.getSpotifyPlayer().updated();
+                        } catch (Exception ignored) {
+                            ConsoleLogging.warning("Failed to restore player queue");
+                        }
+                    }
+                } catch (Exception e) {
+                    //Failed to load last play state! Don't notify user because it's not that important
                 }
             }
         });
@@ -595,7 +589,7 @@ public class PlayerArea extends JPanel {
 
     public void reset() {
         if (!ContentPanel.frame.isVisible()) {
-            Events.subscribe(SpotifyXPEvents.onFrameVisible.getName(), data -> {
+            SpotifyXPEvents.onFrameVisible.subscribe((data) -> {
                 Thread thread = new Thread(() -> {
                     try {
                         Thread.sleep(TimeUnit.SECONDS.toMillis(3));
