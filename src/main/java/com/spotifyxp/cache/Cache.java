@@ -16,7 +16,6 @@
 package com.spotifyxp.cache;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.logging.ConsoleLogging;
 
 import java.io.File;

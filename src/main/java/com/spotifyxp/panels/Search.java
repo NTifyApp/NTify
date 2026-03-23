@@ -15,23 +15,23 @@
  */
 package com.spotifyxp.panels;
 
+import com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotify.metadata.Metadata;
+import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
-import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.*;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.utils.AsyncActionListener;
 import com.spotifyxp.utils.AsyncMouseListener;
 import com.spotifyxp.utils.TrackUtils;
+import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.*;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -298,7 +298,7 @@ public class Search extends JPanel implements View {
                             searchsonglist.addModifyAction(() -> ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{playlistWrapper.data.getName().get() + " - " + playlistWrapper.data.getOwnerV2().get().data.username}));
                         }
                     }
-                } catch (IOException | MercuryClient.MercuryException ex) {
+                } catch (IOException | TokenProvider.TokenException ex) {
                     ConsoleLogging.Throwable(ex);
                 }
                 //ToDo: Re-implement load more

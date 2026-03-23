@@ -17,18 +17,18 @@
 package com.spotifyxp.panels;
 
 import com.google.gson.Gson;
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.AlbumId;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.utils.TrackUtils;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.AlbumId;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -83,7 +83,7 @@ public class LibraryAlbums extends JScrollPane{
                                 LibraryChange.Type.ALBUM,
                                 LibraryChange.Action.REMOVE
                         ));
-                    }catch (IOException | MercuryClient.MercuryException e) {
+                    }catch (IOException | TokenProvider.TokenException e) {
                         throw new RuntimeException(e);
                     }
                 }, "Remove from albums").start();
@@ -104,7 +104,7 @@ public class LibraryAlbums extends JScrollPane{
                                     TrackUtils.getArtists(album.getArtistList())
                             });
                         });
-                    }catch (IOException | MercuryClient.MercuryException e) {
+                    }catch (IOException | TokenProvider.TokenException e) {
                         throw new RuntimeException(e);
                     }
                 }, "Library add album").start();
@@ -157,7 +157,7 @@ public class LibraryAlbums extends JScrollPane{
                 response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Albums"}, null, limit, offset);
                 libraryV3 = response.data.me.libraryV3;
             }
-        }catch (IOException | MercuryClient.MercuryException e) {
+        }catch (IOException | TokenProvider.TokenException e) {
             ConsoleLogging.Throwable(e);
         }
     }

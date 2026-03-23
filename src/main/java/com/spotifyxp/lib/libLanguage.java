@@ -17,7 +17,6 @@ package com.spotifyxp.lib;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.utils.ApplicationUtils;

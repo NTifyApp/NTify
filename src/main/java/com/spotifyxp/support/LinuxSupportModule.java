@@ -16,12 +16,6 @@
 package com.spotifyxp.support;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.org.mpris.*;
-import com.spotifyxp.deps.org.mpris.mpris.PlaybackStatus;
-import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlayableId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.player.Player;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
@@ -34,6 +28,12 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import org.mpris.*;
+import org.mpris.mpris.PlaybackStatus;
+import xyz.gianlu.librespot.audio.MetadataWrapper;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.metadata.PlayableId;
+import xyz.gianlu.librespot.player.Player;
 
 import java.io.IOException;
 import java.net.URI;

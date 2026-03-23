@@ -15,9 +15,9 @@
  */
 package com.spotifyxp.utils;
 
+import com.spotify.context.ContextTrackOuterClass;
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;

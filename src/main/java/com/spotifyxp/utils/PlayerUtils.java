@@ -15,19 +15,19 @@
  */
 package com.spotifyxp.utils;
 
+import com.spotify.connectstate.Connect;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.connectstate.Connect;
-import com.spotifyxp.deps.xyz.gianlu.librespot.ZeroconfServer;
-import com.spotifyxp.deps.xyz.gianlu.librespot.audio.decoders.AudioQuality;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.core.OAuth;
-import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.player.Player;
-import com.spotifyxp.deps.xyz.gianlu.librespot.player.PlayerConfiguration;
 import com.spotifyxp.dialogs.LoginDialog;
 import com.spotifyxp.logging.ConsoleLogging;
 import org.jetbrains.annotations.NotNull;
+import xyz.gianlu.librespot.ZeroconfServer;
+import xyz.gianlu.librespot.audio.decoders.AudioQuality;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.core.OAuth;
+import xyz.gianlu.librespot.core.Session;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.player.Player;
+import xyz.gianlu.librespot.player.PlayerConfiguration;
 
 import java.io.EOFException;
 import java.io.File;
@@ -83,7 +83,7 @@ public class PlayerUtils {
         return null;
     }
 
-    Session authViaOauth(Session.Configuration configuration, OAuth.CallbackURLReceiver receiver, OAuth.CancelCallback onCancelCallback) throws Session.SpotifyAuthenticationException, GeneralSecurityException, IOException, MercuryClient.MercuryException, CancellationException {
+    Session authViaOauth(Session.Configuration configuration, OAuth.CallbackURLReceiver receiver, OAuth.CancelCallback onCancelCallback) throws Session.SpotifyAuthenticationException, GeneralSecurityException, IOException, TokenProvider.TokenException, CancellationException {
         return new Session.Builder(configuration)
                 .setPreferredLocale(PublicValues.config.getFields().preferredLocale)
                 .setDeviceType(Connect.DeviceType.COMPUTER)
@@ -93,7 +93,7 @@ public class PlayerUtils {
                 .create();
     }
 
-    Session authViaStored(Session.Configuration configuration) throws IOException, Session.SpotifyAuthenticationException, GeneralSecurityException, MercuryClient.MercuryException {
+    Session authViaStored(Session.Configuration configuration) throws IOException, Session.SpotifyAuthenticationException, GeneralSecurityException, TokenProvider.TokenException {
         return new Session.Builder(configuration)
                 .setPreferredLocale(PublicValues.config.getFields().preferredLocale)
                 .setDeviceType(Connect.DeviceType.COMPUTER)
@@ -115,7 +115,6 @@ public class PlayerUtils {
                 .setNormalisationPregain(PublicValues.config.getFields().normalizationPregain)
                 .setOutput(PlayerConfiguration.AudioOutput.MIXER)
                 .setOutputClass("")
-                .setOutputPipe(new File(PublicValues.fileslocation, "outputpipe"))
                 .setPreferredQuality(AudioQuality.valueOf(PublicValues.config.getFields().audioQuality))
                 .setPreloadEnabled(PublicValues.config.getFields().preloadEnabled)
                 .setReleaseLineDelay(PublicValues.config.getFields().releaseLineDelay)
@@ -125,6 +124,7 @@ public class PlayerUtils {
                 .build();
         Session.Configuration.Builder configurationBuilder = new Session.Configuration.Builder()
                 .setConnectionTimeout(6)
+                .setOkHttpClient(PublicValues.defaultHttpClient)
                 .setCacheDir(new File(PublicValues.fileslocation, "cache"))
                 .setStoredCredentialsFile(new File(PublicValues.fileslocation, "credentials.json"));
         if(PublicValues.config.getFields().cacheDisabled) {
@@ -142,7 +142,6 @@ public class PlayerUtils {
                 session = authenticate(configuration);
             }
             Player player = new Player(playerconfig, session);
-            session.connectionInit();
             player.waitReady();
             PublicValues.session = session;
 

@@ -16,19 +16,13 @@
 package com.spotifyxp.panels;
 
 import com.google.gson.Gson;
+import com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotify.metadata.Metadata;
+import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
-import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlaylistId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.dialogs.AddPlaylistDialog;
 import com.spotifyxp.dialogs.ChangePlaylistDialog;
 import com.spotifyxp.events.LibraryChange;
@@ -38,6 +32,12 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.utils.AsyncMouseListener;
 import com.spotifyxp.utils.TrackUtils;
+import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.EpisodeId;
+import xyz.gianlu.librespot.metadata.PlaylistId;
+import xyz.gianlu.librespot.metadata.TrackId;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -50,6 +50,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeoutException;
 
 public class LibraryPlaylists extends JSplitPane {
     public static JScrollPane playlistsPlaylistsScrollPane;
@@ -234,12 +235,17 @@ public class LibraryPlaylists extends JSplitPane {
 
         playlistsPlaylistsTableContextMenu = new ContextMenu(playlistsPlaylistsTable, playlistsUriCache, getClass());
         playlistsPlaylistsTableContextMenu.addItem(PublicValues.language.translate("ui.general.remove.playlist"), () -> {
-            PublicValues.session.api().playlist().remove(PublicValues.session.username(), new String[] {playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())});
-            SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
-                    playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()),
-                    LibraryChange.Type.PLAYLIST,
-                    LibraryChange.Action.REMOVE
-            ));
+            try {
+                PublicValues.session.api().playlist().remove(PublicValues.session.username(), new String[] {playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())});
+
+                SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
+                        playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()),
+                        LibraryChange.Type.PLAYLIST,
+                        LibraryChange.Action.REMOVE
+                ));
+            } catch (IOException | TokenProvider.TokenException e) {
+                throw new RuntimeException(e);
+            }
         });
         playlistsPlaylistsTableContextMenu.addItem(PublicValues.language.translate("ui.general.refresh"), () -> {
             new Thread(this::fetchPlaylists, "Fetch playlists").start();
@@ -270,13 +276,13 @@ public class LibraryPlaylists extends JSplitPane {
                                                 new byte[0]
                                         );
                                         new Thread(LibraryPlaylists.this::fetchPlaylists, "Fetch playlists").start();
-                                    } catch (IOException | MercuryClient.MercuryException e) {
+                                    } catch (IOException | TokenProvider.TokenException e) {
                                         ConsoleLogging.Throwable(e);
                                     }
                                 }, "Change playlist").start();
                             }
                         });
-            } catch (IOException | MercuryClient.MercuryException e) {
+            } catch (IOException | TokenProvider.TokenException e) {
                 ConsoleLogging.Throwable(e);
             }
         });
@@ -294,7 +300,7 @@ public class LibraryPlaylists extends JSplitPane {
                                     data.imageData
                             );
                             new Thread(this::fetchPlaylists, "Fetch playlists").start();
-                        } catch (IOException | MercuryClient.MercuryException e) {
+                        } catch (IOException | TokenProvider.TokenException | TimeoutException e) {
                             throw new RuntimeException(e);
                         }
                     }, "Create playlist thread").start();
@@ -316,7 +322,7 @@ public class LibraryPlaylists extends JSplitPane {
                             Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().playlist().get(PlaylistId.fromUri(change.getUri()));
                             playlistsUriCache.add(0, change.getUri());
                             ((DefaultTableModel) playlistsPlaylistsTable.getModel()).insertRow(0, new Object[]{playlist.getAttributes().getName()});
-                        } catch (IOException | MercuryClient.MercuryException e) {
+                        } catch (IOException | TokenProvider.TokenException e) {
                             throw new RuntimeException(e);
                         }
                     }

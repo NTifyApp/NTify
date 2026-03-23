@@ -18,13 +18,13 @@ package com.spotifyxp.panels;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.utils.AsyncMouseListener;
 import com.spotifyxp.utils.StringUtils;
+import xyz.gianlu.librespot.core.TokenProvider;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -33,8 +33,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
@@ -111,7 +113,7 @@ public class HomePanel extends JScrollPane implements View {
             try {
                 tab = InstanceManager.getUnofficialSpotifyApi().getHomeTab().orElse(null);
                 future.complete(null);
-            } catch (IOException | MercuryClient.MercuryException e) {
+            } catch (IOException | TokenProvider.TokenException e) {
                 future.cancel(false);
                 throw new RuntimeException(e);
             }

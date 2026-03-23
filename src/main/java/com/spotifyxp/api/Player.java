@@ -21,7 +21,7 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 
 public class Player {
-    com.spotifyxp.deps.xyz.gianlu.librespot.player.Player player;
+    xyz.gianlu.librespot.player.Player player;
 
     /**
      * Retries building a working librespot-player instance
@@ -51,7 +51,7 @@ public class Player {
      *
      * @return an instance of librespot-player
      */
-    public com.spotifyxp.deps.xyz.gianlu.librespot.player.Player getPlayer() {
+    public xyz.gianlu.librespot.player.Player getPlayer() {
         return player;
     }
 }

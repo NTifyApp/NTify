@@ -18,10 +18,6 @@ package com.spotifyxp.setup;
 import com.spotifyxp.Flags;
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.de.werwolf2303.javasetuptool.components.AcceptComponent;
-import com.spotifyxp.deps.de.werwolf2303.javasetuptool.components.InstallProgressComponent;
-import com.spotifyxp.deps.mslinks.ShellLink;
-import com.spotifyxp.deps.mslinks.ShellLinkHelper;
 import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.SplashPanel;
@@ -29,6 +25,10 @@ import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.GraphicalMessage;
 import com.spotifyxp.utils.LinuxAppUtil;
 import com.spotifyxp.utils.MacOSAppUtil;
+import de.werwolf2303.javasetuptool.components.AcceptComponent;
+import de.werwolf2303.javasetuptool.components.InstallProgressComponent;
+import mslinks.ShellLink;
+import mslinks.ShellLinkHelper;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -42,7 +42,7 @@ public class Setup {
     public Setup() throws IOException {
         SplashPanel.frame.setVisible(false);
         AcceptComponent thirdparty = new AcceptComponent(IOUtils.toString(Initiator.class.getResourceAsStream("/setup/thirdparty.html"), StandardCharsets.UTF_8));
-        com.spotifyxp.deps.de.werwolf2303.javasetuptool.Setup setup = new com.spotifyxp.deps.de.werwolf2303.javasetuptool.Setup.Builder()
+        de.werwolf2303.javasetuptool.Setup setup = new de.werwolf2303.javasetuptool.Setup.Builder()
                 .setProgramImage(Initiator.class.getResourceAsStream("/setup.png"))
                 .setProgramName(ApplicationUtils.getName())
                 .setProgramVersion(ApplicationUtils.getVersion())

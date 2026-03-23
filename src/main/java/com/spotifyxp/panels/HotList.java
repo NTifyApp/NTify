@@ -15,15 +15,10 @@
  */
 package com.spotifyxp.panels;
 
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.ArtistId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.history.PlaybackHistory;
 import com.spotifyxp.logging.ConsoleLogging;
@@ -32,6 +27,12 @@ import com.spotifyxp.utils.AsyncMouseListener;
 import com.spotifyxp.utils.SpotifyUtils;
 import com.spotifyxp.utils.TrackUtils;
 import org.jetbrains.annotations.Nullable;
+import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.mercury.MercuryClient;
+import xyz.gianlu.librespot.metadata.ArtistId;
+import xyz.gianlu.librespot.metadata.TrackId;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -77,7 +78,7 @@ public class HotList extends JSplitPane implements View {
                             hotListSongListCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid().toByteArray())).toSpotifyUri());
                             ((DefaultTableModel) hotListSongsTable.getModel()).addRow(new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
                         }
-                    } catch (IOException | MercuryClient.MercuryException ex) {
+                    } catch (IOException | TokenProvider.TokenException ex) {
                         throw new RuntimeException(ex);
                     }
                 }
@@ -151,7 +152,7 @@ public class HotList extends JSplitPane implements View {
             }
 
             batchedRequestHelper.execute(PublicValues.session.api(), null);
-        } catch (IOException | MercuryClient.MercuryException e) {
+        } catch (IOException | TokenProvider.TokenException | MercuryClient.MercuryException e) {
             ConsoleLogging.Throwable(e);
         }
     }
@@ -259,7 +260,7 @@ public class HotList extends JSplitPane implements View {
                         a.relatedArtists = UnofficialSpotifyAPI.getArtistRelatedArtists(a.artistURI);
                         a.name = entry.artistName;
                         return a;
-                    } catch (IOException | MercuryClient.MercuryException e) {
+                    } catch (IOException | TokenProvider.TokenException e) {
                         ConsoleLogging.Throwable(e);
                         ConsoleLogging.warning("Failed to fetch related artists for " + entry.artistURI);
                         return null;
@@ -394,7 +395,7 @@ public class HotList extends JSplitPane implements View {
             return recommendations;
         }
 
-        private static List<TrackNode> fetchTopTracksFromMercury(String artistURI) throws IOException, MercuryClient.MercuryException {
+        private static List<TrackNode> fetchTopTracksFromMercury(String artistURI) throws IOException, TokenProvider.TokenException {
             Metadata.Artist artist = PublicValues.session.api().artist().getMetadata(ArtistId.fromUri(artistURI));
 
             List<TrackNode> tracks = new ArrayList<>();

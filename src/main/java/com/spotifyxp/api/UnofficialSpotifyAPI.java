@@ -18,9 +18,8 @@ package com.spotifyxp.api;
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.logging.ConsoleLogging;
-import org.jetbrains.annotations.Nullable;
+import xyz.gianlu.librespot.core.TokenProvider;
 
 import java.io.IOException;
 import java.util.*;
@@ -74,7 +73,7 @@ public class UnofficialSpotifyAPI {
             return lyrics;
         } catch (IOException e) {
             return null;
-        } catch (MercuryClient.MercuryException e) {
+        } catch (TokenProvider.TokenException e) {
             ConsoleLogging.Throwable(e);
             return null;
         }
@@ -1629,7 +1628,7 @@ public class UnofficialSpotifyAPI {
         }
     }
 
-    public static LibraryResponse getLibraryPage(String[] filters, String[] features, int limit, int offset) throws IOException, MercuryClient.MercuryException {
+    public static LibraryResponse getLibraryPage(String[] filters, String[] features, int limit, int offset) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
                 PublicValues.session.api().user().getLibrary(filters, features, limit, offset).toString(),
                 LibraryResponse.class
@@ -1642,7 +1641,7 @@ public class UnofficialSpotifyAPI {
      * @return instance of HomeTab
      * @see HomeTab
      */
-    public Optional<HomeTab> getHomeTab() throws IOException, MercuryClient.MercuryException {
+    public Optional<HomeTab> getHomeTab() throws IOException, TokenProvider.TokenException {
         JsonObject root = PublicValues.session.api().user().getHome();
         try {
             return Optional.of(HomeTab.fromJSON(root.getAsJsonObject("data").getAsJsonObject("home")));
@@ -1653,40 +1652,40 @@ public class UnofficialSpotifyAPI {
         return Optional.empty();
     }
 
-    public static ArtistUnionDiscoveredOn getArtistDiscoveredOn(String uri) throws IOException, MercuryClient.MercuryException {
+    public static ArtistUnionDiscoveredOn getArtistDiscoveredOn(String uri) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
                 PublicValues.session.api().artist().getArtistDiscoveredOn(uri).toString(),
                 ArtistUnionDiscoveredOn.class);
     }
 
-    public static LibraryTracksResponse getLibraryTracks(int limit, int offset) throws IOException, MercuryClient.MercuryException {
+    public static LibraryTracksResponse getLibraryTracks(int limit, int offset) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
                 PublicValues.session.api().user().getLibraryTracks(limit, offset).toString(),
                 LibraryTracksResponse.class
         );
     }
 
-    public static ArtistUnionRelatedArtists getArtistRelatedArtists(String uri) throws IOException, MercuryClient.MercuryException {
+    public static ArtistUnionRelatedArtists getArtistRelatedArtists(String uri) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
                 PublicValues.session.api().artist().getArtistRelatedArtists(uri).toString(),
                 ArtistUnionRelatedArtists.class);
     }
 
-    public static ArtistUnionHeaderImage getArtistHeaderImage(String uri) throws IOException, MercuryClient.MercuryException {
+    public static ArtistUnionHeaderImage getArtistHeaderImage(String uri) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
                 PublicValues.session.api().artist().getArtistHeaderImage(uri).toString(),
                 ArtistUnionHeaderImage.class);
     }
 
-    public static SpotifyBrowse getSpotifyBrowse() throws IOException, MercuryClient.MercuryException {
+    public static SpotifyBrowse getSpotifyBrowse() throws IOException, TokenProvider.TokenException {
         return SpotifyBrowse.fromJSON(PublicValues.session.api().getSpotifyBrowse());
     }
 
-    public static SpotifyBrowseSection getSpotifyBrowseSection(String sectionUri) throws IOException, MercuryClient.MercuryException {
+    public static SpotifyBrowseSection getSpotifyBrowseSection(String sectionUri) throws IOException, TokenProvider.TokenException {
         return SpotifyBrowseSection.fromJSON(PublicValues.session.api().getSpotifyBrowseSection(sectionUri));
     }
 
-    public static SearchV2Response search(String searchTerm, int offset, int limit, int numberOfTopResults, boolean includeAudiobooks, boolean includeArtistHasConcertsField, boolean includePreRelease, boolean includeAuthors) throws IOException, MercuryClient.MercuryException {
+    public static SearchV2Response search(String searchTerm, int offset, int limit, int numberOfTopResults, boolean includeAudiobooks, boolean includeArtistHasConcertsField, boolean includePreRelease, boolean includeAuthors) throws IOException, TokenProvider.TokenException {
         if (numberOfTopResults < 1) numberOfTopResults = 1;
         return SearchV2Response.fromJsonObject(PublicValues.session.api().search(searchTerm, offset, limit, numberOfTopResults, includeAudiobooks, includeArtistHasConcertsField, includePreRelease, includeAuthors));
     }

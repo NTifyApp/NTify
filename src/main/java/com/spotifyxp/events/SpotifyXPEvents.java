@@ -15,9 +15,6 @@
  */
 package com.spotifyxp.events;
 
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlayableId;
-
 public class SpotifyXPEvents {
     /**
      * Fires when the player queue updates

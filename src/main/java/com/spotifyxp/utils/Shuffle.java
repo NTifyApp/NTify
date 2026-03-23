@@ -15,7 +15,7 @@
  */
 package com.spotifyxp.utils;
 
-import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
+import com.spotify.context.ContextTrackOuterClass;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 
@@ -37,7 +37,7 @@ public class Shuffle {
             for (String s : mixed) {
                 InstanceManager.getSpotifyPlayer().addToQueue(s);
             }
-            InstanceManager.getSpotifyPlayer().updated();
+            InstanceManager.getSpotifyPlayer().updateState();
         } catch (Exception e) {
             ConsoleLogging.Throwable(e);
             GraphicalMessage.openException(e);

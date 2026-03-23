@@ -15,12 +15,8 @@
  */
 package com.spotifyxp.video;
 
+import com.spotify.canvaz.CanvazOuterClass;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.canvaz.CanvazOuterClass;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Playable;
 import com.spotifyxp.events.SpotifyXPEvents;
@@ -30,6 +26,10 @@ import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.PlayerArea;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.utils.ApplicationUtils;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.EpisodeId;
+import xyz.gianlu.librespot.metadata.TrackId;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -101,7 +101,7 @@ public class CanvasPlayer extends JFrame {
                         .build()).getCanvases(0).getUrl();
                 if(cvnsUrl.isEmpty()) return;
                 try (BufferedInputStream in = new BufferedInputStream(new URL(cvnsUrl).openStream());
-                     FileOutputStream fileOutputStream = new FileOutputStream(new File(cachePath, convertUrlToName(cvnsUrl)));) {
+                     FileOutputStream fileOutputStream = new FileOutputStream(new File(cachePath, convertUrlToName(cvnsUrl)))) {
                     byte[] dataBuffer = new byte[1024];
                     int bytesRead;
                     while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
@@ -125,7 +125,7 @@ public class CanvasPlayer extends JFrame {
         } catch (IndexOutOfBoundsException ignored) {
             // No canvas for track
             ConsoleLogging.info("No canvas available for track");
-        } catch (IOException | MercuryClient.MercuryException e) {
+        } catch (IOException | TokenProvider.TokenException e) {
             throw new RuntimeException(e);
         }
     }

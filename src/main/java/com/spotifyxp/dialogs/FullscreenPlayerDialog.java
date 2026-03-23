@@ -19,8 +19,8 @@ package com.spotifyxp.dialogs;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
 import com.spotifyxp.events.Playable;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.graphics.Graphics;
@@ -106,7 +106,7 @@ public class FullscreenPlayerDialog {
                 try {
                     image.setImage(new URL(
                             "https://i.scdn.co/image/" +
-                                    com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(track.getAlbum().getCoverGroup().getImageList()).getFileId()).toLowerCase()
+                                    xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(track.getAlbum().getCoverGroup().getImageList()).getFileId()).toLowerCase()
                     ).openStream());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -119,7 +119,7 @@ public class FullscreenPlayerDialog {
                 try {
                     image.setImage(new URL(
                             "https://i.scdn.co/image/" +
-                                    com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(episode.getCoverImage().getImageList()).getFileId()).toLowerCase()
+                                    xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(episode.getCoverImage().getImageList()).getFileId()).toLowerCase()
                     ).openStream());
                 } catch (Exception e) {
                     e.printStackTrace();

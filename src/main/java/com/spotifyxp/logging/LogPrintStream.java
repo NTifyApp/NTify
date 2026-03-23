@@ -16,7 +16,6 @@
 package com.spotifyxp.logging;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;

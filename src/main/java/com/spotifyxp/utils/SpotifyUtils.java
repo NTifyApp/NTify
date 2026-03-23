@@ -15,16 +15,16 @@
  */
 package com.spotifyxp.utils;
 
+import com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotify.metadata.Metadata;
+import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
-import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.*;
 import com.spotifyxp.logging.ConsoleLogging;
+import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ public class SpotifyUtils {
         return images.get(0);
     }
 
-    public static ArrayList<Metadata.Track> getAllTracksAlbum(String uri) throws IOException, MercuryClient.MercuryException {
+    public static ArrayList<Metadata.Track> getAllTracksAlbum(String uri) throws IOException, TokenProvider.TokenException {
         Metadata.Album album = PublicValues.session.api().album().getMetadata(AlbumId.fromUri(uri));
         ApiClient.BatchedRequestHelper batchedRequestHelper = new ApiClient.BatchedRequestHelper();
         ArrayList<Metadata.Track> tracks = new ArrayList<>();
@@ -68,7 +68,7 @@ public class SpotifyUtils {
         return tracks;
     }
 
-    public static ArrayList<Metadata.Episode> getAllEpisodesShow(String uri) throws IOException, MercuryClient.MercuryException {
+    public static ArrayList<Metadata.Episode> getAllEpisodesShow(String uri) throws IOException, TokenProvider.TokenException {
         Metadata.Show show = PublicValues.session.api().show().getMetadata(ShowId.fromUri(uri));
         ApiClient.BatchedRequestHelper batchedRequestHelper = new ApiClient.BatchedRequestHelper();
         ArrayList<Metadata.Episode> episodes = new ArrayList<>();
@@ -87,7 +87,7 @@ public class SpotifyUtils {
         return episodes;
     }
 
-    public static ArrayList<TrackOrEpisode> getAllTracksPlaylist(String uri) throws IOException, MercuryClient.MercuryException {
+    public static ArrayList<TrackOrEpisode> getAllTracksPlaylist(String uri) throws IOException, TokenProvider.TokenException {
         Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().playlist().get(PlaylistId.fromUri(uri));
         ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
         ArrayList<TrackOrEpisode> tracks = new ArrayList<>();

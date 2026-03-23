@@ -15,11 +15,8 @@
  */
 package com.spotifyxp.ctxmenu;
 
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.*;
 import com.spotifyxp.dialogs.FollowPlaylist;
 import com.spotifyxp.dialogs.SelectPlaylist;
 import com.spotifyxp.events.LibraryChange;
@@ -29,6 +26,9 @@ import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.panels.Queue;
 import com.spotifyxp.utils.ClipboardUtil;
 import org.jetbrains.annotations.Nullable;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.*;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -84,7 +84,7 @@ public enum GlobalContextMenus {
                                                 PublicValues.session.api().playlist().follow(PlaylistId.fromUri(
                                                         uris.get(table.getSelectedRow())
                                                 ), isPublic);
-                                            }catch (IOException | MercuryClient.MercuryException e) {
+                                            }catch (IOException | TokenProvider.TokenException e) {
                                                 ConsoleLogging.Throwable(e);
                                             }
                                         }, "Follow playlist").start();
@@ -102,7 +102,7 @@ public enum GlobalContextMenus {
                                     PublicValues.session.api().show().follow(ShowId.fromUri(
                                             uris.get(table.getSelectedRow()).split(":")[2]
                                     ));
-                                }catch (IOException | MercuryClient.MercuryException e) {
+                                }catch (IOException | TokenProvider.TokenException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save album").start();
@@ -114,7 +114,7 @@ public enum GlobalContextMenus {
                                     PublicValues.session.api().artist().follow(
                                             ArtistId.fromUri(uris.get(table.getSelectedRow()))
                                     );
-                                }catch (IOException | MercuryClient.MercuryException e) {
+                                }catch (IOException | TokenProvider.TokenException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save Artist").start();
@@ -126,7 +126,7 @@ public enum GlobalContextMenus {
                                     PublicValues.session.api().track().like(
                                             TrackId.fromUri(uris.get(table.getSelectedRow()))
                                     );
-                                }catch (IOException | MercuryClient.MercuryException e) {
+                                }catch (IOException | TokenProvider.TokenException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save track").start();
@@ -154,7 +154,7 @@ public enum GlobalContextMenus {
                                     PublicValues.session.api().album().add(
                                             AlbumId.fromUri(uris.get(table.getSelectedRow()))
                                     );
-                                }catch (IOException | MercuryClient.MercuryException e) {
+                                }catch (IOException | TokenProvider.TokenException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save album").start();
@@ -217,7 +217,7 @@ public enum GlobalContextMenus {
                                             PlaylistId.fromUri(uri),
                                             urisToBeAdded.toArray(new String[0])
                                     );
-                                }catch (IOException | MercuryClient.MercuryException e) {
+                                }catch (IOException | TokenProvider.TokenException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }

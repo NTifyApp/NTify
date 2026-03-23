@@ -16,17 +16,13 @@
 package com.spotifyxp.panels;
 
 import com.google.gson.Gson;
+import com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotify.metadata.Metadata;
+import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
-import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlaylistId;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
@@ -34,6 +30,10 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.swingextension.JDialog;
 import com.spotifyxp.utils.TrackUtils;
+import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.EpisodeId;
+import xyz.gianlu.librespot.metadata.PlaylistId;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -113,7 +113,7 @@ public class LibraryEpisodes extends JScrollPane {
                                 String.format(PublicValues.language.translate("ui.library.tabs.episodes.epdescdialog.title"), episode.getName()),
                                 episode.getDescription()
                         );
-                    }catch (IOException | MercuryClient.MercuryException e) {
+                    }catch (IOException | TokenProvider.TokenException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -129,7 +129,7 @@ public class LibraryEpisodes extends JScrollPane {
                                 String.format(PublicValues.language.translate("ui.library.tabs.episodes.showdescdialog.title"), episode.getShow().getName()),
                                 episode.getShow().getDescription()
                         );
-                    }catch (IOException | MercuryClient.MercuryException e) {
+                    }catch (IOException | TokenProvider.TokenException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -157,7 +157,7 @@ public class LibraryEpisodes extends JScrollPane {
                                     });
                                 }
                             });
-                        }catch (IOException | MercuryClient.MercuryException e) {
+                        }catch (IOException | TokenProvider.TokenException e) {
                             throw new RuntimeException(e);
                         }
                     }
@@ -218,7 +218,7 @@ public class LibraryEpisodes extends JScrollPane {
                 });
             }
             requestHelper.execute(PublicValues.session.api(), (exception, response) -> ConsoleLogging.Throwable(exception));
-        } catch (IOException | MercuryClient.MercuryException e) {
+        } catch (IOException | TokenProvider.TokenException e) {
             ConsoleLogging.Throwable(e);
         }
     }

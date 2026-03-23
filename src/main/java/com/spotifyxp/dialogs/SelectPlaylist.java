@@ -21,9 +21,9 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.swingextension.JDialog;
+import xyz.gianlu.librespot.core.TokenProvider;
 
 import javax.swing.*;
 import java.awt.*;
@@ -142,7 +142,7 @@ public class SelectPlaylist extends JDialog {
                     }
                 }
                 okButton.setEnabled(true);
-            } catch (IOException | MercuryClient.MercuryException e) {
+            } catch (IOException | TokenProvider.TokenException e) {
                 ConsoleLogging.Throwable(e);
                 dispose();
             }

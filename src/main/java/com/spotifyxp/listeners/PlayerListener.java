@@ -15,12 +15,8 @@
  */
 package com.spotifyxp.listeners;
 
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.audio.MetadataWrapper;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.PlayableId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.player.Player;
 import com.spotifyxp.events.Playable;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.graphics.Graphics;
@@ -34,6 +30,10 @@ import com.spotifyxp.utils.TrackUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import xyz.gianlu.librespot.audio.MetadataWrapper;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.metadata.PlayableId;
+import xyz.gianlu.librespot.player.Player;
 
 import java.net.URL;
 import java.util.Objects;

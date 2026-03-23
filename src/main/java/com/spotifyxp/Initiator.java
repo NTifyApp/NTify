@@ -22,7 +22,6 @@ import com.spotifyxp.background.BackgroundService;
 import com.spotifyxp.cache.Cache;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.configuration.ConfigValues;
-import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.injector.Injector;
 import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.lib.libLanguage;
@@ -256,7 +255,7 @@ public class Initiator {
     static void initializeVideoPlayback() throws IOException {
         if(Flags.videoPlaybackSupport) {
             try {
-                Class<?> util = Class.forName("com.spotifyxp.deps.uk.co.caprica.vlcj.SPXPInit");
+                Class<?> util = Class.forName("uk.co.caprica.vlcj.SPXPInit");
                 util.getMethod("init").invoke(util);
             } catch (Exception ex) {
                 ex.printStackTrace();

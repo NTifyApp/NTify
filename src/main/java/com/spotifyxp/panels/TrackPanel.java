@@ -15,16 +15,16 @@
  */
 package com.spotifyxp.panels;
 
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.EpisodeId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.utils.*;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.metadata.EpisodeId;
+import xyz.gianlu.librespot.metadata.TrackId;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;

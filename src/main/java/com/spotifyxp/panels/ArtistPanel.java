@@ -15,24 +15,24 @@
  */
 package com.spotifyxp.panels;
 
+import com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.AlbumId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.ArtistId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
-import com.spotifyxp.protogens.ExtendedMetadataStuff;
 import com.spotifyxp.swingextension.JImagePanel;
 import com.spotifyxp.utils.*;
+import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.mercury.MercuryClient;
+import xyz.gianlu.librespot.metadata.AlbumId;
+import xyz.gianlu.librespot.metadata.ArtistId;
+import xyz.gianlu.librespot.metadata.TrackId;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -152,7 +152,7 @@ public class ArtistPanel extends JScrollPane implements View {
                                 Search.searchplaylistsongscache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
                             });
                         }
-                    } catch (IOException | MercuryClient.MercuryException ex) {
+                    } catch (IOException | TokenProvider.TokenException ex) {
                         GraphicalMessage.openException(ex);
                         ConsoleLogging.Throwable(ex);
                     }
@@ -198,7 +198,7 @@ public class ArtistPanel extends JScrollPane implements View {
                 if(e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && relatedArtistsTable.getSelectedRow() != -1) {
                     try {
                         fillWith(relatedArtistsUriCache.get(relatedArtistsTable.getSelectedRow()));
-                    } catch (IOException | MercuryClient.MercuryException ex) {
+                    } catch (IOException | MercuryClient.MercuryException | TokenProvider.TokenException ex) {
                         ConsoleLogging.Throwable(ex);
                     }
                 }
@@ -283,10 +283,10 @@ public class ArtistPanel extends JScrollPane implements View {
 
     private static class ArtistResponse {
         public Metadata.Artist artist;
-        public ExtendedMetadataStuff.OnPlatformReputationTrait reputationTrait;
+        public ExtendedMetadata.OnPlatformReputationTrait reputationTrait;
     }
 
-    private ArtistResponse fetchArtist(String uri) throws IOException, MercuryClient.MercuryException {
+    private ArtistResponse fetchArtist(String uri) throws IOException, TokenProvider.TokenException {
         ArtistResponse artistResponse = new ArtistResponse();
 
         ExtendedMetadata.BatchedExtensionResponse response = PublicValues.session.api().getExtendedMetadata(ExtendedMetadata.BatchedEntityRequest.newBuilder()
@@ -303,13 +303,13 @@ public class ArtistPanel extends JScrollPane implements View {
 
         PublicValues.session.api().checkExtendedMetadataResponse(response);
 
-        artistResponse.reputationTrait = ExtendedMetadataStuff.OnPlatformReputationTrait.parseFrom(response.getExtendedMetadata(1).getExtensionData(0).getExtensionData().getValue());
+        artistResponse.reputationTrait = ExtendedMetadata.OnPlatformReputationTrait.parseFrom(response.getExtendedMetadata(1).getExtensionData(0).getExtensionData().getValue());
         artistResponse.artist = Metadata.Artist.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
 
         return artistResponse;
     }
 
-    public void fillWith(String uri) throws IOException, MercuryClient.MercuryException {
+    public void fillWith(String uri) throws IOException, TokenProvider.TokenException, MercuryClient.MercuryException {
         reset();
 
         ArtistResponse artistResponse = fetchArtist(uri);

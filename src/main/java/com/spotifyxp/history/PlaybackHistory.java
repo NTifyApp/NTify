@@ -15,23 +15,23 @@
  */
 package com.spotifyxp.history;
 
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.de.werwolf2303.sql.*;
-import com.spotifyxp.deps.xyz.gianlu.librespot.common.Utils;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.AlbumId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.ArtistId;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.graphics.Graphics;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.panels.HomePanel;
 import com.spotifyxp.panels.PlayerArea;
+import com.spotifyxp.sql.*;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.swingextension.URITree;
 import com.spotifyxp.utils.AsyncActionListener;
 import com.spotifyxp.utils.AsyncMouseListener;
+import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.metadata.AlbumId;
+import xyz.gianlu.librespot.metadata.ArtistId;
+import xyz.gianlu.librespot.metadata.TrackId;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;

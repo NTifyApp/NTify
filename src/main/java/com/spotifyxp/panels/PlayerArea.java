@@ -15,12 +15,10 @@
  */
 package com.spotifyxp.panels;
 
+import com.spotify.context.ContextTrackOuterClass;
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.dialogs.FullscreenPlayerDialog;
 import com.spotifyxp.dialogs.LyricsDialog;
 import com.spotifyxp.events.LibraryChange;
@@ -38,6 +36,8 @@ import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.utils.*;
 import com.spotifyxp.video.CanvasPlayer;
 import org.apache.commons.io.IOUtils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.TrackId;
 
 import javax.swing.*;
 import java.awt.*;
@@ -101,7 +101,7 @@ public class PlayerArea extends JPanel {
                         for (String s : Shuffle.before) {
                             InstanceManager.getSpotifyPlayer().addToQueue(s);
                         }
-                        InstanceManager.getSpotifyPlayer().updated();
+                        InstanceManager.getSpotifyPlayer().updateState();
                     } catch (Exception e2) {
                         ConsoleLogging.Throwable(e2);
                         GraphicalMessage.openException(e2);
@@ -345,7 +345,7 @@ public class PlayerArea extends JPanel {
                                         LibraryChange.Action.REMOVE
                                 )
                         );
-                    } catch (IOException | MercuryClient.MercuryException ex) {
+                    } catch (IOException | TokenProvider.TokenException ex) {
                         throw new RuntimeException(ex);
                     }
                     heart.setImage(Graphics.HEART.getPath());
@@ -360,7 +360,7 @@ public class PlayerArea extends JPanel {
                                 LibraryChange.Type.TRACK,
                                 LibraryChange.Action.ADD
                         ));
-                    } catch (IOException | MercuryClient.MercuryException ex) {
+                    } catch (IOException | TokenProvider.TokenException ex) {
                         throw new RuntimeException(ex);
                     }
                     heart.setImage(Graphics.HEARTFILLED.getPath());
@@ -484,7 +484,7 @@ public class PlayerArea extends JPanel {
                             for (String s : lastPlayState.history) {
                                 InstanceManager.getSpotifyPlayer().addToQueue(s);
                             }
-                            InstanceManager.getSpotifyPlayer().updated();
+                            InstanceManager.getSpotifyPlayer().updateState();
                         } catch (Exception ignored) {
                             ConsoleLogging.warning("Failed to restore player history");
                         }
@@ -495,7 +495,7 @@ public class PlayerArea extends JPanel {
                             for (String s : lastPlayState.queue) {
                                 InstanceManager.getSpotifyPlayer().addToQueue(s);
                             }
-                            InstanceManager.getSpotifyPlayer().updated();
+                            InstanceManager.getSpotifyPlayer().updateState();
                         } catch (Exception ignored) {
                             ConsoleLogging.warning("Failed to restore player queue");
                         }

@@ -15,8 +15,6 @@
  */
 package com.spotifyxp.panels;
 
-import com.spotifyxp.PublicValues;
-import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.swingextension.JImagePanel;

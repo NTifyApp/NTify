@@ -15,16 +15,15 @@
  */
 package com.spotifyxp.panels;
 
+import com.spotify.api.ConcertOuterClass;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
-import com.spotifyxp.configuration.ConfigValues;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.guielements.ArtistEventView;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.guielements.SpotifyBrowseModule;
 import com.spotifyxp.guielements.SpotifyBrowseSection;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.protogens.ConcertsOuterClass;
+import xyz.gianlu.librespot.core.TokenProvider;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -261,14 +260,14 @@ public class BrowsePanel extends JScrollPane implements View {
                 case "spotify:concerts":
                     try {
                         ContentPanel.sectionPanel.fillWith(concertsToViewDescriptor(PublicValues.session.api().getConcerts()));
-                    } catch (IOException | MercuryClient.MercuryException e) {
+                    } catch (IOException | TokenProvider.TokenException e) {
                         throw new RuntimeException(e);
                     }
                     break;
                 default:
                     try {
                         ContentPanel.sectionPanel.fillWith(browseSectionToViewDescriptor(UnofficialSpotifyAPI.getSpotifyBrowseSection(id)));
-                    } catch (IOException | MercuryClient.MercuryException e) {
+                    } catch (IOException | TokenProvider.TokenException e) {
                         throw new RuntimeException(e);
                     }
             }
@@ -277,12 +276,12 @@ public class BrowsePanel extends JScrollPane implements View {
         ContentPanel.blockTabSwitch();
     };
 
-    private SpotifySectionPanel.ViewDescriptorBuilder concertsToViewDescriptor(ConcertsOuterClass.Concerts concerts) {
+    private SpotifySectionPanel.ViewDescriptorBuilder concertsToViewDescriptor(ConcertOuterClass.Concerts concerts) {
         SpotifySectionPanel.ViewDescriptorBuilder builder = new SpotifySectionPanel.ViewDescriptorBuilder();
 
         builder.setTitle(concerts.getHeader().getTitle());
 
-        for(ConcertsOuterClass.Concerts.SectionsContainer container : concerts.getSectionsContainer().getSectionsContainerList()) {
+        for(ConcertOuterClass.Concerts.SectionsContainer container : concerts.getSectionsContainer().getSectionsContainerList()) {
             DefTable eventsTable = new DefTable();
             JScrollPane eventsTableScrollPane = new JScrollPane(eventsTable);
             JPanel contentPanel = new JPanel();
@@ -295,8 +294,8 @@ public class BrowsePanel extends JScrollPane implements View {
 
             AtomicBoolean isOnTicketView = new AtomicBoolean(false);
 
-            HashMap<String, List<ConcertsOuterClass.Concerts.ArtistConcertConcert>> concertsMap = new HashMap<>();
-            ArrayList<ConcertsOuterClass.Concerts.ArtistConcertConcert> currentEventsList = new ArrayList<>();
+            HashMap<String, List<ConcertOuterClass.Concerts.ArtistConcertConcert>> concertsMap = new HashMap<>();
+            ArrayList<ConcertOuterClass.Concerts.ArtistConcertConcert> currentEventsList = new ArrayList<>();
 
             alternateTablesTableContainer.setLayout(new BoxLayout(alternateTablesTableContainer, BoxLayout.Y_AXIS));
             alternateTablesContainer.add(alternateTablesTableContainer, BorderLayout.CENTER);
@@ -350,7 +349,7 @@ public class BrowsePanel extends JScrollPane implements View {
                     if(e.getClickCount() == 2
                             && !SwingUtilities.isRightMouseButton(e)
                             && eventsTable.getSelectedRow() != -1) {
-                        List<ConcertsOuterClass.Concerts.ArtistConcertConcert> concerts = concertsMap.get(
+                        List<ConcertOuterClass.Concerts.ArtistConcertConcert> concerts = concertsMap.get(
                                 eventsTable.getModel().getValueAt(eventsTable.getSelectedRow(), 0).toString()
                         );
 
@@ -367,7 +366,7 @@ public class BrowsePanel extends JScrollPane implements View {
 
                             eventsList.clear();
 
-                            for(ConcertsOuterClass.Concerts.ArtistConcertConcert concert : concerts) {
+                            for(ConcertOuterClass.Concerts.ArtistConcertConcert concert : concerts) {
                                 eventsList.add(concert.getConcertUri().split(":")[2]);
                                 eventsListTable.addModifyAction(new Runnable() {
                                     @Override
@@ -390,7 +389,7 @@ public class BrowsePanel extends JScrollPane implements View {
                                     contentPanel.revalidate();
                                     contentPanel.repaint();
                                     isOnTicketView.set(true);
-                                } catch (IOException | MercuryClient.MercuryException ex) {
+                                } catch (IOException | TokenProvider.TokenException ex) {
                                     ConsoleLogging.Throwable(ex);
                                 }
                             }).start();
@@ -422,7 +421,7 @@ public class BrowsePanel extends JScrollPane implements View {
                                 contentPanel.revalidate();
                                 contentPanel.repaint();
                                 isOnTicketView.set(true);
-                            } catch (IOException | MercuryClient.MercuryException ex) {
+                            } catch (IOException | TokenProvider.TokenException ex) {
                                 ConsoleLogging.Throwable(ex);
                             }
                         }).start();
@@ -430,10 +429,10 @@ public class BrowsePanel extends JScrollPane implements View {
                 }
             });
 
-            for(ConcertsOuterClass.Concerts.UNKNContainer unknContainer : container.getArtistContainerList()) {
-                for(ConcertsOuterClass.Concerts.ArtistsContainer artistContainer : unknContainer.getArtistsList()) {
+            for(ConcertOuterClass.Concerts.UNKNContainer unknContainer : container.getArtistContainerList()) {
+                for(ConcertOuterClass.Concerts.ArtistsContainer artistContainer : unknContainer.getArtistsList()) {
                     if(artistContainer.hasArtist()) {
-                        ConcertsOuterClass.Concerts.Artist artist = artistContainer.getArtist();
+                        ConcertOuterClass.Concerts.Artist artist = artistContainer.getArtist();
 
                         concertsMap.put(artist.getName(), artist.getArtistConcerts().getConcertsList());
 
@@ -447,10 +446,10 @@ public class BrowsePanel extends JScrollPane implements View {
                             }
                         });
                     }else if(artistContainer.hasConcert()) {
-                        ConcertsOuterClass.Concerts.Concert concert = artistContainer.getConcert();
+                        ConcertOuterClass.Concerts.Concert concert = artistContainer.getConcert();
 
-                        concertsMap.put(concert.getArtist(), new ArrayList<ConcertsOuterClass.Concerts.ArtistConcertConcert>() {{
-                            add(ConcertsOuterClass.Concerts.ArtistConcertConcert.newBuilder()
+                        concertsMap.put(concert.getArtist(), new ArrayList<ConcertOuterClass.Concerts.ArtistConcertConcert>() {{
+                            add(ConcertOuterClass.Concerts.ArtistConcertConcert.newBuilder()
                                     .setDate(concert.getDate())
                                     .setArtist(concert.getArtist())
                                     .setConcertUri(concert.getConcertUri())
@@ -551,7 +550,7 @@ public class BrowsePanel extends JScrollPane implements View {
                 });
                 try {
                     spotifyBrowse = UnofficialSpotifyAPI.getSpotifyBrowse();
-                }catch (IOException | MercuryClient.MercuryException e) {
+                }catch (IOException | TokenProvider.TokenException e) {
                     throw new RuntimeException(e);
                 }
                 if(PublicValues.config.getFields().browseViewStyle == 1) {

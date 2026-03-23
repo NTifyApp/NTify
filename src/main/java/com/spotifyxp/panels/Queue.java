@@ -15,20 +15,20 @@
  */
 package com.spotifyxp.panels;
 
+import com.spotify.context.ContextTrackOuterClass;
+import com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.context.ContextTrackOuterClass;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.swingextension.DDReorderList;
 import com.spotifyxp.utils.TrackUtils;
+import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.TrackId;
 
 import javax.swing.*;
 import java.awt.event.MouseAdapter;
@@ -252,7 +252,7 @@ public class Queue extends JScrollPane implements View {
                     });
                 } catch (NullPointerException exc) {
                     // Nothing in queue
-                } catch (IOException | MercuryClient.MercuryException e) {
+                } catch (IOException | TokenProvider.TokenException e) {
                     throw new RuntimeException("Failed to list tracks in queue", e);
                 }
             }, "Queue worker (ContentPanel)");

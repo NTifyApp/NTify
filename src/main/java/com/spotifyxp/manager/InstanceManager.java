@@ -37,7 +37,7 @@ public class InstanceManager {
         return player;
     }
 
-    public static com.spotifyxp.deps.xyz.gianlu.librespot.player.Player getSpotifyPlayer() {
+    public static xyz.gianlu.librespot.player.Player getSpotifyPlayer() {
         if (player == null) {
             player = new Player();
         }

@@ -4,6 +4,7 @@ import fnmatch
 import os
 import shutil
 import sys
+import subprocess
 
 
 def copyDirectory(src, dst):
@@ -28,59 +29,10 @@ def mass_replace(directory, file_pattern, search_string, replace_string):
                 for line in file:
                     print(line.replace(search_string, replace_string), end='')
 
-def doMPRISJava(interactive):
-    def copyMPRISJava():
-        if os.path.exists("src/main/java/com/spotifyxp/deps/org"): removeDirectory("src/main/java/com/spotifyxp/deps/org")
-        copyDirectory("deps/mpris-java/src/main/java/org", "src/main/java/com/spotifyxp/deps/org")
-        mass_replace("src/main/java/com/spotifyxp/deps/org/mpris", "*.java", "import org.mpris", "import com.spotifyxp.deps.org.mpris")
-        mass_replace("src/main/java/com/spotifyxp/deps/org/mpris", "*.java", "package org.mpris", "package com.spotifyxp.deps.org.mpris")
-    if os.path.exists("src/main/java/com/spotifyxp/deps/org"):
-        if interactive:
-            inp = input("Overwrite mpris-java? [Y/N]")
-            if inp.lower().__eq__("y"):
-                copyMPRISJava()
-            elif inp.lower().__eq__(""):
-                copyMPRISJava()
-            elif inp.lower().__eq__("n"):
-                return
-            else:
-                doMPRISJava(interactive)
-        else:
-            copyMPRISJava()
-    else:
-        copyMPRISJava()
-
-def doJavaSetupTool(interactive):
-    def copyJavaSetupTool():
-        if os.path.exists("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool"): removeDirectory("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool")
-        copyDirectory("deps/JavaSetupTool/src/main/java/de/werwolf2303/javasetuptool", "src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool")
-        mass_replace("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool", "*.java", "import de.werwolf2303.javasetuptool", "import com.spotifyxp.deps.de.werwolf2303.javasetuptool")
-        mass_replace("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool", "*.java", "package de.werwolf2303.javasetuptool", "package com.spotifyxp.deps.de.werwolf2303.javasetuptool")
-        mass_replace("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool", "*.form", "bind-to-class=\"", "bind-to-class=\"com.spotifyxp.deps.")
-        mass_replace("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool", "*.form", "de.werwolf2303.javasetuptool.swingextensions.JImagePanel", "com.spotifyxp.deps.de.werwolf2303.javasetuptool.swingextensions.JImagePanel")
-    if os.path.exists("src/main/java/com/spotifyxp/deps/de/werwolf2303/javasetuptool"):
-        if interactive:
-            inp = input("Overwrite JavaSetupTool? [Y/N]")
-            if inp.lower().__eq__("y"):
-                copyJavaSetupTool()
-            elif inp.lower().__eq__(""):
-                copyJavaSetupTool()
-            elif inp.lower().__eq__("n"):
-                return
-            else:
-                doJavaSetupTool(interactive)
-        else:
-            copyJavaSetupTool()
-    else:
-        copyJavaSetupTool()
-
 def doVlcj(interactive):
     def copyVlcj():
-        if os.path.exists("src/main/java/com/spotifyxp/deps/uk"): removeDirectory("src/main/java/com/spotifyxp/deps/uk")
-        copyDirectory("deps/vlcj/src/main/java/uk", "src/main/java/com/spotifyxp/deps/uk")
-        mass_replace("src/main/java/com/spotifyxp/deps/uk", "*.java", "import uk.co.caprica", "import com.spotifyxp.deps.uk.co.caprica")
-        mass_replace("src/main/java/com/spotifyxp/deps/uk", "*.java", "import static uk.co.caprica", "import static com.spotifyxp.deps.uk.co.caprica")
-        mass_replace("src/main/java/com/spotifyxp/deps/uk", "*.java", "package uk.co.caprica", "package com.spotifyxp.deps.uk.co.caprica")
+        if os.path.exists("src/main/java/uk"): removeDirectory("src/main/java/uk")
+        copyDirectory("deps/vlcj/src/main/java/uk", "src/main/java/uk")
     if os.path.exists("src/main/java/com/spotifyxp/deps/uk"):
         if interactive:
             inp = input("Overwrite vlcj? [Y/N]")
@@ -98,9 +50,30 @@ def doVlcj(interactive):
         copyVlcj()
 
 def doInit(interactive=False):
-    doMPRISJava(interactive)
-    doJavaSetupTool(interactive)
+    subprocess.Popen(
+        executable="mvn",
+        args=["clean", "package"],
+        shell=True,
+        cwd="deps/mpris-java"
+    ).wait()
+    subprocess.Popen(
+        executable="mvn",
+        args=["clean", "package"],
+        shell=True,
+        cwd="deps/JavaSetupTool"
+    ).wait()
     doVlcj(interactive)
+    subprocess.Popen(
+        executable="mvn",
+        args=["clean", "package"],
+        shell=True,
+        cwd="deps/librespot-java"
+    ).wait()
+    subprocess.Popen(
+        args=["./gradlew", "build"],
+        cwd="deps/mslinks"
+    ).wait()
+
 
 
 if __name__ == '__main__':

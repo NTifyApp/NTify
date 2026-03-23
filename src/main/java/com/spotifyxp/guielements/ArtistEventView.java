@@ -15,10 +15,10 @@
  */
 package com.spotifyxp.guielements;
 
+import com.spotify.api.ConcertOuterClass;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
-import com.spotifyxp.protogens.Concert;
 import com.spotifyxp.swingextension.JImagePanel;
 import com.spotifyxp.utils.Utils;
 
@@ -45,17 +45,17 @@ public class ArtistEventView extends JPanel {
     private final JButton viewOnAMaps;
     private final JButton viewOnGMaps;
 
-    private Concert.ConcertResponse.TicketInfo ticketInfo = null;
-    private Concert.ConcertResponse.VenueInfo venueInfo = null;
+    private ConcertOuterClass.ConcertResponse.TicketInfo ticketInfo = null;
+    private ConcertOuterClass.ConcertResponse.VenueInfo venueInfo = null;
     private String googleMaps = null;
     private String appleMaps = null;
     public static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
 
-    public ArtistEventView(Concert.ConcertResponse concert) throws IllegalArgumentException {
+    public ArtistEventView(ConcertOuterClass.ConcertResponse concert) throws IllegalArgumentException {
         setLayout(null);
         setSize(770, 290);
 
-        for(Concert.ConcertResponse.Section section : concert.getSectionsList()) {
+        for(ConcertOuterClass.ConcertResponse.Section section : concert.getSectionsList()) {
             if(section.hasTicketInfo()) {
                 ticketInfo = section.getTicketInfo();
             }
@@ -91,7 +91,7 @@ public class ArtistEventView extends JPanel {
         add(genres);
 
         ArrayList<String> genresList = new ArrayList<>();
-        for(Concert.ConcertResponse.Genre genre : concert.getConcertInfo().getGenresList()) {
+        for(ConcertOuterClass.ConcertResponse.Genre genre : concert.getConcertInfo().getGenresList()) {
             genresList.add(genre.getName());
         }
         genres.setText(String.join(", ", genresList));
@@ -149,7 +149,7 @@ public class ArtistEventView extends JPanel {
         if(venueInfo != null) location.setText(PublicValues.language.translate("ui.general.location") + ": " + venueInfo.getVenue().getVenueName());
 
         if(venueInfo != null) {
-            for(Concert.ConcertResponse.VenueMapService service : venueInfo.getVenue().getMapServicesList()) {
+            for(ConcertOuterClass.ConcertResponse.VenueMapService service : venueInfo.getVenue().getMapServicesList()) {
                 if(service.getUrl().toLowerCase().contains("https://www.google.com/maps")) {
                     googleMaps = service.getUrl();
                 }

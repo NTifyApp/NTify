@@ -18,10 +18,10 @@ package com.spotifyxp.dialogs;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.deps.com.spotify.playlist4.Playlist4ApiProto;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.swingextension.JDialog;
+import xyz.gianlu.librespot.core.TokenProvider;
 
 import javax.swing.*;
 import java.awt.*;
@@ -154,7 +154,7 @@ public class ChangePlaylistDialog extends JDialog {
         return contentPanel;
     }
 
-    public void show(String id, Playlist4ApiProto.SelectedListContent playlist, ChangedPlaylistRunnable runnable) throws IOException, MercuryClient.MercuryException {
+    public void show(String id, Playlist4ApiProto.SelectedListContent playlist, ChangedPlaylistRunnable runnable) throws IOException, TokenProvider.TokenException {
         Playlist4ApiProto.Permission permission = PublicValues.session.api().playlist().getPermission(id);
         playlistName.setText(playlist.getAttributes().getName());
         playlistDescription.setText(playlist.getAttributes().getDescription());

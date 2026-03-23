@@ -14,27 +14,18 @@
  * limitations under the License.
  */
 
-package com.spotifyxp.events;
+package com.spotifyxp.logging;
 
-import com.spotify.metadata.Metadata;
-import org.jetbrains.annotations.Nullable;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.Logger;
 
-/**
- * Represents a playable item with its metadata
- */
-public class Playable {
-    public enum Type {
-        EPISODE,
-        TRACK
-    }
+import java.util.concurrent.ConcurrentHashMap;
 
-    public final Type playableType;
-    public final Metadata.Track track;
-    public final Metadata.Episode episode;
+public class Slf4JLoggerFactory implements ILoggerFactory {
+    private final ConcurrentHashMap<String, Logger> loggers = new ConcurrentHashMap<>();
 
-    public Playable(Type playableType, @Nullable Metadata.Track track, @Nullable Metadata.Episode episode) {
-        this.playableType = playableType;
-        this.track = track;
-        this.episode = episode;
+    @Override
+    public Logger getLogger(String name) {
+        return loggers.computeIfAbsent(name, Slf4JLogger::new);
     }
 }

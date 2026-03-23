@@ -15,12 +15,10 @@
  */
 package com.spotifyxp.panels;
 
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.TrackId;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
@@ -28,6 +26,8 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.utils.AsyncMouseListener;
 import com.spotifyxp.utils.TrackUtils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.TrackId;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -76,7 +76,7 @@ public class LibraryTracks extends JScrollPane implements View {
                             libraryUriCache.add(0, change.getUri());
                             String a = TrackUtils.getArtists(track.getArtistList());
                             librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).insertRow(0, new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())}));
-                        }catch (IOException | MercuryClient.MercuryException e) {
+                        }catch (IOException | TokenProvider.TokenException e) {
                             throw new RuntimeException(e);
                         }
                     }
@@ -155,7 +155,7 @@ public class LibraryTracks extends JScrollPane implements View {
                         LibraryChange.Type.TRACK,
                         LibraryChange.Action.REMOVE
                 ));
-            } catch (IOException | MercuryClient.MercuryException e) {
+            } catch (IOException | TokenProvider.TokenException e) {
                 throw new RuntimeException(e);
             }
         });

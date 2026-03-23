@@ -19,7 +19,6 @@ import com.neovisionaries.i18n.CountryCode;
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.ctxmenu.GlobalContextMenus;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
 import com.spotifyxp.dev.ErrorSimulator;
 import com.spotifyxp.dev.LocationFinder;
 import com.spotifyxp.dialogs.ErrorDisplay;
@@ -39,6 +38,8 @@ import com.spotifyxp.utils.AsyncActionListener;
 import com.spotifyxp.utils.GraphicalMessage;
 import com.spotifyxp.utils.Utils;
 import org.apache.commons.io.IOUtils;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.mercury.MercuryClient;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
@@ -198,7 +199,7 @@ public class ContentPanel extends JPanel {
         try {
             artistPanel.fillWith(fromUri);
             artistPanel.openPanel();
-        } catch (IOException | MercuryClient.MercuryException ex) {
+        } catch (IOException | MercuryClient.MercuryException | TokenProvider.TokenException ex) {
             ConsoleLogging.Throwable(ex);
         }
     }

@@ -16,21 +16,20 @@
 package com.spotifyxp.panels;
 
 import com.google.gson.Gson;
+import com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotify.extendedmetadata.ExtensionKindOuterClass;
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtendedMetadata;
-import com.spotifyxp.deps.com.spotify.extendedmetadata.ExtensionKindOuterClass;
-import com.spotifyxp.deps.com.spotify.metadata.Metadata;
-import com.spotifyxp.deps.xyz.gianlu.librespot.api.ApiClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.mercury.MercuryClient;
-import com.spotifyxp.deps.xyz.gianlu.librespot.metadata.ArtistId;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.protogens.ExtendedMetadataStuff;
 import com.spotifyxp.utils.SpotifyUtils;
+import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.core.TokenProvider;
+import xyz.gianlu.librespot.metadata.ArtistId;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -86,7 +85,7 @@ public class LibraryArtists extends JScrollPane {
                                 LibraryChange.Type.ARTIST,
                                 LibraryChange.Action.REMOVE
                         ));
-                    } catch (IOException | MercuryClient.MercuryException e) {
+                    } catch (IOException | TokenProvider.TokenException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -111,7 +110,7 @@ public class LibraryArtists extends JScrollPane {
                                         .build())
                                 .build());
                         Metadata.Artist artist = Metadata.Artist.parseFrom(response.getExtendedMetadata(0).getExtensionData(1).getExtensionData().getValue());
-                        ExtendedMetadataStuff.OnPlatformReputationTrait reputationTrait = ExtendedMetadataStuff.OnPlatformReputationTrait.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
+                        ExtendedMetadata.OnPlatformReputationTrait reputationTrait = ExtendedMetadata.OnPlatformReputationTrait.parseFrom(response.getExtendedMetadata(0).getExtensionData(0).getExtensionData().getValue());
                         artistsUris.add(0, change.getUri());
                         artistsTable.addModifyAction(new Runnable() {
                             @Override
@@ -123,7 +122,7 @@ public class LibraryArtists extends JScrollPane {
                                 });
                             }
                         });
-                    } catch (IOException | MercuryClient.MercuryException e) {
+                    } catch (IOException | TokenProvider.TokenException e) {
                         throw new RuntimeException(e);
                     }
                 }, "Library add artist").start();
@@ -171,7 +170,7 @@ public class LibraryArtists extends JScrollPane {
                                             .build())
                             .build(), data -> {
                         Metadata.Artist artist = Metadata.Artist.parseFrom(data[0].getValue());
-                        ExtendedMetadataStuff.OnPlatformReputationTrait reputationTrait = ExtendedMetadataStuff.OnPlatformReputationTrait.parseFrom(data[1].getValue());
+                        ExtendedMetadata.OnPlatformReputationTrait reputationTrait = ExtendedMetadata.OnPlatformReputationTrait.parseFrom(data[1].getValue());
                         artistsUris.add(artistItemData.data.uri);
                         artistsTable.addModifyAction(new Runnable() {
                             @Override
@@ -192,7 +191,7 @@ public class LibraryArtists extends JScrollPane {
                 response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Artists"}, null, limit, offset);
                 libraryV3 = response.data.me.libraryV3;
             }
-        }catch (IOException | MercuryClient.MercuryException e) {
+        }catch (IOException | TokenProvider.TokenException e) {
             ConsoleLogging.Throwable(e);
         }
     }

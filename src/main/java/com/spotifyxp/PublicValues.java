@@ -23,7 +23,6 @@ import com.spotifyxp.cache.Cache;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.ctxmenu.ContextMenu;
-import com.spotifyxp.deps.xyz.gianlu.librespot.core.Session;
 import com.spotifyxp.dialogs.LyricsDialog;
 import com.spotifyxp.history.PlaybackHistory;
 import com.spotifyxp.injector.Injector;
@@ -40,6 +39,7 @@ import com.spotifyxp.video.DummyVLCPlayer;
 import com.spotifyxp.video.VLCPlayer;
 import com.spotifyxp.visuals.AudioVisualizer;
 import okhttp3.OkHttpClient;
+import xyz.gianlu.librespot.core.Session;
 
 import javax.swing.*;
 import java.awt.*;

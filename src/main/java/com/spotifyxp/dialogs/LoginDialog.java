@@ -22,7 +22,6 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.configuration.IConfig;
-import com.spotifyxp.deps.xyz.gianlu.librespot.core.OAuth;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.guielements.Settings;
 import com.spotifyxp.swingextension.JFrame;
