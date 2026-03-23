@@ -1,1 +1,1 @@
-Improved Event system
+Replace copied sources with git submodules
