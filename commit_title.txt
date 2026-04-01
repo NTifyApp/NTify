@@ -1,1 +1,1 @@
-Replace copied sources with git submodules
+Remove deprecated methods in InjectorInterface
