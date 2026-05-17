@@ -33,6 +33,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.Proxy;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
@@ -132,6 +133,15 @@ public class PlayerUtils {
                 FileUtils.deleteDir(new File(PublicValues.fileslocation, "cache"));
             }
             configurationBuilder.setCacheEnabled(false);
+        }
+        if (PublicValues.config.getFields().enableProxy) {
+            configurationBuilder.setProxyEnabled(PublicValues.config.getFields().enableProxy);
+            configurationBuilder.setProxyAddress(PublicValues.config.getFields().proxyAddress.split(":")[0]);
+            configurationBuilder.setProxyPort(Integer.parseInt(PublicValues.config.getFields().proxyAddress.split(":")[1]));
+            configurationBuilder.setProxyAuth(!PublicValues.config.getFields().proxyPassword.isEmpty() || !PublicValues.config.getFields().proxyUsername.isEmpty());
+            configurationBuilder.setProxyUsername(PublicValues.config.getFields().proxyUsername);
+            configurationBuilder.setProxyPassword(PublicValues.config.getFields().proxyPassword);
+            configurationBuilder.setProxyType(Proxy.Type.valueOf(PublicValues.config.getFields().proxyType));
         }
         Session.Configuration configuration = configurationBuilder.build();
         try {
