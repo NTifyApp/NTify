@@ -1,1 +1,1 @@
-Remove deprecated methods in InjectorInterface
+Fix lyrics and audio visualizer
