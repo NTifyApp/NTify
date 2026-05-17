@@ -22,6 +22,10 @@ import com.spotifyxp.logging.ConsoleLogging;
 import org.jetbrains.annotations.NotNull;
 import xyz.gianlu.librespot.ZeroconfServer;
 import xyz.gianlu.librespot.audio.decoders.AudioQuality;
+import xyz.gianlu.librespot.audio.decoders.Decoders;
+import xyz.gianlu.librespot.audio.decoders.Mp3Decoder;
+import xyz.gianlu.librespot.audio.decoders.VorbisDecoder;
+import xyz.gianlu.librespot.audio.format.SuperAudioFormat;
 import xyz.gianlu.librespot.common.Utils;
 import xyz.gianlu.librespot.core.OAuth;
 import xyz.gianlu.librespot.core.Session;
@@ -151,8 +155,15 @@ public class PlayerUtils {
             } else {
                 session = authenticate(configuration);
             }
+
+            Decoders.unregisterDecoder(VorbisDecoder.class);
+            Decoders.unregisterDecoder(Mp3Decoder.class);
+            Decoders.registerDecoder(SuperAudioFormat.VORBIS, com.spotifyxp.audio.VorbisDecoder.class);
+            Decoders.registerDecoder(SuperAudioFormat.MP3, com.spotifyxp.audio.Mp3Decoder.class);
+
             Player player = new Player(playerconfig, session);
             player.waitReady();
+
             PublicValues.session = session;
 
             PublicValues.session.addReconnectionListener(connectionListener);
