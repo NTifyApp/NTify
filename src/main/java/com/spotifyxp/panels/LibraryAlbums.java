@@ -142,7 +142,7 @@ public class LibraryAlbums extends JScrollPane{
                         public void run() {
                             StringBuilder artists = new StringBuilder();
                             for(UnofficialSpotifyAPI.ArtistItem artist : album.artists.items) {
-                                artists.append(artist.data.profile.name).append(", ");
+                                artists.append(artist.profile.name).append(", ");
                             }
                             if (artists.length() != 0)
                                 artists.append(artists, 0, artists.length() - 2);

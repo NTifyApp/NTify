@@ -171,7 +171,7 @@ public class LibraryArtists extends JScrollPane {
                             .build(), data -> {
                         Metadata.Artist artist = Metadata.Artist.parseFrom(data[0].getValue());
                         ExtendedMetadata.OnPlatformReputationTrait reputationTrait = ExtendedMetadata.OnPlatformReputationTrait.parseFrom(data[1].getValue());
-                        artistsUris.add(artistItemData.data.uri);
+                        artistsUris.add(artistItemData.uri);
                         artistsTable.addModifyAction(new Runnable() {
                             @Override
                             public void run() {

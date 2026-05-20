@@ -100,7 +100,7 @@ public class LibraryTracks extends JScrollPane implements View {
                         libraryUriCache.add(item.track.uri);
                         StringBuilder artists = new StringBuilder();
                         for (int i = 0; i < item.track.data.artists.items.size(); i++)
-                            artists.append(item.track.data.artists.items.get(i).data.profile.name).append(", ");
+                            artists.append(item.track.data.artists.items.get(i).profile.name).append(", ");
                         if (artists.length() > 0)
                             artists = new StringBuilder(artists.substring(0, artists.length() - 2));
                         StringBuilder finalArtists = artists;
@@ -115,7 +115,7 @@ public class LibraryTracks extends JScrollPane implements View {
                                 libraryUriCache.add(item.track.uri);
                                 StringBuilder artists = new StringBuilder();
                                 for (int i = 0; i < item.track.data.artists.items.size(); i++)
-                                    artists.append(item.track.data.artists.items.get(i).data.profile.name).append(", ");
+                                    artists.append(item.track.data.artists.items.get(i).profile.name).append(", ");
                                 if (artists.length() > 0)
                                     artists = new StringBuilder(artists.substring(0, artists.length() - 2));
                                 StringBuilder finalArtists = artists;

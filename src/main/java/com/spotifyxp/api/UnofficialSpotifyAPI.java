@@ -1349,10 +1349,6 @@ public class UnofficialSpotifyAPI {
     }
 
     public static class ArtistItem {
-        public ArtistItemData data;
-    }
-
-    public static class ArtistItemData {
         public Profile profile;
         public String uri;
     }
