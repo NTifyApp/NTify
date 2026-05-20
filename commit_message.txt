@@ -1,4 +1,1 @@
-Moved sorryError to showMessageDialog
-Updated mslinks which now uses maven
-Updated main.yaml to ensure building with jdk 8
-Replaced deprecated and now removed appLocation field in vlcj
+
