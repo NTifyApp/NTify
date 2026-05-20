@@ -16,6 +16,7 @@
 package com.spotifyxp.video;
 
 import com.spotify.canvaz.CanvazOuterClass;
+import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.Playable;
@@ -26,6 +27,7 @@ import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.PlayerArea;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.utils.ApplicationUtils;
+import xyz.gianlu.librespot.audio.MetadataWrapper;
 import xyz.gianlu.librespot.common.Utils;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.metadata.EpisodeId;
@@ -90,7 +92,17 @@ public class CanvasPlayer extends JFrame {
         }
     }
 
-    public void loadCanvas(String uri) {
+    public void loadCanvas(Object uriOrMetadata) {
+        if (uriOrMetadata == null) {
+            ConsoleLogging.warning("CanvasPlayer.loadCanvas: uriOrMetadata is null");
+            return;
+        }
+        String uri;
+
+        if (uriOrMetadata instanceof String) {
+            uri = (String) uriOrMetadata;
+        } else uri = ((MetadataWrapper) uriOrMetadata).id.toSpotifyUri();
+
         try {
             if (!PublicValues.config.getFields().cacheDisabled) {
                 clearCache();
@@ -164,6 +176,6 @@ public class CanvasPlayer extends JFrame {
         SpotifyXPEvents.playerResume.subscribe(onPlay);
         PublicValues.vlcPlayer.init(this::close);
         PublicValues.vlcPlayer.setLooping(true);
-        loadCanvas(Objects.requireNonNull(InstanceManager.getSpotifyPlayer().currentMetadata()).id.toSpotifyUri());
+        loadCanvas(InstanceManager.getSpotifyPlayer().currentMetadata());
     }
 }

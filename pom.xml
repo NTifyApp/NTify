@@ -153,7 +153,7 @@
             <artifactId>mslinks</artifactId>
             <version>1.1.2-SNAPSHOT</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/deps/mslinks/build/libs/mslinks-1.1.2-SNAPSHOT.jar</systemPath>
+            <systemPath>${project.basedir}/deps/mslinks/target/mslinks-1.1.2-SNAPSHOT.jar</systemPath>
         </dependency>
         <!--                       -->
 

@@ -70,10 +70,11 @@ def doInit(interactive=False):
         cwd="deps/librespot-java"
     ).wait()
     subprocess.Popen(
-        args=["./gradlew", "build"],
+        executable="mvn",
+        args=["clean", "package"],
+        shell=True,
         cwd="deps/mslinks"
     ).wait()
-
 
 
 if __name__ == '__main__':

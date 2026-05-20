@@ -24,6 +24,8 @@ import com.spotifyxp.configuration.ConfigValues;
 import com.spotifyxp.configuration.IConfig;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.guielements.Settings;
+import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.panels.SplashPanel;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.ClipboardUtil;
@@ -64,8 +66,13 @@ public class LoginDialog {
     public JPanel oauthViewSubPanel;
     public JButton proxysettings;
 
-    private static JFrame frame;
+    public JFrame frame;
     private String oAuthCallbackURL;
+
+    public Runnable onZeroconfCancel = null;
+    public Runnable onOauthCancel = null;
+    public EventSubscriber<Runnable> onZeroconfExecute = null;
+    public EventSubscriber<EventSubscriber<String>> onOauthExecute = null;
 
     private enum Views {
         MAIN,
@@ -99,12 +106,7 @@ public class LoginDialog {
         public boolean proxyTrustAll = false;
     }
 
-    private LoginDialog(
-            Runnable onZeroconfCancel,
-            EventSubscriber<Runnable> onZeroconfExecute,
-            Runnable onOauthCancel,
-            EventSubscriber<EventSubscriber<String>> onOauthExecute
-    ) {
+    public LoginDialog() {
         ImageIcon icon = new ImageIcon(Objects.requireNonNull(LoginDialog.class.getResource("/ntify.png")));
         Dimension defaultDimension = new Dimension(296, 384);
         spotifyxplogo.setIcon(
@@ -146,8 +148,8 @@ public class LoginDialog {
                     try {
                         Utils.openBrowser(oAuthCallbackURL);
                     } catch (URISyntaxException | IOException ex) {
-                        GraphicalMessage.sorryError("Could not open OAuth URL! Press 'Copy' and open it manually");
-                        throw new RuntimeException(ex);
+                        GraphicalMessage.showMessageDialog("ui.general.warning", "ui.login.error.oauth", JOptionPane.WARNING_MESSAGE);
+                        ConsoleLogging.Throwable(ex);
                     }
                 }
             });
@@ -204,18 +206,12 @@ public class LoginDialog {
         switchTo(Views.MAIN);
     }
 
-    public static void open(
-            Runnable onZeroconfCancel,
-            EventSubscriber<Runnable> onZeroconfExecute,
-            Runnable onOauthCancel,
-            EventSubscriber<EventSubscriber<String>> onOauthExecute
-    ) throws IOException {
-        if (frame != null) {
-            return;
-        }
+    public void open() throws IOException {
+        SplashPanel.frame.setAlwaysOnTop(false);
+
         frame = new JFrame(PublicValues.language.translate("ui.login.title").replace("%APPNAME%", ApplicationUtils.getName()));
         frame.setIconImage(Toolkit.getDefaultToolkit().getImage(LoginDialog.class.getResource("/ntify.png")));
-        frame.setContentPane(new LoginDialog(onZeroconfCancel, onZeroconfExecute, onOauthCancel, onOauthExecute).contentPanel);
+        frame.setContentPane(contentPanel);
         frame.setResizable(false);
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
@@ -228,8 +224,10 @@ public class LoginDialog {
         frame.setVisible(true);
     }
 
-    public static void close() {
+    public void close() {
         frame.dispose();
+
+        SplashPanel.frame.setAlwaysOnTop(true);
     }
 
     {

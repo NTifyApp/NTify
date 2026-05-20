@@ -159,6 +159,7 @@
  "ui.browse.ctxmenu.table": "Table layout",
  "ui.login.message": "Click on 'Devices' in the normal Spotify client and click on '%APPNAME%'",
  "ui.login.title": "%APPNAME% - Login",
+ "ui.login.error.oauth": "Could not open OAuth URL! Press 'Copy' and open it manually",
  "theme.bgfield": "Background Color",
  "theme.button": "Select Color",
  "theme.borderfield": "Border Color",

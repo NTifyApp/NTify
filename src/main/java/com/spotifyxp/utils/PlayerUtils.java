@@ -20,6 +20,8 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.dialogs.LoginDialog;
 import com.spotifyxp.logging.ConsoleLogging;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import xyz.gianlu.librespot.ZeroconfServer;
 import xyz.gianlu.librespot.audio.decoders.AudioQuality;
 import xyz.gianlu.librespot.audio.decoders.Decoders;
@@ -47,6 +49,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerUtils {
+    private static LoginDialog loginDialog;
+
     Session authViaZeroconf(Session.Configuration configuration, ZeroconfServer.CancelCallback cancelCallback) throws InterruptedException, ExecutionException {
         CompletableFuture<Session> sessionFuture = new CompletableFuture<>();
         try (ZeroconfServer zeroconfServer = new ZeroconfServer.Builder(configuration)
@@ -132,8 +136,8 @@ public class PlayerUtils {
                 .setOkHttpClient(PublicValues.defaultHttpClient)
                 .setCacheDir(new File(PublicValues.fileslocation, "cache"))
                 .setStoredCredentialsFile(new File(PublicValues.fileslocation, "credentials.json"));
-        if(PublicValues.config.getFields().cacheDisabled) {
-            if(new File(PublicValues.fileslocation, "cache").exists()) {
+        if (PublicValues.config.getFields().cacheDisabled) {
+            if (new File(PublicValues.fileslocation, "cache").exists()) {
                 FileUtils.deleteDir(new File(PublicValues.fileslocation, "cache"));
             }
             configurationBuilder.setCacheEnabled(false);
@@ -151,7 +155,7 @@ public class PlayerUtils {
         try {
             Session session;
             if (new File(PublicValues.fileslocation, "credentials.json").exists()) {
-               session = authViaStored(configuration);
+                session = authViaStored(configuration);
             } else {
                 session = authenticate(configuration);
             }
@@ -168,7 +172,8 @@ public class PlayerUtils {
 
             PublicValues.session.addReconnectionListener(connectionListener);
             return player;
-        } catch (ConnectException | Session.SpotifyAuthenticationException | IllegalArgumentException | EOFException e) {
+        } catch (ConnectException | Session.SpotifyAuthenticationException | IllegalArgumentException |
+                 EOFException e) {
             try {
                 Thread.sleep(TimeUnit.SECONDS.toMillis(2));
             } catch (InterruptedException ignored) {
@@ -185,47 +190,55 @@ public class PlayerUtils {
         return null;
     }
 
-    Session authenticate(Session.Configuration configuration) throws ExecutionException, InterruptedException, IOException {
+    Session authenticate(Session.Configuration configuration) throws IOException {
         CompletableFuture<Session> sessionFuture = new CompletableFuture<>();
-        final Runnable[] cancelRunnable = new Runnable[1];
-        LoginDialog.open(
-                cancelRunnable[0],
-                data -> {
-                    Thread zeroconfthread = new Thread(() -> {
-                        try {
-                            Session session = authViaZeroconf(configuration, data2 -> {
-                                cancelRunnable[0] = data2;
-                            });
-                            sessionFuture.complete(session);
-                        }catch (Exception e) {
-                            sessionFuture.completeExceptionally(e);
-                        }
+        if (loginDialog == null) loginDialog = new LoginDialog();
+        loginDialog.onZeroconfExecute = data -> {
+            Thread zeroconfthread = new Thread(() -> {
+                try {
+                    Session session = authViaZeroconf(configuration, data2 -> {
+                        loginDialog.onZeroconfCancel = data2;
                     });
-                    zeroconfthread.start();
-                },
-                cancelRunnable[0],
-                data -> {
-                    Thread oauthThread = new Thread(() -> {
-                        try {
-                            Session session = authViaOauth(configuration, callbackURL -> {
-                                data.run(callbackURL);
-                            }, data1 -> cancelRunnable[0] = data1);
-                            sessionFuture.complete(session);
-                        } catch (Exception e) {
-                            sessionFuture.completeExceptionally(e);
-                        }
-                    });
-                    oauthThread.start();
+                    if (session == null) return;
+                    sessionFuture.complete(session);
+                } catch (Exception e) {
+                    sessionFuture.completeExceptionally(e);
                 }
-        );
-        synchronized (sessionFuture) {
-            Session session = sessionFuture.get();
-            if(session == null) {
-                return authenticate(configuration);
+            });
+            zeroconfthread.start();
+        };
+        loginDialog.onOauthExecute =  data -> {
+            Thread oauthThread = new Thread(() -> {
+                try {
+                    Session session = authViaOauth(configuration, callbackURL -> {
+                        data.run(callbackURL);
+                    }, data1 -> loginDialog.onOauthCancel = data1);
+                    if (session == null) return;
+                    sessionFuture.complete(session);
+                } catch (Exception e) {
+                    sessionFuture.completeExceptionally(e);
+                }
+            });
+            oauthThread.start();
+        };
+
+        if (loginDialog.frame == null)
+            loginDialog.open();
+
+        try {
+            synchronized (sessionFuture) {
+                Session session = sessionFuture.get();
+                loginDialog.close();
+                return session;
             }
-            LoginDialog.close();
-            return sessionFuture.get();
+        }catch (ExecutionException | IllegalStateException e) {
+            return authenticate(configuration);
+        }catch (InterruptedException e) {
+            ConsoleLogging.info("User interrupted the login process");
+            System.exit(0);
         }
+
+        return null;
     }
 
     Session.ReconnectionListener connectionListener = new Session.ReconnectionListener() {
