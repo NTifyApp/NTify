@@ -1,1 +1,1 @@
-Fix lyrics and audio visualizer
+Fix vlc functionality and critical error in LoginDialog
