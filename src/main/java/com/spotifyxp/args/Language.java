@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2024] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class Language implements Argument {
 
     @Override
     public String getDescription() {
-        return "Sets the language to use (Parameter z.b 'de' or 'en')";
+        return "Sets the language to use (Parameter e.g 'de' or 'en')";
     }
 
     @Override

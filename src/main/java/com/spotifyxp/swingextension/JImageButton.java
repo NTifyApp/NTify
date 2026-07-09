@@ -16,7 +16,6 @@
 package com.spotifyxp.swingextension;
 
 import com.spotifyxp.panels.ContentPanel;
-import com.spotifyxp.utils.AsyncActionListener;
 import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
 import org.apache.batik.swing.JSVGCanvas;
 import org.apache.batik.util.XMLResourceDescriptor;
@@ -24,6 +23,7 @@ import org.w3c.dom.svg.SVGDocument;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class JImageButton extends JSVGCanvas {
     final JSVGCanvas canvas = this;
     boolean highlight = false;
     boolean click = false;
-    AsyncActionListener l;
+    ActionListener l;
 
     public JImageButton() {
         JImageButton button = this;
@@ -98,7 +98,7 @@ public class JImageButton extends JSVGCanvas {
 
     Color oldColor = ContentPanel.frame.getBackground();
 
-    public void addActionListener(AsyncActionListener listener) {
+    public void addActionListener(ActionListener listener) {
         l = listener;
     }
 

@@ -160,7 +160,7 @@ public class Utils {
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().browse(new URI(url));
             }else{
-                JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("utils.browserpath.unabletoopen.message"), PublicValues.language.translate("utils.browserpath.unabletoopen.title"), JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.unable_to_open_page.message"), PublicValues.language.translate("dialogs.unable_to_open_page.title"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }

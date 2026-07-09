@@ -26,7 +26,7 @@ import com.spotifyxp.panels.PlayerArea;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.swingextension.JImageButton;
 import com.spotifyxp.swingextension.JImagePanel;
-import com.spotifyxp.utils.AsyncActionListener;
+import com.spotifyxp.utils.AsyncUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -214,10 +214,10 @@ public class PiPPlayer {
 
     public PiPPlayer() {
         ctxMenu = new ContextMenu();
-        ctxMenu.addItem(PublicValues.language.translate("pip.ctxmenu.item1"), new Runnable() {
+        ctxMenu.addItem(PublicValues.language.translate("dialogs.picture_in_picture.change_button_height"), new Runnable() {
             @Override
             public void run() {
-                String buttonHeight = JOptionPane.showInputDialog(PublicValues.language.translate("pip.ctxmenu.item1.message"));
+                String buttonHeight = JOptionPane.showInputDialog(PublicValues.language.translate("dialogs.picture_in_picture.change_button_height"));
                 if(buttonHeight.isEmpty()) {
                     return;
                 }
@@ -308,12 +308,12 @@ public class PiPPlayer {
         closeButton.setBorderPainted(false);
         closeButton.setImage(Initiator.class.getResourceAsStream(closePath));
         closeButton.setColor(Color.WHITE);
-        closeButton.addActionListener(new AsyncActionListener(new ActionListener() {
+        closeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 close();
             }
-        }));
+        });
         closeButton.setBounds(resizingRect.width / 2 - buttonSize / 2, 0, buttonSize, buttonSize);
         controlButtons.add(closeButton);
 
@@ -322,28 +322,30 @@ public class PiPPlayer {
         previousButton.setBorderPainted(false);
         previousButton.setImage(Initiator.class.getResourceAsStream(previousPath));
         previousButton.setColor(Color.WHITE);
-        previousButton.addActionListener(new AsyncActionListener(new ActionListener() {
+        previousButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                InstanceManager.getSpotifyPlayer().previous();
+                AsyncUtils.run(() -> InstanceManager.getSpotifyPlayer().previous());
             }
-        }));
+        });
         previousButton.setBounds(0, resizingRect.height - buttonSize, buttonSize, buttonSize);
         controlButtons.add(previousButton);
 
 
         playPause = new JImageButton();
         playPause.setImage(Initiator.class.getResourceAsStream(playPath));
-        playPause.addActionListener(new AsyncActionListener(new ActionListener() {
+        playPause.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(InstanceManager.getSpotifyPlayer().isPaused()) {
-                    InstanceManager.getSpotifyPlayer().play();
-                }else {
-                    InstanceManager.getSpotifyPlayer().pause();
-                }
+                AsyncUtils.run(() -> {
+                    if(InstanceManager.getSpotifyPlayer().isPaused()) {
+                        InstanceManager.getSpotifyPlayer().play();
+                    }else {
+                        InstanceManager.getSpotifyPlayer().pause();
+                    }
+                });
             }
-        }));
+        });
         playPause.setBorderPainted(false);
         playPause.setColor(Color.WHITE);
         playPause.setBounds(resizingRect.width / 2  - buttonSize / 2, resizingRect.height - buttonSize, buttonSize, buttonSize);
@@ -354,12 +356,12 @@ public class PiPPlayer {
         nextButton.setBorderPainted(false);
         nextButton.setImage(Initiator.class.getResourceAsStream(nextPath));
         nextButton.setColor(Color.WHITE);
-        nextButton.addActionListener(new AsyncActionListener(new ActionListener() {
+        nextButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                InstanceManager.getSpotifyPlayer().next();
+                AsyncUtils.run(() -> InstanceManager.getSpotifyPlayer().next());
             }
-        }));
+        });
         nextButton.setBounds(resizingRect.width - buttonSize, resizingRect.height - buttonSize, buttonSize, buttonSize);
         controlButtons.add(nextButton);
 

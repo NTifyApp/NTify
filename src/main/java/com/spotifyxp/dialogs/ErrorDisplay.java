@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import com.spotifyxp.exception.ExceptionDialog;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.swingextension.JFrame;
-import com.spotifyxp.utils.AsyncActionListener;
-import com.spotifyxp.utils.AsyncMouseListener;
 import com.spotifyxp.utils.ClipboardUtil;
 
 import javax.swing.*;
@@ -49,7 +47,7 @@ public class ErrorDisplay {
         public Ui() {
             errorDisplayTable = new DefTable();
             errorDisplayTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{""}));
-            errorDisplayTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+            errorDisplayTable.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     super.mouseClicked(e);
@@ -59,14 +57,14 @@ public class ErrorDisplay {
                         errorQueue.get(errorDisplayTable.getSelectedRow()).openReal();
                     }
                 }
-            }));
+            });
 
             errorDisplayScrollPane = new JScrollPane();
             errorDisplayScrollPane.setViewportView(errorDisplayTable);
 
             errorDisplayContextMenu = new ContextMenu(errorDisplayTable, null, getClass());
-            errorDisplayContextMenu.addItem(PublicValues.language.translate("ui.general.copy"), () -> ClipboardUtil.set(errorQueue.get(errorDisplayTable.getSelectedRow()).getAsFormattedText()));
-            errorDisplayContextMenu.addItem(PublicValues.language.translate("ui.general.remove"), () -> {
+            errorDisplayContextMenu.addItem(PublicValues.language.translate("general.copy"), () -> ClipboardUtil.set(errorQueue.get(errorDisplayTable.getSelectedRow()).getAsFormattedText()));
+            errorDisplayContextMenu.addItem(PublicValues.language.translate("general.remove"), () -> {
                 errorQueue.remove(errorDisplayTable.getSelectedRow());
                 errorDisplayPanel.setText(String.valueOf(errorQueue.size()));
                 ((DefaultTableModel) errorDisplayTable.getModel()).removeRow(errorDisplayTable.getSelectedRow());
@@ -75,12 +73,12 @@ public class ErrorDisplay {
                 }
             });
 
-            removeButton = new JButton(PublicValues.language.translate("ui.errorqueue.clear"));
-            removeButton.addActionListener(new AsyncActionListener(e1 -> {
+            removeButton = new JButton(PublicValues.language.translate("dialogs.error_queue.clear_errors_button"));
+            removeButton.addActionListener(e1 -> {
                 errorQueue.clear();
                 ((DefaultTableModel) errorDisplayTable.getModel()).setRowCount(0);
                 errorDisplayPanel.setVisible(false);
-            }));
+            });
         }
 
         @Override
@@ -90,7 +88,7 @@ public class ErrorDisplay {
                 ((DefaultTableModel) errorDisplayTable.getModel()).addRow(new Object[]{exd.getPreview()});
             }
 
-            setTitle(PublicValues.language.translate("ui.errorqueue.title"));
+            setTitle(PublicValues.language.translate("dialogs.error_queue.title"));
             add(removeButton, BorderLayout.SOUTH);
             setPreferredSize(new Dimension(ContentPanel.frame.getWidth() / 2, ContentPanel.frame.getHeight() / 2));
             add(errorDisplayTable, BorderLayout.CENTER);
@@ -125,7 +123,7 @@ public class ErrorDisplay {
                     return true;
                 }
             };
-            addActionListener(new AsyncActionListener(e -> ContentPanel.errorDisplay.open()));
+            addActionListener(e -> ContentPanel.errorDisplay.open());
             setVisible(false);
             setBackground(Color.decode("#BB0000"));
             setBounds(5, 5, 100, 40);
@@ -134,12 +132,12 @@ public class ErrorDisplay {
         @Override
         public void setText(String text) {
             if (text.equals("Default")) {
-                text = PublicValues.language.translate("ui.errorqueue.button");
+                text = PublicValues.language.translate("error_queue_button");
                 super.setText(text);
                 return;
             }
-            if (!text.contains(PublicValues.language.translate("ui.errorqueue.button"))) {
-                text = PublicValues.language.translate("ui.errorqueue.button") + " " + text;
+            if (!text.contains(PublicValues.language.translate("error_queue_button"))) {
+                text = PublicValues.language.translate("error_queue_button") + " " + text;
             }
             setVisible(true);
             if (text.equals(String.valueOf(0))) {

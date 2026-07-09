@@ -25,8 +25,8 @@ import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
-import com.spotifyxp.utils.AsyncActionListener;
-import com.spotifyxp.utils.AsyncMouseListener;
+import com.spotifyxp.utils.AsyncUtils;
+import com.spotifyxp.utils.ReentryGuard;
 import com.spotifyxp.utils.TrackUtils;
 import xyz.gianlu.librespot.api.ApiClient;
 import xyz.gianlu.librespot.common.Utils;
@@ -81,7 +81,12 @@ public class Search extends JPanel implements View {
     private String searchCacheTitle = "";
     private String searchCacheArtist = "";
     private boolean excludeExplicit = false;
-    private boolean[] inProg = {false};
+    private final ReentryGuard searchGuard = new ReentryGuard();
+    /**
+     * Guards writes to searchplaylisttable. Shared across classes (see ArtistPanel's album
+     * double-click handler) since that table is written from more than one panel.
+     */
+    public static final ReentryGuard searchplaylisttableGuard = new ReentryGuard();
     private boolean loadnew = false;
     private Runnable lazyLoadingDeInit;
 
@@ -89,22 +94,22 @@ public class Search extends JPanel implements View {
         setVisible(false);
         setLayout(new BorderLayout());
         searchfieldspanel = new JPanel();
-        searchfieldspanel.setBorder(new TitledBorder(null, PublicValues.language.translate("ui.search.searchfield.border"), TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        searchfieldspanel.setBorder(new TitledBorder(null, PublicValues.language.translate("search.input_fields.border_title"), TitledBorder.LEADING, TitledBorder.TOP, null, null));
         searchfieldspanel.setPreferredSize(new Dimension(getWidth(), 128));
         add(searchfieldspanel, BorderLayout.NORTH);
         searchfieldspanel.setLayout(null);
         searchfieldspanel.setForeground(PublicValues.globalFontColor);
-        searchartistlabel = new JLabel(PublicValues.language.translate("ui.search.searchfield.artist"));
+        searchartistlabel = new JLabel(PublicValues.language.translate("search.input_fields.artist_field"));
         searchartistlabel.setHorizontalAlignment(SwingConstants.RIGHT);
         searchartistlabel.setBounds(5, 25, 101, searchartistlabel.getFontMetrics(searchartistlabel.getFont()).getHeight());
         searchfieldspanel.add(searchartistlabel);
         searchartistlabel.setForeground(PublicValues.globalFontColor);
-        searchsongtitlelabel = new JLabel(PublicValues.language.translate("ui.search.searchfield.title"));
+        searchsongtitlelabel = new JLabel(PublicValues.language.translate("search.input_fields.title_field"));
         searchsongtitlelabel.setHorizontalAlignment(SwingConstants.RIGHT);
         searchsongtitlelabel.setBounds(10, 62, 66, searchsongtitlelabel.getFontMetrics(searchsongtitlelabel.getFont()).getHeight());
         searchfieldspanel.add(searchsongtitlelabel);
         searchsongtitlelabel.setForeground(PublicValues.globalFontColor);
-        searchclearfieldsbutton = new JButton(PublicValues.language.translate("ui.search.searchfield.button.clear"));
+        searchclearfieldsbutton = new JButton(PublicValues.language.translate("search.clear_button"));
         searchclearfieldsbutton.setBounds(30, 94, 194, 23);
         searchfieldspanel.add(searchclearfieldsbutton);
         searchclearfieldsbutton.setForeground(PublicValues.globalFontColor);
@@ -112,7 +117,7 @@ public class Search extends JPanel implements View {
             searchartistfield.setText("");
             searchsongtitlefield.setText("");
         });
-        searchfinditbutton = new JButton(PublicValues.language.translate("ui.search.searchfield.button.findit"));
+        searchfinditbutton = new JButton(PublicValues.language.translate("search.find_it_button"));
         searchfinditbutton.setBounds(234, 94, 194, 23);
         searchfieldspanel.add(searchfinditbutton);
         searchfinditbutton.setForeground(PublicValues.globalFontColor);
@@ -142,32 +147,32 @@ public class Search extends JPanel implements View {
         });
         searchfilterpanel = new JPanel();
         searchfilterpanel.setLayout(null);
-        searchfilterpanel.setBorder(new TitledBorder(null, PublicValues.language.translate("ui.search.searchfield.filters.border"), TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        searchfilterpanel.setBorder(new TitledBorder(null, PublicValues.language.translate("search.filters.border_title"), TitledBorder.LEADING, TitledBorder.TOP, null, null));
         searchfilterpanel.setBounds(452, 11, 322, 106);
         searchfieldspanel.add(searchfilterpanel);
-        searchfilterexcludeexplicit = new JRadioButton(PublicValues.language.translate("ui.search.searchfield.filters.excludeexplicit"));
+        searchfilterexcludeexplicit = new JRadioButton(PublicValues.language.translate("search.filters.exclude_explicit"));
         searchfilterexcludeexplicit.setBounds(6, 24, 130, 23);
         searchfilterexcludeexplicit.setEnabled(false); //ToDo: Reverse engineer explicit filtering
         searchfilterpanel.add(searchfilterexcludeexplicit);
         searchfilterexcludeexplicit.setForeground(PublicValues.globalFontColor);
-        searchfilterartist = new JRadioButton(PublicValues.language.translate("ui.search.filter.artist"));
+        searchfilterartist = new JRadioButton(PublicValues.language.translate("search.filters.artist"));
         searchfilterartist.setBounds(160, 23, 130, 23);
         searchfilterpanel.add(searchfilterartist);
         searchfilterartist.setForeground(PublicValues.globalFontColor);
-        searchfiltertrack = new JRadioButton(PublicValues.language.translate("ui.search.filter.track"));
+        searchfiltertrack = new JRadioButton(PublicValues.language.translate("search.filters.track"));
         searchfiltertrack.setBounds(6, 50, 130, 23);
         searchfilterpanel.add(searchfiltertrack);
         searchfiltertrack.setForeground(PublicValues.globalFontColor);
         searchfiltertrack.setSelected(true);
-        searchfilteralbum = new JRadioButton(PublicValues.language.translate("ui.search.filter.album"));
+        searchfilteralbum = new JRadioButton(PublicValues.language.translate("search.filters.album"));
         searchfilteralbum.setBounds(160, 50, 130, 23);
         searchfilterpanel.add(searchfilteralbum);
         searchfilteralbum.setForeground(PublicValues.globalFontColor);
-        searchfilterplaylist = new JRadioButton(PublicValues.language.translate("ui.search.filter.playlist"));
+        searchfilterplaylist = new JRadioButton(PublicValues.language.translate("search.filters.playlist"));
         searchfilterplaylist.setBounds(6, 75, 130, 23);
         searchfilterpanel.add(searchfilterplaylist);
         searchfilterplaylist.setForeground(PublicValues.globalFontColor);
-        searchfiltershow = new JRadioButton(PublicValues.language.translate("ui.search.filter.show"));
+        searchfiltershow = new JRadioButton(PublicValues.language.translate("search.filters.show"));
         searchfiltershow.setBounds(160, 75, 130, 23);
         searchfilterpanel.add(searchfiltershow);
         searchfiltershow.setForeground(PublicValues.globalFontColor);
@@ -201,8 +206,10 @@ public class Search extends JPanel implements View {
             searchfilterplaylist.setSelected(false);
             searchfilterartist.setSelected(false);
         });
-        searchfinditbutton.addActionListener(new AsyncActionListener(e -> {
-            Thread thread1 = new Thread(() -> {
+        searchfinditbutton.addActionListener(e -> {
+            if (!searchGuard.tryEnter()) return;
+            AsyncUtils.run(() -> {
+              try {
                 String searchartist = searchartistfield.getText();
                 String searchtitle = searchsongtitlefield.getText();
                 boolean track = searchfiltertrack.isSelected();
@@ -246,7 +253,7 @@ public class Search extends JPanel implements View {
                             //    }
                             //} else {
                             searchsonglistcache.add(t.uri);
-                            searchsonglist.addModifyAction(() -> ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{t.name + " - " + t.albumOfTrack.name + " - " + String.join(", ", artists), TrackUtils.calculateFileSizeKb(t.duration.totalMilliseconds), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(t.duration.totalMilliseconds)}));
+                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{t.name + " - " + t.albumOfTrack.name + " - " + String.join(", ", artists), TrackUtils.calculateFileSizeKb(t.duration.totalMilliseconds), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(t.duration.totalMilliseconds)});
                             //}
                         }
                     }
@@ -254,7 +261,7 @@ public class Search extends JPanel implements View {
                         UnofficialSpotifyAPI.SearchV2Response response = UnofficialSpotifyAPI.search(searchtitle, 0, 50, 1, false, false, false, false);
                         for (UnofficialSpotifyAPI.SearchV2Response.ArtistsItemData artistItem : response.data.searchV2.artists.items) {
                             searchsonglistcache.add(artistItem.data.uri);
-                            searchsonglist.addModifyAction(() -> ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{artistItem.data.profile.name}));
+                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{artistItem.data.profile.name});
                         }
                     }
                     if (album) {
@@ -295,108 +302,28 @@ public class Search extends JPanel implements View {
                                 }
                             }
                             searchsonglistcache.add(playlistWrapper.data.getUri().get());
-                            searchsonglist.addModifyAction(() -> ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{playlistWrapper.data.getName().get() + " - " + playlistWrapper.data.getOwnerV2().get().data.username}));
+                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{playlistWrapper.data.getName().get() + " - " + playlistWrapper.data.getOwnerV2().get().data.username});
                         }
                     }
                 } catch (IOException | TokenProvider.TokenException ex) {
                     ConsoleLogging.Throwable(ex);
                 }
                 //ToDo: Re-implement load more
-                //searchsonglist.addModifyAction(() -> ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{PublicValues.language.translate("ui.general.loadmore"), PublicValues.language.translate("ui.general.loadmore"), PublicValues.language.translate("ui.general.loadmore"), PublicValues.language.translate("ui.general.loadmore")}));
-            }, "Search thread");
-            thread1.start();
-        }));
+                //searchsonglist.addModifyAction(() -> ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{PublicValues.language.translate("general.load_more"), PublicValues.language.translate("general.load_more"), PublicValues.language.translate("general.load_more"), PublicValues.language.translate("general.load_more")}));
+              } finally {
+                  searchGuard.exit();
+              }
+            });
+        });
         searchscrollpanel = new JScrollPane();
         add(searchscrollpanel, BorderLayout.CENTER);
         searchsonglist = new DefTable();
         searchsonglist.getTableHeader().setReorderingAllowed(false);
-        searchsonglist.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        searchsonglist.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    /*try {
-                        if (searchsonglist.getModel().getValueAt(searchsonglist.getSelectedRow(), 2).toString().equals(PublicValues.language.translate("ui.general.loadmore"))) {
-                            ((DefaultTableModel) searchsonglist.getModel()).setRowCount(searchsonglist.getRowCount() - 1);
-                            Thread thread1 = new Thread(() -> {
-                                String searchartist = searchCacheArtist;
-                                String searchtitle = searchCacheTitle;
-                                boolean track = searchsonglistcache.get(0).split(":")[1].equals("track");
-                                boolean artist = searchsonglistcache.get(0).split(":")[1].equals("artist");
-                                boolean album = searchsonglistcache.get(0).split(":")[1].equals("album");
-                                boolean show = searchsonglistcache.get(0).split(":")[1].equals("show");
-                                boolean playlist = searchsonglistcache.get(0).split(":")[1].equals("playlist");
-                                try {
-                                    if (track) {
-                                        for (Track t : InstanceManager.getSpotifyApi().searchTracks(searchtitle + " " + searchartist).limit(50).offset(searchsonglistcache.size()).build().execute().getItems()) {
-                                            String artists = TrackUtils.getArtists(t.getArtists());
-                                            if (!searchartist.equalsIgnoreCase("")) {
-                                                if (!TrackUtils.trackHasArtist(t.getArtists(), searchartist, true)) {
-                                                    continue;
-                                                }
-                                            }
-                                            if (excludeExplicit) {
-                                                if (!t.getIsExplicit()) {
-                                                    searchsonglistcache.add(t.getUri());
-                                                    //InstanceManager.getSpotifyAPI().addSongToList(artists, t, searchsonglist);
-                                                }
-                                            } else {
-                                                searchsonglistcache.add(t.getUri());
-                                                //InstanceManager.getSpotifyAPI().addSongToList(artists, t, searchsonglist);
-                                            }
-                                        }
-                                    }
-                                    if (artist) {
-                                        if (searchtitle.isEmpty()) {
-                                            searchtitle = searchartist;
-                                        }
-                                        for (Artist a : InstanceManager.getSpotifyApi().searchArtists(searchtitle).offset(searchsonglistcache.size()).build().execute().getItems()) {
-                                            searchsonglistcache.add(a.getUri());
-                                            InstanceManager.getSpotifyAPI().addArtistToList(a, searchsonglist);
-                                        }
-                                    }
-                                    if (album) {
-                                        for (AlbumSimplified a : InstanceManager.getSpotifyApi().searchAlbums(searchtitle).offset(searchsonglistcache.size()).build().execute().getItems()) {
-                                            if (!searchartist.isEmpty()) {
-                                                if (!TrackUtils.trackHasArtist(a.getArtists(), searchartist, true)) {
-                                                    continue;
-                                                }
-                                            }
-                                            searchsonglistcache.add(a.getUri());
-                                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{a.getName()});
-                                        }
-                                    }
-                                    if (show) {
-                                        for (ShowSimplified s : InstanceManager.getSpotifyApi().searchShows(searchtitle).offset(searchsonglistcache.size()).build().execute().getItems()) {
-                                            if (!searchartist.isEmpty()) {
-                                                if (!s.getPublisher().equalsIgnoreCase(searchartist)) {
-                                                    continue;
-                                                }
-                                            }
-                                            searchsonglistcache.add(s.getUri());
-                                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{s.getName()});
-                                        }
-                                    }
-                                    if (playlist) {
-                                        for (PlaylistSimplified t : InstanceManager.getSpotifyApi().searchPlaylists(searchtitle).offset(searchsonglistcache.size()).build().execute().getItems()) {
-                                            if (!searchartist.isEmpty()) {
-                                                if (!t.getOwner().getDisplayName().equalsIgnoreCase(searchartist)) {
-                                                    continue;
-                                                }
-                                            }
-                                            searchsonglistcache.add(t.getUri());
-                                            InstanceManager.getSpotifyAPI().addPlaylistToList(t, searchsonglist);
-                                        }
-                                    }
-                                } catch (IOException ex) {
-                                    ConsoleLogging.Throwable(ex);
-                                }
-                                searchsonglist.addModifyAction(() -> ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{PublicValues.language.translate("ui.general.loadmore"), PublicValues.language.translate("ui.general.loadmore"), PublicValues.language.translate("ui.general.loadmore"), PublicValues.language.translate("ui.general.loadmore")}));
-                            });
-                            thread1.start();
-                            return;
-                        }
-                    } catch (NullPointerException ignored) {
-                    }*/
+                    if (!searchplaylisttableGuard.tryEnter()) return;
                     switch (searchsonglistcache.get(searchsonglist.getSelectedRow()).split(":")[1]) {
                         case "playlist":
                         case "album":
@@ -414,36 +341,35 @@ public class Search extends JPanel implements View {
                             ContentPanel.blockTabSwitch();
                             break;
                     }
-                    Thread thread = new Thread(() -> {
+                    searchsonglist.setColumnSelectionInterval(0, searchsonglist.getColumnCount() - 1);
+                    AsyncUtils.run(() -> {
+                      try {
                         switch (searchsonglistcache.get(searchsonglist.getSelectedRow()).split(":")[1].toLowerCase()) {
                             case "playlist":
-                                Thread playlistloadthread = new Thread(() -> {
-                                    searchplaylistsongscache.clear();
-                                    ((DefaultTableModel) searchplaylisttable.getModel()).setRowCount(0);
-                                    try {
-                                        Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().playlist().get(PlaylistId.fromUri(searchsonglistcache.get(searchsonglist.getSelectedRow())));
-                                        ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
-                                        playlistDescription.setText(playlist.getAttributes().getDescription());
-                                        playlistDescriptionScrollPane.setVisible(!playlistDescription.getText().isEmpty());
-                                        backButtonContainer.revalidate();
-                                        backButtonContainer.repaint();
-                                        for (Playlist4ApiProto.Item item : playlist.getContents().getItemsList()) 
-                                            helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
-                                                            .setEntityUri(item.getUri())
-                                                            .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
-                                                                    .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
-                                                                    .build())
-                                                    .build(), data -> {
-                                                Metadata.Track track = Metadata.Track.parseFrom(data[0].getValue());
-                                                ((DefaultTableModel) searchplaylisttable.getModel()).addRow(new Object[]{track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
-                                                searchplaylistsongscache.add(item.getUri());
-                                            });
-                                        helper.execute(PublicValues.session.api(), (exception, response) -> ConsoleLogging.Throwable(exception));
-                                    } catch (Exception e1) {
-                                        throw new RuntimeException(e1);
-                                    }
-                                }, "Get playlist tracks");
-                                playlistloadthread.start();
+                                searchplaylistsongscache.clear();
+                                ((DefaultTableModel) searchplaylisttable.getModel()).setRowCount(0);
+                                try {
+                                    Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().playlist().get(PlaylistId.fromUri(searchsonglistcache.get(searchsonglist.getSelectedRow())));
+                                    ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
+                                    playlistDescription.setText(playlist.getAttributes().getDescription());
+                                    playlistDescriptionScrollPane.setVisible(!playlistDescription.getText().isEmpty());
+                                    backButtonContainer.revalidate();
+                                    backButtonContainer.repaint();
+                                    for (Playlist4ApiProto.Item item : playlist.getContents().getItemsList())
+                                        helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                                        .setEntityUri(item.getUri())
+                                                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                                                .build())
+                                                .build(), data -> {
+                                            Metadata.Track track = Metadata.Track.parseFrom(data[0].getValue());
+                                            ((DefaultTableModel) searchplaylisttable.getModel()).addRow(new Object[]{track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
+                                            searchplaylistsongscache.add(item.getUri());
+                                        });
+                                    helper.execute(PublicValues.session.api(), (exception, response) -> ConsoleLogging.Throwable(exception));
+                                } catch (Exception e1) {
+                                    throw new RuntimeException(e1);
+                                }
                                 break;
                             case "artist":
                                 try {
@@ -503,17 +429,18 @@ public class Search extends JPanel implements View {
                             default:
                                 throw new RuntimeException("Invalid uri '" + searchsonglistcache.get(searchsonglist.getSelectedRow()).split(":")[1].toLowerCase() + "'");
                         }
+                      } finally {
+                          searchplaylisttableGuard.exit();
+                      }
                     });
-                    thread.start();
-                    searchsonglist.setColumnSelectionInterval(0, searchsonglist.getColumnCount() - 1);
                 } else {
                     searchsonglist.setColumnSelectionInterval(0, searchsonglist.getColumnCount() - 1);
                 }
             }
-        }));
+        });
         searchsonglist.getTableHeader().setForeground(PublicValues.globalFontColor);
         searchsonglist.setForeground(PublicValues.globalFontColor);
-        searchsonglist.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("ui.search.songlist.songname"), PublicValues.language.translate("ui.search.songlist.filesize"), PublicValues.language.translate("ui.search.songlist.bitrate"), PublicValues.language.translate("ui.search.songlist.length")}));
+        searchsonglist.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("general.name"), PublicValues.language.translate("general.filesize"), PublicValues.language.translate("general.bitrate"), PublicValues.language.translate("general.length")}));
         searchsonglist.getColumnModel().getColumn(0).setPreferredWidth(342);
         searchsonglist.getColumnModel().getColumn(1).setPreferredWidth(130);
         searchsonglist.setFillsViewportHeight(true);
@@ -546,7 +473,7 @@ public class Search extends JPanel implements View {
         backButtonContainer.setLayout(new BorderLayout());
         backButtonContainer.add(playlistDescriptionScrollPane, BorderLayout.CENTER);
         searchplaylistpanel.add(backButtonContainer, BorderLayout.NORTH);
-        searchbackbutton = new JButton(PublicValues.language.translate("ui.back"));
+        searchbackbutton = new JButton(PublicValues.language.translate("general.back"));
         backButtonContainer.add(searchbackbutton, BorderLayout.WEST);
         searchbackbutton.setForeground(PublicValues.globalFontColor);
         searchplaylistscrollpanel = new JScrollPane();
@@ -555,22 +482,24 @@ public class Search extends JPanel implements View {
         searchplaylistscrollpanel.setViewportView(searchplaylisttable);
         searchplaylisttable.setForeground(PublicValues.globalFontColor);
         searchplaylisttable.getTableHeader().setForeground(PublicValues.globalFontColor);
-        searchplaylisttable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        searchplaylisttable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 2) {
-                    InstanceManager.getPlayer().getPlayer().load(searchplaylistsongscache.get(searchplaylisttable.getSelectedRow()), true, PublicValues.shuffle);
                     searchplaylisttable.setColumnSelectionInterval(0, searchplaylisttable.getColumnCount() - 1);
-                    TrackUtils.addAllToQueue(searchplaylistsongscache, searchplaylisttable);
+                    AsyncUtils.run(() -> {
+                        InstanceManager.getPlayer().getPlayer().load(searchplaylistsongscache.get(searchplaylisttable.getSelectedRow()), true, PublicValues.shuffle);
+                        TrackUtils.addAllToQueue(searchplaylistsongscache, searchplaylisttable);
+                    });
                 }
             }
-        }));
-        searchplaylisttable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("ui.search.songlist.songname"), PublicValues.language.translate("ui.search.songlist.filesize"), PublicValues.language.translate("ui.search.songlist.bitrate"), PublicValues.language.translate("ui.search.songlist.length")}));
+        });
+        searchplaylisttable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("general.name"), PublicValues.language.translate("general.filesize"), PublicValues.language.translate("general.bitrate"), PublicValues.language.translate("general.length")}));
         searchplaylistpanel.setVisible(false);
 
         searchplaylistsongscontextmenu = new ContextMenu(searchplaylisttable, searchplaylistsongscache, getClass());
-        searchbackbutton.addActionListener(new AsyncActionListener(e -> {
+        searchbackbutton.addActionListener(e -> {
             searchplaylistpanel.setVisible(false);
             if(lazyLoadingDeInit != null) {
                 lazyLoadingDeInit.run();
@@ -585,7 +514,7 @@ public class Search extends JPanel implements View {
             if (ContentPanel.currentView != Views.ARTIST) {
                 ContentPanel.enableTabSwitch();
             }
-        }));
+        });
         searchcontextmenu = new ContextMenu(searchsonglist, searchsonglistcache, getClass());
     }
 

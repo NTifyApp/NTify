@@ -71,8 +71,8 @@ public class InjectorStore extends JFrame {
         };
 
 
-        tabSwitcher.setTitleAt(0, PublicValues.language.translate("extensions.tab1"));
-        tabSwitcher.setTitleAt(1, PublicValues.language.translate("extensions.tab2"));
+        tabSwitcher.setTitleAt(0, PublicValues.language.translate("dialogs.extension_store.tabs.installed"));
+        tabSwitcher.setTitleAt(1, PublicValues.language.translate("dialogs.extension_store.tabs.store"));
 
         tabSwitcher.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
@@ -96,183 +96,124 @@ public class InjectorStore extends JFrame {
             }
         });
 
-        if (!PublicValues.cache.has(cacheID)) {
+        if (!PublicValues.cache.namespace("InjectorStore").has(cacheID)) {
             refreshImageBytes = IOUtils.toByteArray(com.spotifyxp.graphics.Graphics.REFRESH.getInputStream());
         } else {
-            refreshImageBytes = PublicValues.cache.getBytes(cacheID);
+            refreshImageBytes = PublicValues.cache.namespace("InjectorStore").get(cacheID);
             cacheState = 1;
         }
 
         installedTab.setLayout(new BoxLayout(installedTab, BoxLayout.Y_AXIS));
         availableTab.setLayout(new BoxLayout(availableTab, BoxLayout.Y_AXIS));
 
-        setTitle(PublicValues.language.translate("extension.title"));
+        setTitle(PublicValues.language.translate("dialogs.extension_store.title"));
+    }
+
+    private static final FilenameFilter JAR_FILTER = (dir, name) -> name.endsWith(".jar");
+
+    private File installedJarPath(InjectorAPI.Extension extension) {
+        return new File(
+                new File(PublicValues.fileslocation, "Extensions"),
+                extension.getName() + "-" + extension.getAuthor() + ".jar"
+        ).getAbsoluteFile();
+    }
+
+    private void scanInstalledExtensions() throws IOException {
+        installedExtensions.clear();
+        File[] jars = new File(PublicValues.fileslocation, "Extensions").listFiles(JAR_FILTER);
+        if (jars == null) return;
+
+        for (File ext : jars) {
+            InjectorAPI.JarExtension jarext = InjectorAPI.getPluginJson(ext);
+            if (jarext.getIdentifier() == null) {
+                // Extension uses an outdated plugin.json format
+                ConsoleLogging.warning("Extension " + ext.getName() + " uses an outdated plugin.json format");
+                continue;
+            }
+            installedExtensions.put(jarext.getIdentifier(), jarext);
+        }
+    }
+
+    private ExtensionModule buildInstalledModule(InjectorAPI.InjectorRepository repository, InjectorAPI.Extension extension) throws IOException {
+        return new ExtensionModule(
+                repository,
+                extension,
+                installedJarPath(extension),
+                null,
+                null,
+                panel -> {
+                    installedTab.remove(panel);
+                    installedTab.revalidate();
+                    installedTab.repaint();
+                }
+        );
+    }
+
+    private ExtensionModule buildAvailableModule(InjectorAPI.InjectorRepository repository, InjectorAPI.Extension extension) throws IOException {
+        return new ExtensionModule(
+                repository,
+                extension,
+                null,
+                null,
+                panel -> {
+                    availableTab.remove(panel);
+                    availableTab.revalidate();
+                    availableTab.repaint();
+                    refreshExtensionsInstalled();
+                },
+                null
+        );
+    }
+
+    private static GridBagConstraints freshGbc() {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 0;
+        gbc.anchor = GridBagConstraints.NORTH;
+        return gbc;
+    }
+
+    /**
+     * Rebuilds the installed/available tabs from the current installedExtensions map.
+     * @param rebuildInstalled whether to also clear+repopulate installedTab, or leave it as-is
+     */
+    private void refreshExtensionTabs(boolean rebuildInstalled) throws IOException {
+        contentPanel.setEnabled(false);
+        availableTab.removeAll();
+        if (rebuildInstalled) installedTab.removeAll();
+
+        GridBagConstraints availableGbc = freshGbc();
+        GridBagConstraints installedGbc = freshGbc();
+
+        for (InjectorAPI.InjectorRepository repository : InjectorAPI.injectorRepos) {
+            for (InjectorAPI.Extension extension : InjectorAPI.getExtensions(repository, InjectorAPI.getRepository(repository))) {
+                if (installedExtensions.containsKey(extension.getIdentifier())) {
+                    if (rebuildInstalled) {
+                        installedTab.add(buildInstalledModule(repository, extension).contentPanel, installedGbc);
+                        installedGbc.gridy++;
+                    }
+                    continue;
+                }
+                availableTab.add(buildAvailableModule(repository, extension).contentPanel, availableGbc);
+                availableGbc.gridy++;
+            }
+        }
+        contentPanel.setEnabled(true);
     }
 
     private void refreshExtensionsAvailable() throws IOException {
-        contentPanel.setEnabled(false);
-        availableTab.removeAll();
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1;
-        gbc.weighty = 0;
-        gbc.anchor = GridBagConstraints.NORTH;
-
-        for (InjectorAPI.InjectorRepository repository : InjectorAPI.injectorRepos) {
-            for (InjectorAPI.Extension extension : InjectorAPI.getExtensions(repository, InjectorAPI.getRepository(repository))) {
-                if (installedExtensions.containsKey(extension.getIdentifier())) {
-                    continue;
-                }
-                availableTab.add(new ExtensionModule(
-                        repository,
-                        extension,
-                        null,
-                        null,
-                        new ExtensionModule.ModuleAction() {
-                            @Override
-                            public void run(JPanel panel) {
-                                availableTab.remove(panel);
-                                availableTab.revalidate();
-                                availableTab.repaint();
-                                refreshExtensionsInstalled();
-                            }
-                        },
-                        null
-                ).contentPanel, gbc);
-                gbc.gridy++;
-            }
-        }
-        contentPanel.setEnabled(true);
-    }
-
-    private void refreshExtensionsAll() throws IOException {
-        contentPanel.setEnabled(false);
-        installedTab.removeAll();
-        availableTab.removeAll();
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1;
-        gbc.weighty = 0;
-        gbc.anchor = GridBagConstraints.NORTH;
-
-        for (InjectorAPI.InjectorRepository repository : InjectorAPI.injectorRepos) {
-            for (InjectorAPI.Extension extension : InjectorAPI.getExtensions(repository, InjectorAPI.getRepository(repository))) {
-                if (installedExtensions.containsKey(extension.getIdentifier())) {
-                    ExtensionModule module = new ExtensionModule(
-                            repository,
-                            extension,
-                            new File(
-                                    new File(
-                                            PublicValues.fileslocation,
-                                            "Extensions"
-                                    ),
-                                    extension.getName()
-                                            + "-"
-                                            + extension.getAuthor()
-                                            + ".jar")
-                                    .getAbsoluteFile(),
-                            null,
-                            null,
-                            new ExtensionModule.ModuleAction() {
-                                @Override
-                                public void run(JPanel panel) {
-                                    installedTab.remove(panel);
-                                    installedTab.revalidate();
-                                    installedTab.repaint();
-                                }
-                            }
-                    );
-                    installedTab.add(module.contentPanel, gbc);
-                    gbc.gridy++;
-                    continue;
-                }
-                availableTab.add(new ExtensionModule(
-                        repository,
-                        extension,
-                        null,
-                        null,
-                        new ExtensionModule.ModuleAction() {
-                            @Override
-                            public void run(JPanel panel) {
-                                availableTab.remove(panel);
-                                availableTab.revalidate();
-                                availableTab.repaint();
-                                refreshExtensionsInstalled();
-                            }
-                        },
-                        null
-                ).contentPanel, gbc);
-                gbc.gridy++;
-            }
-        }
-        contentPanel.setEnabled(true);
+        refreshExtensionTabs(false);
     }
 
     private void refreshExtensionsInstalled() {
-        contentPanel.setEnabled(false);
-        installedExtensions.clear();
-        installedTab.removeAll();
         try {
-            for (File ext : new File(PublicValues.fileslocation, "Extensions").listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(".jar");
-                }
-            })) {
-                InjectorAPI.JarExtension jarext = InjectorAPI.getPluginJson(ext);
-                if (jarext.getIdentifier() == null) {
-                    // Extension uses an outdated plugin.json format
-                    ConsoleLogging.warning("Extension " + ext.getName() + " uses an outdated plugin.json format");
-                    continue;
-                }
-                installedExtensions.put(jarext.getIdentifier(), jarext);
-            }
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridx = 0;
-            gbc.gridy = 0;
-            gbc.weightx = 1;
-            gbc.weighty = 0;
-            gbc.anchor = GridBagConstraints.NORTH;
-
-            for (InjectorAPI.InjectorRepository repository : InjectorAPI.injectorRepos) {
-                for (InjectorAPI.Extension extension : InjectorAPI.getExtensions(repository, InjectorAPI.getRepository(repository))) {
-                    if (installedExtensions.containsKey(extension.getIdentifier())) {
-                        installedTab.add(new ExtensionModule(
-                                repository,
-                                extension,
-                                new File(
-                                        new File(
-                                                PublicValues.fileslocation,
-                                                "Extensions"
-                                        ),
-                                        extension.getName()
-                                                + "-"
-                                                + extension.getAuthor()
-                                                + ".jar")
-                                        .getAbsoluteFile(),
-                                null,
-                                null,
-                                new ExtensionModule.ModuleAction() {
-                                    @Override
-                                    public void run(JPanel panel) {
-                                        installedTab.remove(panel);
-                                        installedTab.revalidate();
-                                        installedTab.repaint();
-                                    }
-                                }
-                        ).contentPanel, gbc);
-                        gbc.gridy++;
-                        continue;
-                    }
-                    gbc.gridy++;
-                }
-            }
+            scanInstalledExtensions();
+            refreshExtensionTabs(true);
         } catch (IOException e) {
             ConsoleLogging.Throwable(e);
         }
-        contentPanel.setEnabled(true);
     }
 
     /**
@@ -328,7 +269,7 @@ public class InjectorStore extends JFrame {
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         ImageIO.write(Utils.imageToBufferedImage(image), "png", bos);
                         refreshImageBytes = bos.toByteArray();
-                        PublicValues.cache.addBytes(cacheID, bos.toByteArray());
+                        PublicValues.cache.namespace("InjectorStore").put(cacheID, bos.toByteArray());
                         cacheState = 1;
                         g.drawImage(image, x, y, null);
                     }
@@ -343,21 +284,8 @@ public class InjectorStore extends JFrame {
     public void open() {
         new Thread(() -> {
             try {
-                for (File ext : new File(PublicValues.fileslocation, "Extensions").listFiles(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File dir, String name) {
-                        return name.endsWith(".jar");
-                    }
-                })) {
-                    InjectorAPI.JarExtension jarext = InjectorAPI.getPluginJson(ext);
-                    if (jarext.getIdentifier() == null) {
-                        // Extension uses an outdated plugin.json format
-                        ConsoleLogging.warning("Extension " + ext.getName() + " uses an outdated plugin.json format");
-                        continue;
-                    }
-                    installedExtensions.put(jarext.getIdentifier(), jarext);
-                }
-                refreshExtensionsAll();
+                scanInstalledExtensions();
+                refreshExtensionTabs(true);
             } catch (IOException e) {
                 ConsoleLogging.Throwable(e);
             }

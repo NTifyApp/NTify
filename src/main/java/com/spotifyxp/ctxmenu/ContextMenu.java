@@ -16,8 +16,7 @@
 package com.spotifyxp.ctxmenu;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.utils.AsyncActionListener;
-import com.spotifyxp.utils.AsyncMouseListener;
+import com.spotifyxp.utils.AsyncUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -66,7 +65,7 @@ public class ContextMenu {
             for(int i = 0; i < globalContextMenuItems.size(); i++) {
                 GlobalContextMenuItem globalContextMenuItem = globalContextMenuItems.get(i);
                 JMenuItem item = new JMenuItem(globalContextMenuItem.name());
-                item.addActionListener(new AsyncActionListener(e -> globalContextMenuItem.toRun(invoker, uris).run()));
+                item.addActionListener(e -> AsyncUtils.run(() -> globalContextMenuItem.toRun(invoker, uris).run()));
                 if(globalContextMenuItem.showItem(invoker, uris)) super.add(item);
             }
             super.show(invoker, x, y);
@@ -87,7 +86,7 @@ public class ContextMenu {
     }
 
     public ContextMenu(JComponent component, @Nullable ArrayList<String> uris, Class<?> containingClass) {
-        component.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        component.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
@@ -118,7 +117,7 @@ public class ContextMenu {
                     holder.show(component, e.getX(), e.getY(), uris);
                 }
             }
-        }));
+        });
         holder = new ContextualPopupMenu();
         for (GlobalContextMenuItem item : PublicValues.globalContextMenuItems) {
             if(item.shouldBeAdded(component, containingClass)) holder.addGlobalContextMenuItem(item);
@@ -128,7 +127,7 @@ public class ContextMenu {
 
     public void addItem(String text, Runnable onClick) {
         JMenuItem item = new JMenuItem(text);
-        item.addActionListener(new AsyncActionListener(e -> onClick.run()));
+        item.addActionListener(e -> AsyncUtils.run(onClick));
         holder.add(item);
     }
 

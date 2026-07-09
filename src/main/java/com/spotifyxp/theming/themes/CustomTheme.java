@@ -24,9 +24,9 @@ import com.spotifyxp.PublicValues;
 import com.spotifyxp.args.CustomSaveDir;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.theming.Theme;
-import com.spotifyxp.utils.AsyncActionListener;
 import org.apache.commons.io.IOUtils;
 
 import javax.swing.*;
@@ -65,7 +65,7 @@ public class CustomTheme implements Theme {
         public ContentPanel() {
             setLayout(null);
 
-            bgcolorlabel = new JLabel(PublicValues.language.translate("theme.bgfield"));
+            bgcolorlabel = new JLabel(PublicValues.language.translate("dialogs.custom_theme.fields.background_color"));
             bgcolorlabel.setBounds(6, 6, 388, 16);
             add(bgcolorlabel);
 
@@ -76,13 +76,13 @@ public class CustomTheme implements Theme {
 
             bgcolorfield.setEditable(false);
 
-            bgcolorbutton = new JButton(PublicValues.language.translate("theme.button"));
+            bgcolorbutton = new JButton(PublicValues.language.translate("dialogs.custom_theme.select_color_button"));
             bgcolorbutton.setBounds(214, 34, 180, 29);
             add(bgcolorbutton);
 
-            bgcolorbutton.addActionListener(new AsyncActionListener(e -> bgcolorfield.setText(openColorWheel(bgcolorfield.getText()))));
+            bgcolorbutton.addActionListener(e -> bgcolorfield.setText(openColorWheel(bgcolorfield.getText())));
 
-            bordercolorlabel = new JLabel(PublicValues.language.translate("theme.borderfield"));
+            bordercolorlabel = new JLabel(PublicValues.language.translate("dialogs.custom_theme.fields.border_color"));
             bordercolorlabel.setBounds(6, 75, 388, 16);
             add(bordercolorlabel);
 
@@ -93,21 +93,21 @@ public class CustomTheme implements Theme {
 
             bordercolorfield.setEditable(false);
 
-            bordercolorbutton = new JButton(PublicValues.language.translate("theme.button"));
+            bordercolorbutton = new JButton(PublicValues.language.translate("dialogs.custom_theme.select_color_button"));
             bordercolorbutton.setBounds(214, 100, 180, 29);
             add(bordercolorbutton);
 
-            bordercolorbutton.addActionListener(new AsyncActionListener(e -> bordercolorfield.setText(openColorWheel(bordercolorfield.getText()))));
+            bordercolorbutton.addActionListener(e -> bordercolorfield.setText(openColorWheel(bordercolorfield.getText())));
 
-            tabpanelbglabel = new JLabel(PublicValues.language.translate("theme.tabpanelfield"));
+            tabpanelbglabel = new JLabel(PublicValues.language.translate("dialogs.custom_theme.fields.tabpanel_color"));
             tabpanelbglabel.setBounds(6, 138, 388, 16);
             add(tabpanelbglabel);
 
-            tabpanelbgbutton = new JButton(PublicValues.language.translate("theme.button"));
+            tabpanelbgbutton = new JButton(PublicValues.language.translate("dialogs.custom_theme.select_color_button"));
             tabpanelbgbutton.setBounds(214, 166, 180, 29);
             add(tabpanelbgbutton);
 
-            tabpanelbgbutton.addActionListener(new AsyncActionListener(e -> tabpanelbgfield.setText(openColorWheel(tabpanelbgfield.getText()))));
+            tabpanelbgbutton.addActionListener(e -> tabpanelbgfield.setText(openColorWheel(tabpanelbgfield.getText())));
 
             tabpanelbgfield = new JTextField();
             tabpanelbgfield.setColumns(10);
@@ -116,7 +116,7 @@ public class CustomTheme implements Theme {
 
             tabpanelbgfield.setEditable(false);
 
-            fontcolorlabel = new JLabel(PublicValues.language.translate("theme.fontfield"));
+            fontcolorlabel = new JLabel(PublicValues.language.translate("dialogs.custom_theme.fields.font_color"));
             fontcolorlabel.setBounds(6, 207, 388, 16);
             add(fontcolorlabel);
 
@@ -127,13 +127,13 @@ public class CustomTheme implements Theme {
 
             fontcolorfield.setEditable(false);
 
-            fontcolorbutton = new JButton(PublicValues.language.translate("theme.button"));
+            fontcolorbutton = new JButton(PublicValues.language.translate("dialogs.custom_theme.select_color_button"));
             fontcolorbutton.setBounds(214, 235, 180, 29);
             add(fontcolorbutton);
 
-            fontcolorbutton.addActionListener(new AsyncActionListener(e -> fontcolorfield.setText(openColorWheel(fontcolorfield.getText()))));
+            fontcolorbutton.addActionListener(e -> fontcolorfield.setText(openColorWheel(fontcolorfield.getText())));
 
-            themetouselabel = new JLabel(PublicValues.language.translate("theme.touse"));
+            themetouselabel = new JLabel(PublicValues.language.translate("dialogs.custom_theme.fields.theme_to_use"));
             themetouselabel.setBounds(6, 276, 196, 16);
             add(themetouselabel);
 
@@ -166,7 +166,7 @@ public class CustomTheme implements Theme {
                 if (!color.isEmpty()) {
                     defc = Color.getColor(color);
                 }
-                Color c = JColorChooser.showDialog(this, "Choose the Color", defc); //ToDo: Translate the text
+                Color c = JColorChooser.showDialog(this, PublicValues.language.translate("dialogs.custom_theme.dialogs.color_chooser.title"), defc);
                 return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue());
             } catch (NullPointerException e) {
                 //User cancelled the color selection
@@ -214,7 +214,7 @@ public class CustomTheme implements Theme {
             public void windowClosing(WindowEvent e) {
                 saveSettings();
                 frame.dispose();
-                JOptionPane.showConfirmDialog(com.spotifyxp.panels.ContentPanel.frame, PublicValues.language.translate("ui.settings.pleaserestart"), PublicValues.language.translate("joptionpane.info"), JOptionPane.OK_CANCEL_OPTION);
+                JOptionPane.showConfirmDialog(com.spotifyxp.panels.ContentPanel.frame, PublicValues.language.translate("dialogs.settings.dialogs.please_restart.title"), PublicValues.language.translate("general.info"), JOptionPane.OK_CANCEL_OPTION);
             }
         });
     }
@@ -247,11 +247,11 @@ public class CustomTheme implements Theme {
         }
         PublicValues.globalFontColor = Color.decode(config.get("fontcolor"));
         SpotifyXPEvents.onFrameReady.subscribe((data) -> {
-            JMenu menu = new JMenu(PublicValues.language.translate("ui.theme.menu"));
-            JMenuItem change = new JMenuItem(PublicValues.language.translate("ui.theme.change"));
+            JMenu menu = new JMenu(PublicValues.language.translate("menubar.theme.name"));
+            JMenuItem change = new JMenuItem(PublicValues.language.translate("menubar.theme.change_color"));
             menu.add(change);
             PublicValues.menuBar.add(menu);
-            change.addActionListener(new AsyncActionListener(e -> openCustomzationMenu()));
+            change.addActionListener(e -> openCustomzationMenu());
         });
     }
 

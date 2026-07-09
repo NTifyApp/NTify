@@ -18,13 +18,13 @@ package com.spotifyxp.swingextension;
 import com.spotifyxp.graphics.Graphics;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.utils.SVGUtils;
-import org.apache.commons.io.IOUtils;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.ByteArrayInputStream;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 /**
@@ -53,14 +53,17 @@ public class DDReorderList<T> extends JList<T> {
     }
 
     static class ReorderVisualizerRenderer extends DefaultListCellRenderer {
-        private final byte[] unselected;
-        private final byte[] selected;
+        //Decoded once and reused - getListCellRendererComponent() is called for every cell on
+        //every repaint/scroll tick, so re-decoding these from raw bytes each time was wasteful
+        //given only these two fixed images are ever shown.
+        private final BufferedImage unselected;
+        private final BufferedImage selected;
         private boolean mouseIsDown = false;
         private boolean wasDragged = false;
 
         public ReorderVisualizerRenderer(JComponent component) throws IOException {
-            selected = IOUtils.toByteArray(SVGUtils.svgToImageInputStreamSameSize(Graphics.MVERTICALSELECTED.getInputStream(), new Dimension(40, 40)));
-            unselected = IOUtils.toByteArray(SVGUtils.svgToImageInputStreamSameSize(Graphics.MVERTICAL.getInputStream(), new Dimension(40, 40)));
+            selected = ImageIO.read(SVGUtils.svgToImageInputStreamSameSize(Graphics.MVERTICALSELECTED.getInputStream(), new Dimension(40, 40)));
+            unselected = ImageIO.read(SVGUtils.svgToImageInputStreamSameSize(Graphics.MVERTICAL.getInputStream(), new Dimension(40, 40)));
             component.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
@@ -90,9 +93,9 @@ public class DDReorderList<T> extends JList<T> {
             if(isSelected && mouseIsDown && wasDragged) {
                 c.setForeground(Color.GRAY);
                 c.setFont(c.getFont().deriveFont(Font.BOLD));
-                imagePanel.setImage(new ByteArrayInputStream(selected));
+                imagePanel.setImage(selected);
             } else {
-                imagePanel.setImage(new ByteArrayInputStream(unselected));
+                imagePanel.setImage(unselected);
             }
             elementPanel.add(c, BorderLayout.CENTER);
             return elementPanel;

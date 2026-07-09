@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,13 +49,13 @@ public class ChangePlaylistDialog extends JDialog {
         getRootPane().setDefaultButton(okButton);
 
         playlistNameLabel.setForeground(PublicValues.globalFontColor);
-        playlistNameLabel.setText(PublicValues.language.translate("changeplaylist.name"));
+        playlistNameLabel.setText(PublicValues.language.translate("dialogs.general.playlist_name"));
 
         playlistDescriptionLabel.setForeground(PublicValues.globalFontColor);
-        playlistDescriptionLabel.setText(PublicValues.language.translate("changeplaylist.description"));
+        playlistDescriptionLabel.setText(PublicValues.language.translate("dialogs.general.playlist_description"));
 
         visibility.setForeground(PublicValues.globalFontColor);
-        visibility.setText(PublicValues.language.translate("changeplaylist.visibility"));
+        visibility.setText(PublicValues.language.translate("dialogs.change_playlist.playlist_visibility.public"));
         visibility.addChangeListener(e -> {
             if (visibility.isSelected()) {
                 collaborative.setSelected(false);
@@ -63,16 +63,16 @@ public class ChangePlaylistDialog extends JDialog {
         });
 
         collaborative.setForeground(PublicValues.globalFontColor);
-        collaborative.setText(PublicValues.language.translate("changeplaylist.collaborative"));
+        collaborative.setText(PublicValues.language.translate("dialogs.change_playlist.playlist_visibility.collaborative"));
         collaborative.addChangeListener(e -> {
             if (collaborative.isSelected()) {
                 visibility.setSelected(false);
             }
         });
 
-        okButton.setText(PublicValues.language.translate("changeplaylist.ok"));
+        okButton.setText(PublicValues.language.translate("general.ok"));
 
-        cancelButton.setText(PublicValues.language.translate("changeplaylist.cancel"));
+        cancelButton.setText(PublicValues.language.translate("general.cancel"));
     }
 
     public static class ChangedPlaylist {
@@ -179,7 +179,7 @@ public class ChangePlaylistDialog extends JDialog {
             }
         });
         setModal(true);
-        setTitle(PublicValues.language.translate("changeplaylist.title"));
+        setTitle(PublicValues.language.translate("dialogs.change_playlist.title"));
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override

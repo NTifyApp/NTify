@@ -50,7 +50,7 @@ public class LyricsDialog extends JDialog {
 
     public LyricsDialog() throws IOException {
         $$$setupUI$$$();
-        setTitle(PublicValues.language.translate("ui.lyrics.title").replace("%APPNAME%", ApplicationUtils.getName()));
+        setTitle(PublicValues.language.translate("dialogs.lyrics.title"));
         setContentPane(contentPanel);
     }
 
@@ -102,7 +102,7 @@ public class LyricsDialog extends JDialog {
                     }
                 }
                 ContextMenu menu = new ContextMenu(paintPanel, null, getClass());
-                menu.addItem(PublicValues.language.translate("ui.general.copy"), new Runnable() {
+                menu.addItem(PublicValues.language.translate("general.copy"), new Runnable() {
                     @Override
                     public void run() {
                         StringBuilder buffer = new StringBuilder();
@@ -200,7 +200,7 @@ public class LyricsDialog extends JDialog {
     }
 
     public void triggerRefresh() {
-        if (lyrics == null) {
+        if (lyrics == null || !isVisible()) {
             return;
         }
         int counter = 0;

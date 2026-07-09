@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,12 +48,12 @@ public class LogsViewer extends JFrame {
         $$$setupUI$$$();
         setContentPane(contentPanel);
 
-        setTitle(PublicValues.language.translate("logsviewer.title"));
+        setTitle(PublicValues.language.translate("dialogs.log_viewer.title"));
 
-        info.setText(PublicValues.language.translate("logsviewer.info"));
+        info.setText(PublicValues.language.translate("dialogs.log_viewer.info"));
 
         contextMenu = new ContextMenu();
-        contextMenu.addItem(PublicValues.language.translate("ui.general.refresh"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("general.refresh"), new Runnable() {
             @Override
             public void run() {
                 logs.clear();
@@ -85,8 +85,8 @@ public class LogsViewer extends JFrame {
         });
         logsList.setModel(new DefaultListModel<>());
 
-        tabs.setTitleAt(0, PublicValues.language.translate("logsviewer.tab1"));
-        tabs.setTitleAt(1, PublicValues.language.translate("logsviewer.tab2"));
+        tabs.setTitleAt(0, PublicValues.language.translate("dialogs.log_viewer.tabs.logs"));
+        tabs.setTitleAt(1, PublicValues.language.translate("dialogs.log_viewer.tabs.log"));
     }
 
     private void loadLogs() {

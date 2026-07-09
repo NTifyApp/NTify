@@ -53,11 +53,11 @@ public class TrackPanel extends Panel implements View {
         setVisible(false);
         backButtonContainer = new JPanel();
         backButtonContainer.setLayout(new BorderLayout());
-        advancedBackButton = new JButton(PublicValues.language.translate("ui.back"));
+        advancedBackButton = new JButton(PublicValues.language.translate("general.back"));
         backButtonContainer.add(advancedBackButton, BorderLayout.WEST);
         advancedBackButton.setForeground(PublicValues.globalFontColor);
         add(backButtonContainer, BorderLayout.NORTH);
-        advancedBackButton.addActionListener(new AsyncActionListener(e -> {
+        advancedBackButton.addActionListener(e -> {
             if(lazyLoadingDeInit != null) {
                 lazyLoadingDeInit.run();
                 lazyLoadingDeInit = null;
@@ -68,9 +68,9 @@ public class TrackPanel extends Panel implements View {
             }
             ContentPanel.switchView(ContentPanel.lastView);
             ContentPanel.enableTabSwitch();
-        }));
+        });
         advancedSongTable = new DefTable();
-        advancedSongTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("ui.search.songlist.songname"), PublicValues.language.translate("ui.search.songlist.filesize"), PublicValues.language.translate("ui.search.songlist.bitrate"), PublicValues.language.translate("ui.search.songlist.length")}));
+        advancedSongTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("general.name"), PublicValues.language.translate("general.filesize"), PublicValues.language.translate("general.bitrate"), PublicValues.language.translate("general.length")}));
         advancedSongTable.setForeground(PublicValues.globalFontColor);
         advancedSongTable.getTableHeader().setForeground(PublicValues.globalFontColor);
         contextMenu = new ContextMenu(advancedSongTable, advancedUriCache, getClass());
@@ -78,17 +78,19 @@ public class TrackPanel extends Panel implements View {
         advancedScrollPanel.setBounds(0, 22, 784, 399);
         add(advancedScrollPanel, BorderLayout.CENTER);
         advancedScrollPanel.setViewportView(advancedSongTable);
-        advancedSongTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        advancedSongTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 2) {
-                    InstanceManager.getPlayer().getPlayer().load(advancedUriCache.get(advancedSongTable.getSelectedRow()), true, PublicValues.shuffle);
                     advancedSongTable.setColumnSelectionInterval(0, advancedSongTable.getColumnCount() - 1);
-                    TrackUtils.addAllToQueue(advancedUriCache, advancedSongTable);
+                    AsyncUtils.run(() -> {
+                        InstanceManager.getPlayer().getPlayer().load(advancedUriCache.get(advancedSongTable.getSelectedRow()), true, PublicValues.shuffle);
+                        TrackUtils.addAllToQueue(advancedUriCache, advancedSongTable);
+                    });
                 }
             }
-        }));
+        });
     }
 
     ActionListener customListener;
@@ -102,19 +104,18 @@ public class TrackPanel extends Panel implements View {
         advancedBackButton.addActionListener(customListener);
     }
 
-    private static final boolean[] inProg = {false};
+    private static final ReentryGuard openGuard = new ReentryGuard();
 
     public void open(String forUri, HomePanel.ContentTypes contentType) {
-        ContentPanel.switchView(Views.TRACKPANEL);
-        advancedSongPanelUri = forUri;
-        ((DefaultTableModel) advancedSongTable.getModel()).setRowCount(0);
-        advancedUriCache.clear();
+        if (!openGuard.tryEnter()) return;
         try {
-            switch (contentType) {
-                case playlist:
-                    Thread thread = new Thread(() -> {
-                        advancedUriCache.clear();
-                        ((DefaultTableModel)  advancedSongTable.getModel()).setRowCount(0);
+            ContentPanel.switchView(Views.TRACKPANEL);
+            advancedSongPanelUri = forUri;
+            ((DefaultTableModel) advancedSongTable.getModel()).setRowCount(0);
+            advancedUriCache.clear();
+            try {
+                switch (contentType) {
+                    case playlist:
                         try {
                             for (SpotifyUtils.TrackOrEpisode trackOrEpisode : SpotifyUtils.getAllTracksPlaylist(forUri)) {
                                 if (trackOrEpisode.isTrack) {
@@ -130,31 +131,32 @@ public class TrackPanel extends Panel implements View {
                         }catch (Exception e) {
                             ConsoleLogging.Throwable(e);
                         }
-                    }, "Get playlist tracks");
-                    thread.start();
-                    break;
-                case show:
-                    for (Metadata.Episode episode : SpotifyUtils.getAllEpisodesShow(forUri)) {
-                        ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{episode.getName(), TrackUtils.calculateFileSizeKb(episode.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(episode.getDuration())});
-                        advancedUriCache.add(EpisodeId.fromHex(Utils.bytesToHex(episode.getGid())).toSpotifyUri());
-                    }
-                    break;
-                case album:
-                    for (Metadata.Track track : SpotifyUtils.getAllTracksAlbum(forUri)) {
-                        ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
-                        advancedUriCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
-                    }
-                    break;
-                default:
-                    GraphicalMessage.bug("tried to invoke showAdvancedSongPanel with incompatible type -> " + contentType);
-                    break;
+                        break;
+                    case show:
+                        for (Metadata.Episode episode : SpotifyUtils.getAllEpisodesShow(forUri)) {
+                            ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{episode.getName(), TrackUtils.calculateFileSizeKb(episode.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(episode.getDuration())});
+                            advancedUriCache.add(EpisodeId.fromHex(Utils.bytesToHex(episode.getGid())).toSpotifyUri());
+                        }
+                        break;
+                    case album:
+                        for (Metadata.Track track : SpotifyUtils.getAllTracksAlbum(forUri)) {
+                            ((DefaultTableModel) advancedSongTable.getModel()).addRow(new Object[]{track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
+                            advancedUriCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
+                        }
+                        break;
+                    default:
+                        GraphicalMessage.bug("tried to invoke showAdvancedSongPanel with incompatible type -> " + contentType);
+                        break;
+                }
+            } catch (Exception e) {
+                ConsoleLogging.Throwable(e);
             }
-        } catch (Exception e) {
-            ConsoleLogging.Throwable(e);
+            ContentPanel.blockTabSwitch();
+            ContentPanel.frame.revalidate();
+            ContentPanel.frame.repaint();
+        } finally {
+            openGuard.exit();
         }
-        ContentPanel.blockTabSwitch();
-        ContentPanel.frame.revalidate();
-        ContentPanel.frame.repaint();
     }
 
     @Override

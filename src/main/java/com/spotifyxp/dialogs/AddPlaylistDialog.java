@@ -177,10 +177,10 @@ public class AddPlaylistDialog extends JDialog {
                 .collect(Collectors.toSet());
 
         fileSelectMenu = new ContextMenu();
-        fileSelectMenu.addItem(PublicValues.language.translate("addplaylist.ctxmenu.fromurl"), new Runnable() {
+        fileSelectMenu.addItem(PublicValues.language.translate("dialogs.create_playlist.context_menu.from_url"), new Runnable() {
             @Override
             public void run() {
-                String[] url = new String[]{JOptionPane.showInputDialog(thisDialog, PublicValues.language.translate("addplaylist.image.dialog.description"), PublicValues.language.translate("addplaylist.image.dialog.title"), JOptionPane.PLAIN_MESSAGE)};
+                String[] url = new String[]{JOptionPane.showInputDialog(thisDialog, PublicValues.language.translate("dialogs.create_playlist.dialogs.select_image_url.description"), PublicValues.language.translate("dialogs.create_playlist.dialogs.select_image_url.title"), JOptionPane.PLAIN_MESSAGE)};
                 if (url[0] == null || url[0].isEmpty()) {
                     return;
                 }
@@ -189,14 +189,14 @@ public class AddPlaylistDialog extends JDialog {
                         imageBytes = convertToJPEG(new URL(url[0]).openStream());
                         return imageBytes;
                     } catch (IOException e) {
-                        JOptionPane.showMessageDialog(thisDialog, PublicValues.language.translate("addplaylist.image.error") + " " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(thisDialog, PublicValues.language.translate("dialogs.create_playlist.dialogs.general.unable_to_get_image") + " " + e.getMessage(), PublicValues.language.translate("general.error"), JOptionPane.ERROR_MESSAGE);
                         ConsoleLogging.Throwable(e);
                         return new byte[0];
                     }
                 });
             }
         });
-        fileSelectMenu.addItem(PublicValues.language.translate("addplaylist.ctxmenu.fromfile"), new Runnable() {
+        fileSelectMenu.addItem(PublicValues.language.translate("dialogs.create_playlist.context_menu.from_file"), new Runnable() {
             @Override
             public void run() {
                 JFileChooser chooser = new JFileChooser();
@@ -211,7 +211,7 @@ public class AddPlaylistDialog extends JDialog {
 
                     @Override
                     public String getDescription() {
-                        return PublicValues.language.translate("addplaylist.fileselect.description") + " (*." + String.join(", *.", formats) + ")";
+                        return PublicValues.language.translate("dialogs.create_playlist.dialogs.select_image_file.mime_type_description") + " (*." + String.join(", *.", formats) + ")";
                     }
                 });
                 if (chooser.showOpenDialog(thisDialog) == JFileChooser.APPROVE_OPTION) {
@@ -219,7 +219,7 @@ public class AddPlaylistDialog extends JDialog {
                         imageBytes = convertToJPEG(Files.newInputStream(Paths.get(chooser.getSelectedFile().getAbsolutePath())));
                         playlistImage.setImage(imageBytes);
                     } catch (IOException e) {
-                        JOptionPane.showMessageDialog(thisDialog, PublicValues.language.translate("addplaylist.image.error") + " " + e.getMessage(), PublicValues.language.translate("addplaylist.image.error.title"), JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(thisDialog, PublicValues.language.translate("dialogs.create_playlist.dialogs.general.unable_to_get_image") + " " + e.getMessage(), PublicValues.language.translate("general.error"), JOptionPane.ERROR_MESSAGE);
                         ConsoleLogging.Throwable(e);
                     }
                 }
@@ -227,10 +227,10 @@ public class AddPlaylistDialog extends JDialog {
         });
 
         playlistNameLabel.setForeground(PublicValues.globalFontColor);
-        playlistNameLabel.setText(PublicValues.language.translate("addplaylist.name"));
+        playlistNameLabel.setText(PublicValues.language.translate("dialogs.general.playlist_name"));
 
         playlistChangeImageButton.setForeground(PublicValues.globalFontColor);
-        playlistChangeImageButton.setText(PublicValues.language.translate("addplaylist.image.button"));
+        playlistChangeImageButton.setText(PublicValues.language.translate("dialogs.create_playlist.change_image_button"));
         playlistChangeImageButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -243,7 +243,7 @@ public class AddPlaylistDialog extends JDialog {
         });
 
         playlistVisibility.setForeground(PublicValues.globalFontColor);
-        playlistVisibility.setText(PublicValues.language.translate("addplaylist.visibility"));
+        playlistVisibility.setText(PublicValues.language.translate("dialogs.create_playlist.playlist_visibility.public"));
         playlistVisibility.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
@@ -254,7 +254,7 @@ public class AddPlaylistDialog extends JDialog {
         });
 
         playlistCollaborative.setForeground(PublicValues.globalFontColor);
-        playlistCollaborative.setText(PublicValues.language.translate("addplaylist.collaborative"));
+        playlistCollaborative.setText(PublicValues.language.translate("dialogs.create_playlist.playlist_visibility.collaborative"));
         playlistCollaborative.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
@@ -265,11 +265,11 @@ public class AddPlaylistDialog extends JDialog {
         });
 
         playlistDescriptionLabel.setForeground(PublicValues.globalFontColor);
-        playlistDescriptionLabel.setText(PublicValues.language.translate("addplaylist.description"));
+        playlistDescriptionLabel.setText(PublicValues.language.translate("dialogs.general.playlist_description"));
 
-        okbutton.setText(PublicValues.language.translate("addplaylist.ok"));
+        okbutton.setText(PublicValues.language.translate("general.ok"));
 
-        cancelbutton.setText(PublicValues.language.translate("addplaylist.cancel"));
+        cancelbutton.setText(PublicValues.language.translate("general.cancel"));
     }
 
     public byte[] convertToJPEG(InputStream source) throws IOException {
@@ -284,12 +284,12 @@ public class AddPlaylistDialog extends JDialog {
     public void show(OkRunnable ok, Runnable cancel, Runnable onClose) {
         setModal(true);
         setLocation(ContentPanel.frame.getCenter());
-        setTitle(PublicValues.language.translate("addplaylist.title"));
+        setTitle(PublicValues.language.translate("dialogs.create_playlist.title"));
         okbutton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (playlistName.getText().isEmpty()) {
-                    JOptionPane.showMessageDialog(thisDialog, PublicValues.language.translate("addplaylist.dialog.noname.description"), PublicValues.language.translate("addplaylist.dialog.noname.title"), JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(thisDialog, PublicValues.language.translate("dialogs.create_playlist.dialogs.no_playlist_name.message"), PublicValues.language.translate("general.error"), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 ok.run(new Playlist(

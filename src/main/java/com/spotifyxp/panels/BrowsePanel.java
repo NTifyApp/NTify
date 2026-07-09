@@ -23,6 +23,7 @@ import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.guielements.SpotifyBrowseModule;
 import com.spotifyxp.guielements.SpotifyBrowseSection;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.utils.ReentryGuard;
 import xyz.gianlu.librespot.core.TokenProvider;
 
 import javax.swing.*;
@@ -42,6 +43,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class BrowsePanel extends JScrollPane implements View {
+    private static final String CACHE_ID = "spotifyBrowse";
+
     public static UnofficialSpotifyAPI.SpotifyBrowse spotifyBrowse;
     public static JPanel contentPanel;
     public static JPopupMenu popupMenu;
@@ -81,8 +84,8 @@ public class BrowsePanel extends JScrollPane implements View {
         getVerticalScrollBar().setUnitIncrement(32);
 
         popupMenu = new JPopupMenu();
-        metroLayout = new JCheckBoxMenuItem(PublicValues.language.translate("ui.browse.ctxmenu.metro"));
-        tableLayout = new JCheckBoxMenuItem(PublicValues.language.translate("ui.browse.ctxmenu.table"));
+        metroLayout = new JCheckBoxMenuItem(PublicValues.language.translate("browse.context_menu.metro"));
+        tableLayout = new JCheckBoxMenuItem(PublicValues.language.translate("browse.context_menu.table"));
         metroLayout.setSelected(PublicValues.config.getFields().browseViewStyle == 0);
         tableLayout.setSelected(!metroLayout.isSelected());
         metroLayout.addActionListener(e -> {
@@ -137,7 +140,7 @@ public class BrowsePanel extends JScrollPane implements View {
                 new Object[][]{
                 },
                 new String[]{
-                        PublicValues.language.translate("ui.general.name")
+                        PublicValues.language.translate("general.name")
                 }
         ));
         table.setForeground(PublicValues.globalFontColor);
@@ -289,13 +292,14 @@ public class BrowsePanel extends JScrollPane implements View {
             JScrollPane eventsListTableScrollPane = new JScrollPane(eventsListTable);
             JPanel alternateTablesTableContainer = new JPanel();
             JPanel alternateTablesContainer = new JPanel(new BorderLayout());
-            JButton backButton = new JButton(PublicValues.language.translate("ui.back"));
+            JButton backButton = new JButton(PublicValues.language.translate("general.back"));
             AtomicReference<ArtistEventView> eventView = new AtomicReference<>();
 
             AtomicBoolean isOnTicketView = new AtomicBoolean(false);
 
             HashMap<String, List<ConcertOuterClass.Concerts.ArtistConcertConcert>> concertsMap = new HashMap<>();
             ArrayList<ConcertOuterClass.Concerts.ArtistConcertConcert> currentEventsList = new ArrayList<>();
+            ReentryGuard eventsListLoadGuard = new ReentryGuard();
 
             alternateTablesTableContainer.setLayout(new BoxLayout(alternateTablesTableContainer, BoxLayout.Y_AXIS));
             alternateTablesContainer.add(alternateTablesTableContainer, BorderLayout.CENTER);
@@ -334,7 +338,7 @@ public class BrowsePanel extends JScrollPane implements View {
             eventsListTableScrollPane.setVisible(false);
 
             eventsTable.setModel(new DefaultTableModel(new Object[][]{}, new Object[]{
-                    PublicValues.language.translate("ui.general.artist"),
+                    PublicValues.language.translate("general.artist"),
                     ""
             }));
 
@@ -354,7 +358,8 @@ public class BrowsePanel extends JScrollPane implements View {
                         );
 
                         if(concerts.size() > 1) {
-                            ((DefaultTableModel) eventsListTable.getModel()).setRowCount(0);
+                            if (!eventsListLoadGuard.tryEnter()) return;
+                            eventsListTable.addModifyAction(() -> ((DefaultTableModel) eventsListTable.getModel()).setRowCount(0));
                             currentEventsList.addAll(concerts);
 
                             eventsTableScrollPane.setVisible(false);
@@ -378,6 +383,7 @@ public class BrowsePanel extends JScrollPane implements View {
                                     }
                                 });
                             }
+                            eventsListLoadGuard.exit();
                         }else {
                             new Thread(() -> {
                                 try {
@@ -399,8 +405,8 @@ public class BrowsePanel extends JScrollPane implements View {
             });
 
             eventsListTable.setModel(new DefaultTableModel(new Object[][]{}, new Object[]{
-                    PublicValues.language.translate("ui.general.location"),
-                    PublicValues.language.translate("ui.general.date")
+                    PublicValues.language.translate("general.location"),
+                    PublicValues.language.translate("general.date")
             }));
 
             eventsListTable.setForeground(PublicValues.globalFontColor);
@@ -441,7 +447,7 @@ public class BrowsePanel extends JScrollPane implements View {
                             public void run() {
                                 ((DefaultTableModel) eventsTable.getModel()).addRow(new Object[]{
                                         artist.getName(),
-                                        artist.getArtistConcerts().getConcertsList().size() + " " + PublicValues.language.translate("ui.browse.events.events")
+                                        artist.getArtistConcerts().getConcertsList().size() + " " + PublicValues.language.translate("browse.events")
                                 });
                             }
                         });
@@ -549,7 +555,12 @@ public class BrowsePanel extends JScrollPane implements View {
                     loaderPanel.setVisible(true);
                 });
                 try {
-                    spotifyBrowse = UnofficialSpotifyAPI.getSpotifyBrowse();
+                    if (PublicValues.cache.namespace("BrowsePanel").has(CACHE_ID)) {
+                        spotifyBrowse = PublicValues.cache.namespace("BrowsePanel").get(CACHE_ID, UnofficialSpotifyAPI.SpotifyBrowse.class);
+                    } else {
+                        spotifyBrowse = UnofficialSpotifyAPI.getSpotifyBrowse();
+                        PublicValues.cache.namespace("BrowsePanel").put(CACHE_ID, spotifyBrowse);
+                    }
                 }catch (IOException | TokenProvider.TokenException e) {
                     throw new RuntimeException(e);
                 }
@@ -569,5 +580,12 @@ public class BrowsePanel extends JScrollPane implements View {
     @Override
     public void makeInvisible() {
         setVisible(false);
+
+        if (spotifyBrowse != null) {
+            spotifyBrowse = null;
+            contentPanel.removeAll();
+            contentPanel.revalidate();
+            contentPanel.repaint();
+        }
     }
 }

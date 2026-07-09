@@ -31,7 +31,7 @@ public class NoMediaControl implements Argument {
 
     @Override
     public String getDescription() {
-        return "Disbles media control per media keys";
+        return "Disables media control with media keys";
     }
 
     @Override

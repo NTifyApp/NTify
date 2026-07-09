@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,20 +66,20 @@ public class ArtistEventView extends JPanel {
 
         if(ticketInfo == null) {
             JOptionPane.showMessageDialog(ContentPanel.frame,
-                    PublicValues.language.translate("ui.artisteventview.error.noticketinfo"),
-                    PublicValues.language.translate("ui.general.error"),
+                    PublicValues.language.translate("artist_event_view.dialogs.no_ticket_info.message"),
+                    PublicValues.language.translate("general.error"),
                     JOptionPane.ERROR_MESSAGE);
             throw new IllegalArgumentException("No ticket info found");
         }
 
         if(venueInfo == null) {
             JOptionPane.showMessageDialog(ContentPanel.frame,
-                    PublicValues.language.translate("ui.artisteventview.error.novenueinfo"),
-                    PublicValues.language.translate("ui.general.warning"),
+                    PublicValues.language.translate("artist_event_view.dialogs.no_venue_info.message"),
+                    PublicValues.language.translate("general.warning"),
                     JOptionPane.WARNING_MESSAGE);
         }
 
-        genresLabel = new JLabel(PublicValues.language.translate("ui.artisteventview.genres"));
+        genresLabel = new JLabel(PublicValues.language.translate("general.genres"));
         genresLabel.setBounds(12, 12, 60, 17);
         add(genresLabel);
 
@@ -113,7 +113,7 @@ public class ArtistEventView extends JPanel {
         companyName.setText(ticketInfo.getTicketServiceInfo().getCompanyName());
         companyName.setForeground(PublicValues.globalFontColor);
 
-        viewEvent = new JButton(PublicValues.language.translate("ui.artisteventview.viewevent"));
+        viewEvent = new JButton(PublicValues.language.translate("artist_event_view.view_event"));
         viewEvent.setBounds(282, 86, 106, 27);
         add(viewEvent);
 
@@ -138,7 +138,7 @@ public class ArtistEventView extends JPanel {
         add(time);
 
         time.setForeground(PublicValues.globalFontColor);
-        if(venueInfo != null) time.setText(PublicValues.language.translate("ui.general.date") + ": " + parseDate(venueInfo.getDateInfo().getDate().getTime()).format(formatter));
+        if(venueInfo != null) time.setText(PublicValues.language.translate("general.date") + ": " + parseDate(venueInfo.getDateInfo().getDate().getTime()).format(formatter));
 
         location = new JLabel("");
         location.setBounds(500, 91, 209, 17);
@@ -146,7 +146,7 @@ public class ArtistEventView extends JPanel {
 
         location.setHorizontalAlignment(SwingConstants.CENTER);
         location.setForeground(PublicValues.globalFontColor);
-        if(venueInfo != null) location.setText(PublicValues.language.translate("ui.general.location") + ": " + venueInfo.getVenue().getVenueName());
+        if(venueInfo != null) location.setText(PublicValues.language.translate("general.location") + ": " + venueInfo.getVenue().getVenueName());
 
         if(venueInfo != null) {
             for(ConcertOuterClass.ConcertResponse.VenueMapService service : venueInfo.getVenue().getMapServicesList()) {
@@ -159,7 +159,7 @@ public class ArtistEventView extends JPanel {
             }
         }
 
-        viewOnAMaps = new JButton(PublicValues.language.translate("ui.artisteventview.viewonamaps"));
+        viewOnAMaps = new JButton(PublicValues.language.translate("artist_event_view.view_on_apple_maps"));
         viewOnAMaps.setBounds(500, 121, 209, 27);
         add(viewOnAMaps);
 
@@ -175,7 +175,7 @@ public class ArtistEventView extends JPanel {
             }
         });
 
-        viewOnGMaps = new JButton(PublicValues.language.translate("ui.artisteventview.viewongmaps"));
+        viewOnGMaps = new JButton(PublicValues.language.translate("artist_event_view.view_on_google_maps"));
         viewOnGMaps.setBounds(500, 161, 209, 27);
         add(viewOnGMaps);
 

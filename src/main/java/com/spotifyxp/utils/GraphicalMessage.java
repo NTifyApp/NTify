@@ -29,42 +29,35 @@ public class GraphicalMessage {
         if (SplashPanel.frame.isVisible()) {
             SplashPanel.frame.setAlwaysOnTop(false);
         }
-        JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("ui.graphicalmessage.bug") + where, PublicValues.language.translate("joptionpane.info"), JOptionPane.OK_CANCEL_OPTION);
+        JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.bug_occurred.description") + where, PublicValues.language.translate("general.info"), JOptionPane.OK_CANCEL_OPTION);
     }
 
     public static void sorryError() {
         if (SplashPanel.frame.isVisible()) {
             SplashPanel.frame.setAlwaysOnTop(false);
         }
-        JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("critical.sorry.text"), PublicValues.language.translate("critical.sorry.title"), JOptionPane.OK_CANCEL_OPTION);
+        JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.critical.text"), PublicValues.language.translate("dialogs.critical.title"), JOptionPane.OK_CANCEL_OPTION);
     }
 
     public static void pleaseRestart() {
         if (SplashPanel.frame.isVisible()) {
             SplashPanel.frame.setAlwaysOnTop(false);
         }
-        JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("ui.settings.pleaserestart"), PublicValues.language.translate("joptionpane.info"), JOptionPane.OK_CANCEL_OPTION);
-    }
-
-    public static void debug(Object o) {
-        if (SplashPanel.frame.isVisible()) {
-            SplashPanel.frame.setAlwaysOnTop(false);
-        }
-        JOptionPane.showMessageDialog(ContentPanel.frame, o.toString(), "Debug", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.settings.dialogs.please_restart.title"), PublicValues.language.translate("general.info"), JOptionPane.OK_CANCEL_OPTION);
     }
 
     public static void sorryError(String additional) {
         if (SplashPanel.frame.isVisible()) {
             SplashPanel.frame.setAlwaysOnTop(false);
         }
-        JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("critical.sorry.text") + " Additional Info => " + additional, PublicValues.language.translate("critical.sorry.title"), JOptionPane.OK_CANCEL_OPTION);
+        JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.critical.text") + " Additional Info => " + additional, PublicValues.language.translate("dialogs.critical.title"), JOptionPane.OK_CANCEL_OPTION);
     }
 
     public static void sorryErrorExit() {
         if (SplashPanel.frame.isVisible()) {
             SplashPanel.frame.setAlwaysOnTop(false);
         }
-        int selection = JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("critical.sorry.text"), PublicValues.language.translate("critical.sorry.title"), JOptionPane.OK_CANCEL_OPTION);
+        int selection = JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.critical.text"), PublicValues.language.translate("dialogs.critical.title"), JOptionPane.OK_CANCEL_OPTION);
         if (selection == JOptionPane.CANCEL_OPTION) {
             openException(new UnknownError());
             return;
@@ -76,7 +69,7 @@ public class GraphicalMessage {
         if (SplashPanel.frame.isVisible()) {
             SplashPanel.frame.setAlwaysOnTop(false);
         }
-        int selection = JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("critical.sorry.text") + " Additional Info => " + additional, PublicValues.language.translate("critical.sorry.title"), JOptionPane.OK_CANCEL_OPTION);
+        int selection = JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.critical.text") + " Additional Info => " + additional, PublicValues.language.translate("dialogs.critical.title"), JOptionPane.OK_CANCEL_OPTION);
         if (selection == JOptionPane.CANCEL_OPTION) {
             openException(new Throwable(additional));
             return;

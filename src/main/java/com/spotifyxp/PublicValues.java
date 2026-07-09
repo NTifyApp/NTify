@@ -32,7 +32,6 @@ import com.spotifyxp.logging.LogPrintStream;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.theming.Theme;
 import com.spotifyxp.theming.ThemeLoader;
-import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.ArchitectureDetection;
 import com.spotifyxp.utils.Utils;
 import com.spotifyxp.video.DummyVLCPlayer;
@@ -44,7 +43,6 @@ import xyz.gianlu.librespot.core.Session;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 @SuppressWarnings("CanBeFinal")
@@ -62,15 +60,7 @@ public class PublicValues {
 
     public static ArchitectureDetection.Architecture architecture = ArchitectureDetection.Architecture.x86;
     public static libLanguage language = null;
-    public static String fileslocation;
-
-    static {
-        try {
-            fileslocation = System.getenv("appdata") + File.separator + ApplicationUtils.getName();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    public static String fileslocation = System.getenv("appdata") + File.separator + "NTify";
 
     public static String configfilepath = fileslocation + File.separator + "config.json";
     public static Config.RuntimeConfig<ConfigValues> config = null;
@@ -79,15 +69,7 @@ public class PublicValues {
     public static boolean debug = false;
     public static Quality quality = null;
     public static String[] args = null;
-    public static String deviceName;
-
-    static {
-        try {
-            deviceName = ApplicationUtils.getName();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    public static String deviceName = "NTify";
 
     public static Theme theme = null;
     public static libDetect.OSType osType;

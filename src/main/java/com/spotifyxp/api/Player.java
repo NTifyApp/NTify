@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2025] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public class Player {
      */
     public void retry() {
         player = InstanceManager.getPlayerUtils().buildPlayer();
-        ConsoleLogging.info(PublicValues.language.translate("debug.connection.ready"));
+        ConsoleLogging.info("Player ready");
         player.addEventsListener(new PlayerListener(this));
     }
 
@@ -42,7 +42,7 @@ public class Player {
 
     public Player() {
         player = InstanceManager.getPlayerUtils().buildPlayer();
-        ConsoleLogging.info(PublicValues.language.translate("debug.connection.ready"));
+        ConsoleLogging.info("Player ready");
         player.addEventsListener(new PlayerListener(this));
     }
 

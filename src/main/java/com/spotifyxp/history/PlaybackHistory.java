@@ -26,8 +26,7 @@ import com.spotifyxp.panels.PlayerArea;
 import com.spotifyxp.sql.*;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.swingextension.URITree;
-import com.spotifyxp.utils.AsyncActionListener;
-import com.spotifyxp.utils.AsyncMouseListener;
+import com.spotifyxp.utils.AsyncUtils;
 import xyz.gianlu.librespot.common.Utils;
 import xyz.gianlu.librespot.metadata.AlbumId;
 import xyz.gianlu.librespot.metadata.ArtistId;
@@ -73,6 +72,7 @@ public class PlaybackHistory {
     private static ArrayList<PlaybackHistory.TreeEntry> addedArtists;
     private static int offset = 0;
     private static SQLTable sqlTable;
+    private static SQLSession sqlSession;
     private Ui ui;
 
     public static class Ui extends JFrame {
@@ -88,17 +88,17 @@ public class PlaybackHistory {
 
         public Ui() {
             setPreferredSize(new Dimension(300, 400));
-            setTitle(PublicValues.language.translate("ui.history.title"));
+            setTitle(PublicValues.language.translate("dialogs.history.title"));
 
-            root = new DefaultMutableTreeNode(PublicValues.language.translate("ui.history.tree.root"));
+            root = new DefaultMutableTreeNode(PublicValues.language.translate("dialogs.history.tree_root"));
             tree = new URITree(root);
 
             pane = new JScrollPane(tree);
             add(pane, BorderLayout.CENTER);
 
-            removeAll = new JButton(PublicValues.language.translate("ui.history.removeall"));
+            removeAll = new JButton(PublicValues.language.translate("dialogs.history.remove_all_button"));
 
-            removeAll.addActionListener(new AsyncActionListener(e -> {
+            removeAll.addActionListener(e -> AsyncUtils.run(() -> {
                 try {
                     removeAllSongs();
                 } catch (SQLException ex) {
@@ -108,36 +108,38 @@ public class PlaybackHistory {
 
             add(removeAll, BorderLayout.SOUTH);
 
-            tree.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+            tree.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     if (e.getClickCount() == 2) {
-                        ContentPanel.switchView(ContentPanel.lastView);
-                        try {
-                            DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getSelectionModel().getSelectionPath().getLastPathComponent();
-                            URITree.TreeNodeData data = ((URITree.TreeNodeData) node.getUserObject());
-                            switch (data.getNodetype()) {
-                                case ARTIST:
-                                    ContentPanel.showArtistPanel(data.getURI());
-                                    break;
-                                case ALBUM:
-                                    ContentPanel.trackPanel.open(data.getURI(), HomePanel.ContentTypes.album);
-                                    break;
-                                case TRACK:
-                                    InstanceManager.getSpotifyPlayer().load(data.getURI(), true, PublicValues.shuffle);
-                                    break;
-                                case LOADMORE:
-                                    loadMore();
-                                    break;
-                                default:
-                                    break;
+                        AsyncUtils.run(() -> {
+                            ContentPanel.switchView(ContentPanel.lastView);
+                            try {
+                                DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getSelectionModel().getSelectionPath().getLastPathComponent();
+                                URITree.TreeNodeData data = ((URITree.TreeNodeData) node.getUserObject());
+                                switch (data.getNodetype()) {
+                                    case ARTIST:
+                                        ContentPanel.showArtistPanel(data.getURI());
+                                        break;
+                                    case ALBUM:
+                                        ContentPanel.trackPanel.open(data.getURI(), HomePanel.ContentTypes.album);
+                                        break;
+                                    case TRACK:
+                                        InstanceManager.getSpotifyPlayer().load(data.getURI(), true, PublicValues.shuffle);
+                                        break;
+                                    case LOADMORE:
+                                        loadMore();
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            } catch (Exception ignored) {
+                                tree.expandRow(0);
                             }
-                        } catch (Exception ignored) {
-                            tree.expandRow(0);
-                        }
+                        });
                     }
                 }
-            }));
+            });
 
             addWindowListener(new WindowAdapter() {
                 @Override
@@ -174,7 +176,7 @@ public class PlaybackHistory {
                         }
                     }
                     if (sqlTable.tryGetRowCount() - 1 > offset) {
-                        root.add(new DefaultMutableTreeNode(new URITree.TreeNodeData(PublicValues.language.translate("ui.general.loadmore"), "", URITree.NodeType.LOADMORE)));
+                        root.add(new DefaultMutableTreeNode(new URITree.TreeNodeData(PublicValues.language.translate("general.load_more"), "", URITree.NodeType.LOADMORE)));
                     }
                     int curPos = pane.getVerticalScrollBar().getValue();
                     ((DefaultTreeModel) tree.getModel()).reload();
@@ -242,7 +244,7 @@ public class PlaybackHistory {
                         }
                     }
                     if (sqlTable.tryGetRowCount() - 1 > offset) {
-                        root.add(new DefaultMutableTreeNode(new URITree.TreeNodeData(PublicValues.language.translate("ui.general.loadmore"), "", URITree.NodeType.LOADMORE)));
+                        root.add(new DefaultMutableTreeNode(new URITree.TreeNodeData(PublicValues.language.translate("general.load_more"), "", URITree.NodeType.LOADMORE)));
                     }
                     tree.expandRow(0);
                 } catch (Exception e) {
@@ -270,7 +272,7 @@ public class PlaybackHistory {
     public PlaybackHistory() {
         String databasePath = new File(PublicValues.fileslocation, "playbackhistory.db").getAbsolutePath();
 
-        SQLSession sqlSession = new SQLSession(databasePath);
+        sqlSession = new SQLSession(databasePath);
         sqlSession.loadDriver("org.sqlite.JDBC", "jdbc", "sqlite");
 
         try {
@@ -300,6 +302,18 @@ public class PlaybackHistory {
             }
         } catch (SQLException e) {
             PublicValues.history = null;
+        }
+    }
+
+    /**
+     * Closes the database connection kept open for the app's lifetime. Call once on shutdown.
+     */
+    public static void shutdown() {
+        if (sqlSession == null) return;
+        try {
+            sqlSession.disconnect();
+        } catch (SQLException e) {
+            ConsoleLogging.Throwable(e);
         }
     }
 

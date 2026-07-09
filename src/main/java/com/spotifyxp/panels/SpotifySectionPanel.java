@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.spotifyxp.panels;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.utils.AsyncActionListener;
 
 import javax.swing.*;
 import java.awt.*;
@@ -38,10 +37,10 @@ public class SpotifySectionPanel extends JScrollPane implements View {
         contentPanel.setLayout(null);
         contentPanel.setBackground(getBackground());
 
-        backButton = new JButton(PublicValues.language.translate("ui.back"));
+        backButton = new JButton(PublicValues.language.translate("general.back"));
         backButton.setBounds(0, 0, 89, 23);
         backButton.setForeground(PublicValues.globalFontColor);
-        backButton.addActionListener(new AsyncActionListener(e -> {
+        backButton.addActionListener(e -> {
             for(Component component : contentPanel.getComponents()) {
                 if(component.getName() != null && component.getName().equals("BackButton") && component instanceof JButton) {
                     continue;
@@ -56,7 +55,7 @@ public class SpotifySectionPanel extends JScrollPane implements View {
             // Back button is still visible. Redrawing the entire window should fix it
             ContentPanel.frame.revalidate();
             ContentPanel.frame.repaint();
-        }));
+        });
         backButton.setName("BackButton");
         contentPanel.add(backButton, JLayeredPane.PALETTE_LAYER);
 

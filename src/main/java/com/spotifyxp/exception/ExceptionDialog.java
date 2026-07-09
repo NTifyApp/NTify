@@ -61,7 +61,7 @@ public class ExceptionDialog {
             SplashPanel.frame.setAlwaysOnTop(false);
         }
 
-        JFrame frame = new JFrame(PublicValues.language.translate("exception.dialog.title"));
+        JFrame frame = new JFrame(PublicValues.language.translate("dialogs.error.title"));
 
         JPanel contentPane = new JPanel();
         contentPane.setLayout(new BorderLayout());
@@ -70,7 +70,7 @@ public class ExceptionDialog {
             exceptionText.setText(extractStackTrace(e));
         }
         
-        JLabel exceptionLabel = new JLabel(PublicValues.language.translate("exception.dialog.label"));
+        JLabel exceptionLabel = new JLabel(PublicValues.language.translate("dialogs.error.description"));
         exceptionLabel.setFont(new Font("Tahoma", Font.PLAIN, 17));
         exceptionLabel.setHorizontalAlignment(SwingConstants.CENTER);
         contentPane.add(exceptionLabel, BorderLayout.NORTH);
@@ -80,9 +80,9 @@ public class ExceptionDialog {
         contentPane.add(exceptionScrollPane, BorderLayout.CENTER);
 
         ContextMenu menu = new ContextMenu(exceptionText, null, getClass());
-        menu.addItem(PublicValues.language.translate("ui.general.copy"), () -> ClipboardUtil.set(exceptionText.getText()));
+        menu.addItem(PublicValues.language.translate("general.copy"), () -> ClipboardUtil.set(exceptionText.getText()));
 
-        JButton exceptionOkButton = new JButton(PublicValues.language.translate("exception.dialog.button.text"));
+        JButton exceptionOkButton = new JButton(PublicValues.language.translate("general.ok"));
         contentPane.add(exceptionOkButton, BorderLayout.SOUTH);
         exceptionOkButton.addActionListener(e -> frame.dispose());
 

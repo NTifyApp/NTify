@@ -84,6 +84,8 @@ public class SpotifyUtils {
             });
         }
 
+        batchedRequestHelper.execute(PublicValues.session.api(), ((exception, response) -> ConsoleLogging.Throwable(exception)));
+
         return episodes;
     }
 

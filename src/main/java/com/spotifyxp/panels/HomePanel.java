@@ -22,7 +22,7 @@ import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
-import com.spotifyxp.utils.AsyncMouseListener;
+import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.StringUtils;
 import xyz.gianlu.librespot.core.TokenProvider;
 
@@ -41,11 +41,16 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
 public class HomePanel extends JScrollPane implements View {
+    private static final String CACHE_ID = "homeTab";
+
     public static JPanel content;
     public static UnofficialSpotifyAPI.HomeTab tab;
     public static ContextMenu menu;
     public static Timer reloadTimer;
     public static TimerTask nextReload;
+    private static boolean refreshDue = false;
+    private static boolean isVisible = false;
+    private static boolean loadInProgress = false;
 
     public HomePanel() {
         content = new JPanel();
@@ -54,8 +59,13 @@ public class HomePanel extends JScrollPane implements View {
         reloadTimer = new Timer();
 
         menu = new ContextMenu(content, null, getClass());
-        menu.addItem(PublicValues.language.translate("ui.general.refresh"), () -> {
+        menu.addItem(PublicValues.language.translate("general.refresh"), () -> {
             nextReload.cancel();
+            try {
+                PublicValues.cache.namespace("HomePanel").remove(CACHE_ID);
+            } catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+            }
             reloadHome();
         });
 
@@ -63,6 +73,7 @@ public class HomePanel extends JScrollPane implements View {
         setVisible(false);
         setViewportView(content);
 
+        loadInProgress = true;
         CompletableFuture<Boolean> homeFuture = loadHome();
 
         SpotifyXPEvents.onFrameVisible.subscribe((data) -> {
@@ -71,19 +82,29 @@ public class HomePanel extends JScrollPane implements View {
                     homeFuture.join();
                 }catch (CancellationException e) {
                     ConsoleLogging.error("Failed to get home tab");
+                    loadInProgress = false;
                     return;
                 }
                 SwingUtilities.invokeLater(this::fill);
-                nextReload = new TimerTask() {
-                    @Override
-                    public void run() {
-                        reloadHome();
-                    }
-                };
-                reloadTimer.schedule(nextReload, Date.from(Instant.now().plusSeconds(1800))); // Every 30 minutes
+                loadInProgress = false;
+                scheduleNextReload();
             }, "Wait for home tab");
             thread.start();
         });
+    }
+
+    private void scheduleNextReload() {
+        nextReload = new TimerTask() {
+            @Override
+            public void run() {
+                if (isVisible) {
+                    reloadHome();
+                } else {
+                    refreshDue = true;
+                }
+            }
+        };
+        reloadTimer.schedule(nextReload, Date.from(Instant.now().plusSeconds(1800))); // Every 30 minutes
     }
 
     private void reloadHome() {
@@ -96,13 +117,8 @@ public class HomePanel extends JScrollPane implements View {
             }
             content.removeAll();
             SwingUtilities.invokeLater(this::fill);
-            nextReload = new TimerTask() {
-                @Override
-                public void run() {
-                    reloadHome();
-                }
-            };
-            reloadTimer.schedule(nextReload, Date.from(Instant.now().plusSeconds(1800))); // Every 30 minutes
+            refreshDue = false;
+            scheduleNextReload();
         }, "Wait for home tab");
         thread.start();
     }
@@ -111,7 +127,14 @@ public class HomePanel extends JScrollPane implements View {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         Thread requestTabThread = new Thread(() -> {
             try {
-                tab = InstanceManager.getUnofficialSpotifyApi().getHomeTab().orElse(null);
+                if (PublicValues.cache.namespace("HomePanel").has(CACHE_ID)) {
+                    tab = PublicValues.cache.namespace("HomePanel").get(CACHE_ID, UnofficialSpotifyAPI.HomeTab.class);
+                } else {
+                    tab = InstanceManager.getUnofficialSpotifyApi().getHomeTab().orElse(null);
+                    if (tab != null) {
+                        PublicValues.cache.namespace("HomePanel").put(CACHE_ID, tab);
+                    }
+                }
                 future.complete(null);
             } catch (IOException | TokenProvider.TokenException e) {
                 future.cancel(false);
@@ -154,7 +177,7 @@ public class HomePanel extends JScrollPane implements View {
                 new Object[][]{
                 },
                 new String[]{
-                        PublicValues.language.translate( "ui.general.name"), PublicValues.language.translate("ui.general.artist")
+                        PublicValues.language.translate( "general.name"), PublicValues.language.translate("general.artist")
                 }
         ));
 
@@ -189,39 +212,41 @@ public class HomePanel extends JScrollPane implements View {
             }
         }
 
-        homepanelmodulecontenttable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        homepanelmodulecontenttable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 2) {
-                    ContentTypes ct = ContentTypes.valueOf(uricache.get(homepanelmodulecontenttable.getSelectedRow()).split(":")[1]);
-                    String uri = uricache.get(homepanelmodulecontenttable.getSelectedRow());
-                    try {
-                        switch (ct) {
-                            case episode:
-                            case track:
-                                InstanceManager.getSpotifyPlayer().load(uri, true, PublicValues.shuffle);
-                                SpotifyXPEvents.queueUpdate.trigger(uri);
-                                break;
-                            case artist:
-                                setVisible(false);
-                                ContentPanel.switchView(Views.ARTIST);
-                                try {
-                                    ContentPanel.artistPanel.fillWith(uri);
-                                } catch (IOException ex) {
-                                    ConsoleLogging.Throwable(ex);
-                                }
-                                break;
-                            default:
-                                ContentPanel.trackPanel.open(uri, ct);
-                                break;
+                    AsyncUtils.run(() -> {
+                        ContentTypes ct = ContentTypes.valueOf(uricache.get(homepanelmodulecontenttable.getSelectedRow()).split(":")[1]);
+                        String uri = uricache.get(homepanelmodulecontenttable.getSelectedRow());
+                        try {
+                            switch (ct) {
+                                case episode:
+                                case track:
+                                    InstanceManager.getSpotifyPlayer().load(uri, true, PublicValues.shuffle);
+                                    SpotifyXPEvents.queueUpdate.trigger(uri);
+                                    break;
+                                case artist:
+                                    setVisible(false);
+                                    ContentPanel.switchView(Views.ARTIST);
+                                    try {
+                                        ContentPanel.artistPanel.fillWith(uri);
+                                    } catch (IOException ex) {
+                                        ConsoleLogging.Throwable(ex);
+                                    }
+                                    break;
+                                default:
+                                    ContentPanel.trackPanel.open(uri, ct);
+                                    break;
+                            }
+                        } catch (Exception exception) {
+                            ConsoleLogging.Throwable(exception);
                         }
-                    } catch (Exception exception) {
-                        ConsoleLogging.Throwable(exception);
-                    }
+                    });
                 }
             }
-        }));
+        });
     }
 
     String artistParser(ArrayList<UnofficialSpotifyAPI.HomeTabArtist> cache) {
@@ -269,12 +294,18 @@ public class HomePanel extends JScrollPane implements View {
     }
 
     void fill() {
-        Thread t = new Thread(this::initializeContent, "Get home");
-        t.start();
         if(tab == null) return;
-        content.setPreferredSize(new Dimension(content.getWidth(), (261 + getFontMetrics(getFont()).getHeight() + 55) * tab.getSections().size()));
-        content.revalidate();
-        content.repaint();
+        int sectionCount = tab.getSections().size();
+
+        Thread t = new Thread(() -> {
+            initializeContent();
+            SwingUtilities.invokeLater(() -> {
+                content.setPreferredSize(new Dimension(content.getWidth(), (261 + getFontMetrics(getFont()).getHeight() + 55) * sectionCount));
+                content.revalidate();
+                content.repaint();
+            });
+        }, "Get home");
+        t.start();
     }
 
     public JPanel getPanel() {
@@ -284,10 +315,36 @@ public class HomePanel extends JScrollPane implements View {
     @Override
     public void makeVisible() {
         setVisible(true);
+        isVisible = true;
+
+        if (refreshDue) {
+            reloadHome();
+        } else if (content.getComponentCount() == 0 && !loadInProgress) {
+            loadInProgress = true;
+            Thread thread = new Thread(() -> {
+                try {
+                    loadHome().join();
+                } catch (CancellationException e) {
+                    ConsoleLogging.error("Failed to get home tab");
+                    loadInProgress = false;
+                    return;
+                }
+                SwingUtilities.invokeLater(this::fill);
+                loadInProgress = false;
+            }, "Wait for home tab");
+            thread.start();
+        }
     }
 
     @Override
     public void makeInvisible() {
         setVisible(false);
+        isVisible = false;
+
+        if (!refreshDue && content.getComponentCount() > 0) {
+            content.removeAll();
+            content.revalidate();
+            content.repaint();
+        }
     }
 }

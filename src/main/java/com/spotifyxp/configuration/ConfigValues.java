@@ -31,79 +31,79 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ConfigValues implements IConfig {
-    @Config.CustomComponent(id = "settings.mypal.path", category = "ui.settings.browser", component = MypalComponentProvider.class)
+    @Config.CustomComponent(id = "settings.mypal.path", translationKey = "dialogs.settings.browser.mypal_path", category = "dialogs.settings.browser.name", component = MypalComponentProvider.class)
     public String mypalPath = "";
 
-    @Config.Dropdown(id = "settings.ui.theme", category = "ui.settings.ui.label", values = ThemeListProvider.class)
+    @Config.Dropdown(id = "settings.ui.theme", translationKey = "dialogs.settings.ui.theme", category = "dialogs.settings.ui.name", values = ThemeListProvider.class)
     public String theme = "DarkGreen";
 
-    @Config.Dropdown(id = "user.settings.language", category = "ui.settings.ui.label", values = LanguageListProvider.class)
+    @Config.Dropdown(id = "user.settings.language", translationKey = "dialogs.settings.ui.language", category = "dialogs.settings.ui.name", values = LanguageListProvider.class)
     public String language = "English";
 
-    @Config.Dropdown(id = "user.settings.browse_view_style", category = "ui.settings.ui.label", values = BrowseViewStyleProvider.class, mapping = BrowseViewStyleMappingProvider.class)
+    @Config.Dropdown(id = "user.settings.browse_view_style", translationKey = "dialogs.settings.ui.browse_view_style", category = "dialogs.settings.ui.name", values = BrowseViewStyleProvider.class, mapping = BrowseViewStyleMappingProvider.class)
     public int browseViewStyle = 0;
 
-    @Config.CheckBox(id = "general.exception.visibility", category = "ui.settings.ui.label")
+    @Config.CheckBox(id = "general.exception.visibility", translationKey = "dialogs.settings.ui.exception_visibility", category = "dialogs.settings.ui.name")
     public boolean hideExceptions = false;
 
-    @Config.CheckBox(id = "user.settings.cache.disabled", category = "ui.settings.playback.label")
+    @Config.CheckBox(id = "user.settings.cache.disabled", translationKey = "dialogs.settings.playback.cache", category = "dialogs.settings.playback.name")
     public boolean cacheDisabled = false;
 
-    @Config.Dropdown(id = "settings.playback.quality", category = "ui.settings.playback.label", values = AudioQualityProvider.class, mapping = AudioQualityMappingProvider.class)
+    @Config.Dropdown(id = "settings.playback.quality", translationKey = "dialogs.settings.playback.quality", category = "dialogs.settings.playback.name", values = AudioQualityProvider.class, mapping = AudioQualityMappingProvider.class)
     public String audioQuality = "NORMAL";
 
-    @Config.CheckBox(id = "user.settings.autoqueue.disabled", category = "ui.settings.playback.label")
+    @Config.CheckBox(id = "user.settings.autoqueue.disabled", translationKey = "dialogs.settings.playback.autoqueue", category = "dialogs.settings.playback.name")
     public boolean disableAutoQueue = false;
 
-    @Config.CheckBox(id = "proxy.enable", category = "ui.settings.proxy")
+    @Config.CheckBox(id = "proxy.enable", translationKey = "dialogs.settings.proxy.enable", category = "dialogs.settings.proxy.name")
     public boolean enableProxy = false;
 
-    @Config.Dropdown(id = "proxy.type", category = "ui.settings.proxy", values = ProxyTypeProvider.class)
+    @Config.Dropdown(id = "proxy.type", translationKey = "dialogs.settings.proxy.type", category = "dialogs.settings.proxy.name", values = ProxyTypeProvider.class)
     public String proxyType = Proxy.Type.HTTP.name();
 
-    @Config.Text(id = "proxy.address", category = "ui.settings.proxy")
+    @Config.Text(id = "proxy.address", translationKey = "dialogs.settings.proxy.address", category = "dialogs.settings.proxy.name")
     public String proxyAddress = "";
 
-    @Config.Text(id = "proxy.username", category = "ui.settings.proxy")
+    @Config.Text(id = "proxy.username", translationKey = "dialogs.settings.proxy.username", category = "dialogs.settings.proxy.name")
     public String proxyUsername = "";
 
-    @Config.Text(id = "proxy.password", category = "ui.settings.proxy")
+    @Config.Text(id = "proxy.password", translationKey = "dialogs.settings.proxy.password", category = "dialogs.settings.proxy.name")
     public String proxyPassword = "";
 
-    @Config.CheckBox(id = "proxy.trustall", category = "ui.settings.proxy")
+    @Config.CheckBox(id = "proxy.trustall", translationKey = "dialogs.settings.proxy.trust_all_certificates", category = "dialogs.settings.proxy.name")
     public boolean proxyTrustAll = false;
 
-    @Config.CheckBox(id = "ui.settings.logging.enablelogfile", category = "ui.settings.logging.label")
+    @Config.CheckBox(id = "ui.settings.logging.enablelogfile", translationKey = "dialogs.settings.logging.enable_file_logging", category = "dialogs.settings.logging.name")
     public boolean enableLogging = true;
 
-    @Config.Numbers(id = "ui.settings.logging.maxkeeplogs", category = "ui.settings.logging.label")
+    @Config.Numbers(id = "ui.settings.logging.maxkeeplogs", translationKey = "dialogs.settings.logging.max_kept_logs", category = "dialogs.settings.logging.name")
     public int maxKeptLogFiles = 10;
 
-    @Config.CheckBox(id = "user.settings.other.autoplayenabled", category = "ui.settings.other")
+    @Config.CheckBox(id = "user.settings.other.autoplayenabled", translationKey = "dialogs.settings.other.autoplay_enabled", category = "dialogs.settings.other.name")
     public boolean autoplayEnabled = true;
 
-    @Config.Numbers(id = "user.settings.other.crossfadeduration", category = "ui.settings.other")
+    @Config.Numbers(id = "user.settings.other.crossfadeduration", translationKey = "dialogs.settings.other.crossfade_duration", category = "dialogs.settings.other.name")
     public int crossfadeDuration = 0;
 
-    @Config.CheckBox(id = "user.settings.other.enablenormalization", category = "ui.settings.other")
+    @Config.CheckBox(id = "user.settings.other.enablenormalization", translationKey = "dialogs.settings.other.enable_normalization", category = "dialogs.settings.other.name")
     public boolean enableNormalization = true;
 
-    @Config.Numbers(id = "user.settings.other.normalizationpregain", category = "ui.settings.other")
+    @Config.Numbers(id = "user.settings.other.normalizationpregain", translationKey = "dialogs.settings.other.normalization_pregain", category = "dialogs.settings.other.name")
     public int normalizationPregain = 3;
 
-    @Config.Text(id = "user.settings.other.mixersearchkeywords", category = "ui.settings.other")
+    @Config.Text(id = "user.settings.other.mixersearchkeywords", translationKey = "dialogs.settings.other.mixer_search_keywords", category = "dialogs.settings.other.name")
     public String mixerSearchKeywords = "";
 
-    @Config.CheckBox(id = "user.settings.other.preloadenabled", category = "ui.settings.other")
+    @Config.CheckBox(id = "user.settings.other.preloadenabled", translationKey = "dialogs.settings.other.preload_enabled", category = "dialogs.settings.other.name")
     public boolean preloadEnabled = true;
 
-    @Config.Numbers(id = "user.settings.other.releaselinedelay", category = "ui.settings.other")
+    @Config.Numbers(id = "user.settings.other.releaselinedelay", translationKey = "dialogs.settings.other.release_line_delay", category = "dialogs.settings.other.name")
     public int releaseLineDelay = 20;
 
-    @Config.CheckBox(id = "user.settings.other.bypasssinkvolume", category = "ui.settings.other")
+    @Config.CheckBox(id = "user.settings.other.bypasssinkvolume", translationKey = "dialogs.settings.other.bypass_sink_volume", category = "dialogs.settings.other.name")
     public boolean bypassSinkVolume = false;
 
-    @Config.Text(id = "user.settings.other.preferredlocale", category = "ui.settings.other")
+    @Config.Text(id = "user.settings.other.preferredlocale", translationKey = "dialogs.settings.other.preferred_locale", category = "dialogs.settings.other.name")
     public String preferredLocale = "en";
 
     public static class ThemeListProvider implements Config.ConfigValueProvider<String> {

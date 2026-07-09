@@ -32,6 +32,9 @@ public class SpotifyBrowseModule extends JPanel {
     private final byte[] image;
     private final String title;
     private final int width,height;
+    //Decoded+resized once and reused - paintComponent() previously re-decoded and re-resized
+    //this on every single repaint even though image/width/height never change after construction.
+    private BufferedImage cachedResizedImage;
 
     public SpotifyBrowseModule(int x, int y, String title, InputStream stream, int width, int height, String genreId, BrowsePanel.XYRunnable globalRightClickListener, BrowsePanel.IDRunnable idRunnable) throws IOException {
         image = IOUtils.toByteArray(stream);
@@ -73,7 +76,10 @@ public class SpotifyBrowseModule extends JPanel {
         super.paintComponent(g);
         try {
             if(image != null) {
-                Image img = resizeImage(ImageIO.read(new ByteArrayInputStream(image)), height - 20);
+                if (cachedResizedImage == null) {
+                    cachedResizedImage = resizeImage(ImageIO.read(new ByteArrayInputStream(image)), height - 20);
+                }
+                Image img = cachedResizedImage;
                 int x = width - img.getWidth(null) / 2 - 7;
                 int y = height - img.getHeight(null) - 10;
                 Graphics2D g2d = (Graphics2D) g.create();

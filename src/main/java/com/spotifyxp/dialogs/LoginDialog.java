@@ -87,22 +87,22 @@ public class LoginDialog {
             return PublicValues.language.translate(id);
         }
 
-        @Config.CheckBox(id = "proxy.enable", category = "ui.settings.proxy")
+        @Config.CheckBox(id = "proxy.enable", translationKey = "dialogs.settings.proxy.enable", category = "dialogs.settings.proxy.name")
         public boolean enableProxy = false;
 
-        @Config.Dropdown(id = "proxy.type", category = "ui.settings.proxy", values = ConfigValues.ProxyTypeProvider.class)
+        @Config.Dropdown(id = "proxy.type", translationKey = "dialogs.settings.proxy.type", category = "dialogs.settings.proxy.name", values = ConfigValues.ProxyTypeProvider.class)
         public String proxyType = Proxy.Type.HTTP.name();
 
-        @Config.Text(id = "proxy.address", category = "ui.settings.proxy")
+        @Config.Text(id = "proxy.address", translationKey = "dialogs.settings.proxy.address", category = "dialogs.settings.proxy.name")
         public String proxyAddress = "";
 
-        @Config.Text(id = "proxy.username", category = "ui.settings.proxy")
+        @Config.Text(id = "proxy.username", translationKey = "dialogs.settings.proxy.username", category = "dialogs.settings.proxy.name")
         public String proxyUsername = "";
 
-        @Config.Text(id = "proxy.password", category = "ui.settings.proxy")
+        @Config.Text(id = "proxy.password", translationKey = "dialogs.settings.proxy.password", category = "dialogs.settings.proxy.name")
         public String proxyPassword = "";
 
-        @Config.CheckBox(id = "proxy.trustall", category = "ui.settings.proxy")
+        @Config.CheckBox(id = "proxy.trustall", translationKey = "dialogs.settings.proxy.trust_all_certificates", category = "dialogs.settings.proxy.name")
         public boolean proxyTrustAll = false;
     }
 
@@ -114,7 +114,7 @@ public class LoginDialog {
         );
 
         proxysettings.setForeground(PublicValues.globalFontColor);
-        proxysettings.setText(PublicValues.language.translate("ui.login.openproxysettings"));
+        proxysettings.setText(PublicValues.language.translate("dialogs.login.open_proxy_settings"));
         proxysettings.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -131,6 +131,10 @@ public class LoginDialog {
             }
         });
 
+        chooseloginmethodlabel.setText(PublicValues.language.translate("dialogs.login.choose_login_method"));
+        oauthcopybutton.setText(PublicValues.language.translate("general.copy"));
+        ifnobrowserlabel.setText(PublicValues.language.translate("dialogs.login.login_method.oauth.message"));
+
         chooseloginmethodlabel.setForeground(PublicValues.globalFontColor);
         zeroconfloginmethodbutton.setForeground(PublicValues.globalFontColor);
         oauthloginmethodbutton.setForeground(PublicValues.globalFontColor);
@@ -140,6 +144,7 @@ public class LoginDialog {
         zeroconfhowto.setForeground(PublicValues.globalFontColor);
         zeroconfbackbutton.setForeground(PublicValues.globalFontColor);
 
+        oauthloginmethodbutton.setText(PublicValues.language.translate("dialogs.login.login_method.oauth.title"));
         oauthloginmethodbutton.addActionListener(e -> {
             onOauthExecute.run(new EventSubscriber<String>() {
                 @Override
@@ -148,7 +153,7 @@ public class LoginDialog {
                     try {
                         Utils.openBrowser(oAuthCallbackURL);
                     } catch (URISyntaxException | IOException ex) {
-                        GraphicalMessage.showMessageDialog("ui.general.warning", "ui.login.error.oauth", JOptionPane.WARNING_MESSAGE);
+                        GraphicalMessage.showMessageDialog("general.warning", "dialogs.login.dialogs.login_oauth_error.message", JOptionPane.WARNING_MESSAGE);
                         ConsoleLogging.Throwable(ex);
                     }
                 }
@@ -163,13 +168,14 @@ public class LoginDialog {
             back();
         });
 
-        zeroconfhowto.setText(PublicValues.language.translate("ui.login.message"));
+        zeroconfhowto.setText(PublicValues.language.translate("dialogs.login.login_method.zeroconf.message"));
         zeroconfhowto.setLineWrap(true);
         zeroconfhowto.setWrapStyleWord(true);
         zeroconfbackbutton.addActionListener(e -> {
             onZeroconfCancel.run();
             back();
         });
+        zeroconfloginmethodbutton.setText(PublicValues.language.translate("dialogs.login.login_method.zeroconf.title"));
         zeroconfloginmethodbutton.addActionListener(e -> {
             onZeroconfExecute.run(null);
             switchTo(Views.ZEROCONF);
@@ -209,7 +215,7 @@ public class LoginDialog {
     public void open() throws IOException {
         SplashPanel.frame.setAlwaysOnTop(false);
 
-        frame = new JFrame(PublicValues.language.translate("ui.login.title").replace("%APPNAME%", ApplicationUtils.getName()));
+        frame = new JFrame(PublicValues.language.translate("dialogs.login.title"));
         frame.setIconImage(Toolkit.getDefaultToolkit().getImage(LoginDialog.class.getResource("/ntify.png")));
         frame.setContentPane(contentPanel);
         frame.setResizable(false);
@@ -251,7 +257,7 @@ public class LoginDialog {
         contentPanel.setPreferredSize(new Dimension(296, 384));
         mainView = new JPanel();
         mainView.setLayout(new GridLayoutManager(8, 1, new Insets(0, 0, 0, 0), -1, -1));
-        mainView.setVisible(true);
+        mainView.setVisible(false);
         contentPanel.add(mainView, "Card1");
         spotifyxplogo = new JLabel();
         spotifyxplogo.setAlignmentY(1.0f);
@@ -261,17 +267,17 @@ public class LoginDialog {
         zeroconfloginmethodbutton = new JButton();
         Font zeroconfloginmethodbuttonFont = this.$$$getFont$$$(null, -1, 14, zeroconfloginmethodbutton.getFont());
         if (zeroconfloginmethodbuttonFont != null) zeroconfloginmethodbutton.setFont(zeroconfloginmethodbuttonFont);
-        zeroconfloginmethodbutton.setText("Log in via zeroconf");
+        zeroconfloginmethodbutton.setText("");
         mainView.add(zeroconfloginmethodbutton, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_SOUTH, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, new Dimension(166, -1), new Dimension(166, -1), new Dimension(166, -1), 0, false));
         oauthloginmethodbutton = new JButton();
         Font oauthloginmethodbuttonFont = this.$$$getFont$$$(null, -1, 14, oauthloginmethodbutton.getFont());
         if (oauthloginmethodbuttonFont != null) oauthloginmethodbutton.setFont(oauthloginmethodbuttonFont);
-        oauthloginmethodbutton.setText("Log in via OAuth");
+        oauthloginmethodbutton.setText("");
         mainView.add(oauthloginmethodbutton, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, new Dimension(166, -1), new Dimension(166, -1), new Dimension(166, -1), 0, false));
         chooseloginmethodlabel = new JLabel();
         Font chooseloginmethodlabelFont = this.$$$getFont$$$(null, -1, 16, chooseloginmethodlabel.getFont());
         if (chooseloginmethodlabelFont != null) chooseloginmethodlabel.setFont(chooseloginmethodlabelFont);
-        chooseloginmethodlabel.setText("Choose login method");
+        chooseloginmethodlabel.setText("");
         chooseloginmethodlabel.setVerticalAlignment(0);
         mainView.add(chooseloginmethodlabel, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_SOUTH, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
@@ -297,7 +303,7 @@ public class LoginDialog {
         zeroconfView.add(spacer4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         oauthView = new JPanel();
         oauthView.setLayout(new GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));
-        oauthView.setVisible(false);
+        oauthView.setVisible(true);
         contentPanel.add(oauthView, "Card3");
         oauthbackbutton = new JButton();
         oauthbackbutton.setText("Back");
@@ -308,10 +314,10 @@ public class LoginDialog {
         oauthViewSubPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         oauthView.add(oauthViewSubPanel, new GridConstraints(1, 0, 2, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         ifnobrowserlabel = new JLabel();
-        ifnobrowserlabel.setText("If no browser opens, click 'Copy' to copy the URL");
+        ifnobrowserlabel.setText("");
         oauthViewSubPanel.add(ifnobrowserlabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_SOUTHWEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         oauthcopybutton = new JButton();
-        oauthcopybutton.setText("Copy");
+        oauthcopybutton.setText("");
         oauthViewSubPanel.add(oauthcopybutton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 

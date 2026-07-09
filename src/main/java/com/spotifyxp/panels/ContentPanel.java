@@ -34,7 +34,7 @@ import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.updater.Updater;
 import com.spotifyxp.updater.UpdaterUI;
 import com.spotifyxp.utils.ApplicationUtils;
-import com.spotifyxp.utils.AsyncActionListener;
+import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.GraphicalMessage;
 import com.spotifyxp.utils.Utils;
 import org.apache.commons.io.IOUtils;
@@ -69,7 +69,7 @@ public class ContentPanel extends JPanel {
 
     static {
         try {
-            frame = new JFrame(ApplicationUtils.getName() + " - " + ApplicationUtils.getVersion() + " " + ApplicationUtils.getReleaseCandidate());
+            frame = new JFrame("NTify - " + ApplicationUtils.getVersion() + " " + ApplicationUtils.getReleaseCandidate());
         } catch (IOException e) {
             GraphicalMessage.sorryErrorExit("Unable to start the application: " + e.getMessage());
             throw new RuntimeException(e);
@@ -88,7 +88,7 @@ public class ContentPanel extends JPanel {
 
     public ContentPanel() throws IOException {
         PublicValues.contentPanel = this;
-        ConsoleLogging.info(PublicValues.language.translate("debug.buildcontentpanelbegin"));
+        ConsoleLogging.info("Building ContentPanel");
         SpotifyXPEvents.trackLoadFinished.subscribe((data) -> PublicValues.blockLoading = false);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener(new PropertyChangeListener() {
             @Override
@@ -154,7 +154,7 @@ public class ContentPanel extends JPanel {
         }
         SpotifyXPEvents.addToQueue.subscribe((data) -> InstanceManager.getSpotifyPlayer().addToQueue(data));
         SplashPanel.linfo.setText("Done building contentPanel");
-        ConsoleLogging.info(PublicValues.language.translate("debug.buildcontentpanelend"));
+        ConsoleLogging.info("Done building ContentPanel");
     }
 
     void createContextMenuItems() {
@@ -215,17 +215,10 @@ public class ContentPanel extends JPanel {
         dialog.getDialog().setPreferredSize(new Dimension(400, 500));
         try {
             String out = IOUtils.toString(Initiator.class.getResourceAsStream("about.html"), StandardCharsets.UTF_8);
-            StringBuilder cache = new StringBuilder();
-            for (String s : out.split("\n")) {
-                if (s.contains("(TRANSLATE)")) {
-                    s = s.replace(s.split("\\(TRANSLATE\\)")[1].replace("(TRANSLATE)", ""), PublicValues.language.translate(s.split("\\(TRANSLATE\\)")[1].replace("(TRANSLATE)", "")));
-                    s = s.replace("(TRANSLATE)", "");
-                }
-                cache.append(s);
-            }
+            String translated = PublicValues.language.translateHTML(out);
             String openSourceList = IOUtils.toString(Initiator.class.getResourceAsStream("setup/thirdparty.html"), StandardCharsets.UTF_8);
-            String finalHTML = cache.toString().split("<insertOpenSourceList>")[0] + openSourceList + cache.toString().split("</insertOpenSourceList>")[1];
-            dialog.open(PublicValues.language.translate("ui.menu.help.about"), finalHTML.replace("%APPNAME%", ApplicationUtils.getName()));
+            String finalHTML = translated.split("<insertOpenSourceList>")[0] + openSourceList + translated.split("</insertOpenSourceList>")[1];
+            dialog.open(PublicValues.language.translate("menubar.help.about"), finalHTML);
         } catch (Exception ex) {
             GraphicalMessage.openException(ex);
             ConsoleLogging.Throwable(ex);
@@ -297,13 +290,13 @@ public class ContentPanel extends JPanel {
     void createLegacy() {
         legacySwitch.setForeground(PublicValues.globalFontColor);
         legacySwitch.setBounds(0, 111, PublicValues.applicationWidth, PublicValues.contentContainerHeight());
-        legacySwitch.addTab(PublicValues.language.translate("ui.navigation.home"), new JPanel());
-        legacySwitch.addTab(PublicValues.language.translate("ui.navigation.browse"), new JPanel());
-        legacySwitch.addTab(PublicValues.language.translate("ui.navigation.library"), new JPanel());
-        legacySwitch.addTab(PublicValues.language.translate("ui.navigation.search"), new JPanel());
-        legacySwitch.addTab(PublicValues.language.translate("ui.navigation.hotlist"), new JPanel());
-        legacySwitch.addTab(PublicValues.language.translate("ui.navigation.queue"), new JPanel());
-        legacySwitch.addTab(PublicValues.language.translate("ui.navigation.feedback"), new JPanel());
+        legacySwitch.addTab(PublicValues.language.translate("tabs.home"), new JPanel());
+        legacySwitch.addTab(PublicValues.language.translate("tabs.browse"), new JPanel());
+        legacySwitch.addTab(PublicValues.language.translate("tabs.library"), new JPanel());
+        legacySwitch.addTab(PublicValues.language.translate("tabs.search"), new JPanel());
+        legacySwitch.addTab(PublicValues.language.translate("tabs.hotlist"), new JPanel());
+        legacySwitch.addTab(PublicValues.language.translate("tabs.queue"), new JPanel());
+        legacySwitch.addTab(PublicValues.language.translate("tabs.feedback"), new JPanel());
         legacySwitch.setUI(new BasicTabbedPaneUI() {
             @Override
             protected int calculateTabWidth(int tabPlacement, int tabIndex, FontMetrics metrics) {
@@ -367,20 +360,20 @@ public class ContentPanel extends JPanel {
 
     void createMenuBar() {
         PublicValues.menuBar = bar;
-        JMenu file = new JMenu(PublicValues.language.translate("ui.legacy.file"));
-        JMenu edit = new JMenu(PublicValues.language.translate("ui.legacy.edit"));
-        JMenu view = new JMenu(PublicValues.language.translate("ui.legacy.view"));
-        JMenu account = new JMenu(PublicValues.language.translate("ui.legacy.account"));
-        JMenu help = new JMenu(PublicValues.language.translate("ui.legacy.help"));
-        JMenuItem exit = new JMenuItem(PublicValues.language.translate("ui.legacy.exit"));
-        JMenuItem logout = new JMenuItem(PublicValues.language.translate("ui.legacy.logout"));
-        JMenuItem about = new JMenuItem(PublicValues.language.translate("ui.legacy.about"));
-        JMenuItem settingsItem = new JMenuItem(PublicValues.language.translate("ui.legacy.settings"));
-        JMenuItem extensions = new JMenuItem(PublicValues.language.translate("ui.legacy.extensionstore"));
-        JMenuItem audioVisualizer = new JMenuItem(PublicValues.language.translate("ui.legacy.view.audiovisualizer"));
-        JMenuItem playUri = new JMenuItem(PublicValues.language.translate("ui.legacy.playuri"));
-        JMenuItem checkUpdate = new JMenuItem(PublicValues.language.translate("updater.menubar.title"));
-        JMenuItem openlogviewer = new JMenuItem(PublicValues.language.translate("logsviewer.open"));
+        JMenu file = new JMenu(PublicValues.language.translate("menubar.file.name"));
+        JMenu edit = new JMenu(PublicValues.language.translate("menubar.edit.name"));
+        JMenu view = new JMenu(PublicValues.language.translate("menubar.view.name"));
+        JMenu account = new JMenu(PublicValues.language.translate("menubar.account.name"));
+        JMenu help = new JMenu(PublicValues.language.translate("menubar.help.name"));
+        JMenuItem exit = new JMenuItem(PublicValues.language.translate("menubar.file.exit"));
+        JMenuItem logout = new JMenuItem(PublicValues.language.translate("menubar.account.logout"));
+        JMenuItem about = new JMenuItem(PublicValues.language.translate("menubar.help.about"));
+        JMenuItem settingsItem = new JMenuItem(PublicValues.language.translate("menubar.edit.settings"));
+        JMenuItem extensions = new JMenuItem(PublicValues.language.translate("menubar.help.extension_store"));
+        JMenuItem audioVisualizer = new JMenuItem(PublicValues.language.translate("menubar.view.audio_visualizer"));
+        JMenuItem playUri = new JMenuItem(PublicValues.language.translate("menubar.file.play_uri"));
+        JMenuItem checkUpdate = new JMenuItem(PublicValues.language.translate("menubar.help.check_update"));
+        JMenuItem openlogviewer = new JMenuItem(PublicValues.language.translate("menubar.help.open_log_viewer"));
         bar.add(file);
         bar.add(edit);
         bar.add(view);
@@ -413,7 +406,7 @@ public class ContentPanel extends JPanel {
                     if(updateInfo.isPresent()) {
                         new UpdaterUI().openWithoutUpdateFunctionality(updateInfo.get());
                     }else{
-                        JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("updater.noupdatedialog.message"), PublicValues.language.translate("updater.noupdatedialog.title"), JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.updater.dialogs.no_update_available.message"), PublicValues.language.translate("dialogs.updater.title"), JOptionPane.INFORMATION_MESSAGE);
                     }
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
@@ -433,7 +426,7 @@ public class ContentPanel extends JPanel {
                 throw new RuntimeException(ex);
             }
         });
-        extensions.addActionListener(e -> {
+        extensions.addActionListener(e -> AsyncUtils.run(() -> {
             if(injectorStore == null) {
                 try {
                     injectorStore = new InjectorStore();
@@ -442,25 +435,29 @@ public class ContentPanel extends JPanel {
                 }
             }
             injectorStore.open();
-        });
-        settingsItem.addActionListener(new AsyncActionListener(e -> settings.open()));
-        logout.addActionListener(new AsyncActionListener(e -> {
-            JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("ui.logout.text"), PublicValues.language.translate("ui.logout.title"), JOptionPane.OK_CANCEL_OPTION);
-            new File(PublicValues.fileslocation, "credentials.json").delete();
-            System.exit(0);
         }));
-        about.addActionListener(new AsyncActionListener(e -> openAbout()));
+        settingsItem.addActionListener(e -> settings.open());
+        logout.addActionListener(e -> {
+            JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.logout.message"), PublicValues.language.translate("general.info"), JOptionPane.OK_CANCEL_OPTION);
+            AsyncUtils.run(() -> {
+                new File(PublicValues.fileslocation, "credentials.json").delete();
+                System.exit(0);
+            });
+        });
+        about.addActionListener(e -> AsyncUtils.run(ContentPanel::openAbout));
         exit.addActionListener(e -> System.exit(0));
-        playUri.addActionListener(new AsyncActionListener(e -> {
-            String uri = JOptionPane.showInputDialog(frame, PublicValues.language.translate("ui.playtrackuri.message"), PublicValues.language.translate("ui.playtrackuri.title"), JOptionPane.PLAIN_MESSAGE);
+        playUri.addActionListener(e -> {
+            String uri = JOptionPane.showInputDialog(frame, PublicValues.language.translate("dialogs.play_track_uri.message"), PublicValues.language.translate("dialogs.play_track_uri.title"), JOptionPane.PLAIN_MESSAGE);
             if(uri == null || uri.isEmpty()) {
                 return;
             }else{
                 if(!(uri.split(":").length > 2)) return;
             }
-            InstanceManager.getSpotifyPlayer().load(uri, true, PublicValues.shuffle);
-            SpotifyXPEvents.queueUpdate.trigger();
-        }));
+            AsyncUtils.run(() -> {
+                InstanceManager.getSpotifyPlayer().load(uri, true, PublicValues.shuffle);
+                SpotifyXPEvents.queueUpdate.trigger();
+            });
+        });
     }
 
     @FunctionalInterface
@@ -557,7 +554,7 @@ public class ContentPanel extends JPanel {
         JMenu helpMenu = null;
         for (int i = 0; i < bar.getMenuCount(); i++) {
             JMenu menu = bar.getMenu(i);
-            if (menu.getText().equals(PublicValues.language.translate("ui.legacy.help"))) {
+            if (menu.getText().equals(PublicValues.language.translate("menubar.help.name"))) {
                 helpMenu = menu;
                 break;
             }

@@ -23,7 +23,8 @@ import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.history.PlaybackHistory;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
-import com.spotifyxp.utils.AsyncMouseListener;
+import com.spotifyxp.utils.AsyncUtils;
+import com.spotifyxp.utils.ReentryGuard;
 import com.spotifyxp.utils.SpotifyUtils;
 import com.spotifyxp.utils.TrackUtils;
 import org.jetbrains.annotations.Nullable;
@@ -42,9 +43,13 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class HotList extends JSplitPane implements View {
+    private static final String CACHE_ID = "recommendations";
+
     public static DefTable hotListPlaylistsTable;
     public static DefTable hotListSongsTable;
     public static JScrollPane hotListPlaylistsScrollPanel;
@@ -53,37 +58,45 @@ public class HotList extends JSplitPane implements View {
     public static final ArrayList<String> hotListSongListCache = new ArrayList<>();
     public static ContextMenu hotListPlaylistsPanelRightClickMenu;
     public static ContextMenu hotListSongsTablecontextmenu;
+    private static final ReentryGuard songsLoadGuard = new ReentryGuard();
 
     public HotList() {
         setOrientation(JSplitPane.HORIZONTAL_SPLIT);
         setVisible(false);
 
         hotListPlaylistsTable = new DefTable();
-        hotListPlaylistsTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("ui.hotlist.playlistlist.playlists")}));
+        hotListPlaylistsTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("general.name")}));
         hotListPlaylistsTable.setForeground(PublicValues.globalFontColor);
         hotListPlaylistsTable.getTableHeader().setForeground(PublicValues.globalFontColor);
         hotListPlaylistsTable.getColumnModel().getColumn(0).setPreferredWidth(623);
         hotListPlaylistsTable.setFillsViewportHeight(true);
         hotListPlaylistsTable.setColumnSelectionAllowed(true);
         hotListPlaylistsTable.getTableHeader().setReorderingAllowed(false);
-        hotListPlaylistsTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        hotListPlaylistsTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    ((DefaultTableModel) hotListSongsTable.getModel()).setRowCount(0);
-                    hotListSongListCache.clear();
-                    try {
-                        for (Metadata.Track track : SpotifyUtils.getAllTracksAlbum(hotListPlaylistCache.get(hotListPlaylistsTable.getSelectedRow()))) {
-                            String a = TrackUtils.getArtists(track.getArtistList());
-                            hotListSongListCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid().toByteArray())).toSpotifyUri());
-                            ((DefaultTableModel) hotListSongsTable.getModel()).addRow(new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
+                    if (!songsLoadGuard.tryEnter()) return;
+                    AsyncUtils.run(() -> {
+                        try {
+                            hotListSongsTable.addModifyAction(() -> ((DefaultTableModel) hotListSongsTable.getModel()).setRowCount(0));
+                            hotListSongListCache.clear();
+                            try {
+                                for (Metadata.Track track : SpotifyUtils.getAllTracksAlbum(hotListPlaylistCache.get(hotListPlaylistsTable.getSelectedRow()))) {
+                                    String a = TrackUtils.getArtists(track.getArtistList());
+                                    hotListSongListCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid().toByteArray())).toSpotifyUri());
+                                    hotListSongsTable.addModifyAction(() -> ((DefaultTableModel) hotListSongsTable.getModel()).addRow(new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())}));
+                                }
+                            } catch (IOException | TokenProvider.TokenException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        } finally {
+                            songsLoadGuard.exit();
                         }
-                    } catch (IOException | TokenProvider.TokenException ex) {
-                        throw new RuntimeException(ex);
-                    }
+                    });
                 }
             }
-        }));
+        });
 
         hotListPlaylistsScrollPanel = new JScrollPane();
         hotListPlaylistsScrollPanel.setPreferredSize(new Dimension(259, getHeight()));
@@ -91,16 +104,21 @@ public class HotList extends JSplitPane implements View {
         setLeftComponent(hotListPlaylistsScrollPanel);
 
         hotListPlaylistsPanelRightClickMenu = new ContextMenu(hotListPlaylistsTable, hotListPlaylistCache, getClass());
-        hotListPlaylistsPanelRightClickMenu.addItem(PublicValues.language.translate("ui.general.refresh"), () -> {
+        hotListPlaylistsPanelRightClickMenu.addItem(PublicValues.language.translate("general.refresh"), () -> {
             hotListPlaylistCache.clear();
             hotListSongListCache.clear();
-            ((DefaultTableModel) hotListSongsTable.getModel()).setRowCount(0);
-            ((DefaultTableModel) hotListPlaylistsTable.getModel()).setRowCount(0);
+            hotListSongsTable.addModifyAction(() -> ((DefaultTableModel) hotListSongsTable.getModel()).setRowCount(0));
+            hotListPlaylistsTable.addModifyAction(() -> ((DefaultTableModel) hotListPlaylistsTable.getModel()).setRowCount(0));
+            try {
+                PublicValues.cache.namespace("HotList").remove(CACHE_ID);
+            } catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+            }
             fetchHotlist();
         });
 
         hotListSongsTable = new DefTable();
-        hotListSongsTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("ui.hotlist.songlist.songtitle"), PublicValues.language.translate("ui.hotlist.songlist.filesize"), PublicValues.language.translate("ui.hotlist.songlist.bitrate"), PublicValues.language.translate("ui.hotlist.songlist.length")}));
+        hotListSongsTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{PublicValues.language.translate("general.name"), PublicValues.language.translate("general.filesize"), PublicValues.language.translate("general.bitrate"), PublicValues.language.translate("general.length")}));
         hotListSongsTable.getColumnModel().getColumn(0).setPreferredWidth(363);
         hotListSongsTable.getColumnModel().getColumn(1).setPreferredWidth(89);
         hotListSongsTable.getColumnModel().getColumn(3).setPreferredWidth(96);
@@ -108,16 +126,18 @@ public class HotList extends JSplitPane implements View {
         hotListSongsTable.setColumnSelectionAllowed(true);
         hotListSongsTable.setForeground(PublicValues.globalFontColor);
         hotListSongsTable.getTableHeader().setForeground(PublicValues.globalFontColor);
-        hotListSongsTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        hotListSongsTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 hotListSongsTable.setColumnSelectionInterval(0, hotListSongsTable.getColumnCount() - 1);
                 if (e.getClickCount() == 2) {
-                    InstanceManager.getPlayer().getPlayer().load(hotListSongListCache.get(hotListSongsTable.getSelectedRow()), true, PublicValues.shuffle);
-                    TrackUtils.addAllToQueue(hotListSongListCache, hotListSongsTable);
+                    AsyncUtils.run(() -> {
+                        InstanceManager.getPlayer().getPlayer().load(hotListSongListCache.get(hotListSongsTable.getSelectedRow()), true, PublicValues.shuffle);
+                        TrackUtils.addAllToQueue(hotListSongListCache, hotListSongsTable);
+                    });
                 }
             }
-        }));
+        });
 
         hotListSongsScrollPanel = new JScrollPane();
         hotListSongsScrollPanel.setViewportView(hotListSongsTable);
@@ -126,7 +146,32 @@ public class HotList extends JSplitPane implements View {
         hotListSongsTablecontextmenu = new ContextMenu(hotListSongsTable, hotListSongListCache, getClass());
     }
 
+    private static class HotListEntry {
+        String uri;
+        String display;
+
+        HotListEntry(String uri, String display) {
+            this.uri = uri;
+            this.display = display;
+        }
+    }
+
     public static void fetchHotlist() {
+        if (PublicValues.cache.namespace("HotList").has(CACHE_ID)) {
+            try {
+                HotListEntry[] entries = PublicValues.cache.namespace("HotList").get(CACHE_ID, HotListEntry[].class);
+                for (HotListEntry entry : entries) {
+                    hotListPlaylistsTable.addModifyAction(() -> {
+                        hotListPlaylistCache.add(entry.uri);
+                        ((DefaultTableModel) hotListPlaylistsTable.getModel()).addRow(new Object[]{entry.display});
+                    });
+                }
+            } catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+            }
+            return;
+        }
+
         if (PublicValues.history == null) return;
 
         int historySize = PublicValues.history.getSize();
@@ -137,22 +182,24 @@ public class HotList extends JSplitPane implements View {
 
         try {
             List<RecommendationsAlgorithm.RecommendationItem> recommended = RecommendationsAlgorithm.computeRecommendations(recentTracks);
-            ApiClient.BatchedRequestHelper batchedRequestHelper = new ApiClient.BatchedRequestHelper();
+            List<HotListEntry> cacheEntries = new ArrayList<>();
 
             for (RecommendationsAlgorithm.RecommendationItem item : recommended) {
                 switch (item.type) {
                     case ALBUM: {
+                        String display = item.name + " - " + item.artistName;
+                        cacheEntries.add(new HotListEntry(item.uri, display));
                         hotListPlaylistsTable.addModifyAction(() -> {
                             hotListPlaylistCache.add(item.uri);
-                            ((DefaultTableModel) hotListPlaylistsTable.getModel()).addRow(new Object[]{item.name + " - " + item.artistName});
+                            ((DefaultTableModel) hotListPlaylistsTable.getModel()).addRow(new Object[]{display});
                         });
                         break;
                     }
                 }
             }
 
-            batchedRequestHelper.execute(PublicValues.session.api(), null);
-        } catch (IOException | TokenProvider.TokenException | MercuryClient.MercuryException e) {
+            PublicValues.cache.namespace("HotList").put(CACHE_ID, cacheEntries);
+        } catch (IOException | MercuryClient.MercuryException e) {
             ConsoleLogging.Throwable(e);
         }
     }
@@ -249,23 +296,35 @@ public class HotList extends JSplitPane implements View {
         }
 
         private static Map<String, ArtistNode> buildHierarchy(List<PlaybackHistory.SongEntry> history) {
+            // First pass: collect each distinct artist's URI/name with no network calls.
+            Map<String, String> artistNamesByUri = new LinkedHashMap<>();
+            for (PlaybackHistory.SongEntry entry : history) {
+                artistNamesByUri.putIfAbsent(entry.artistURI, entry.artistName);
+            }
+
+            // Fan the related-artists lookups out in parallel instead of one-at-a-time.
+            Map<String, Future<UnofficialSpotifyAPI.ArtistUnionRelatedArtists>> relatedArtistsFutures = new HashMap<>();
+            for (String artistURI : artistNamesByUri.keySet()) {
+                relatedArtistsFutures.put(artistURI, AsyncUtils.submit(() -> UnofficialSpotifyAPI.getArtistRelatedArtists(artistURI)));
+            }
+
             Map<String, ArtistNode> artists = new HashMap<>();
+            for (Map.Entry<String, String> e : artistNamesByUri.entrySet()) {
+                String artistURI = e.getKey();
+                try {
+                    ArtistNode a = new ArtistNode();
+                    a.artistURI = artistURI;
+                    a.relatedArtists = relatedArtistsFutures.get(artistURI).get();
+                    a.name = e.getValue();
+                    artists.put(artistURI, a);
+                } catch (InterruptedException | ExecutionException ex) {
+                    ConsoleLogging.Throwable(ex);
+                    ConsoleLogging.warning("Failed to fetch related artists for " + artistURI);
+                }
+            }
 
             for (PlaybackHistory.SongEntry entry : history) {
-
-                ArtistNode artist = artists.computeIfAbsent(entry.artistURI, uri -> {
-                    try {
-                        ArtistNode a = new ArtistNode();
-                        a.artistURI = uri;
-                        a.relatedArtists = UnofficialSpotifyAPI.getArtistRelatedArtists(a.artistURI);
-                        a.name = entry.artistName;
-                        return a;
-                    } catch (IOException | TokenProvider.TokenException e) {
-                        ConsoleLogging.Throwable(e);
-                        ConsoleLogging.warning("Failed to fetch related artists for " + entry.artistURI);
-                        return null;
-                    }
-                });
+                ArtistNode artist = artists.get(entry.artistURI);
                 if (artist == null) continue;
                 artist.playCount++;
 
@@ -430,5 +489,12 @@ public class HotList extends JSplitPane implements View {
     @Override
     public void makeInvisible() {
         setVisible(false);
+
+        if (!hotListPlaylistCache.isEmpty()) {
+            hotListPlaylistCache.clear();
+            hotListSongListCache.clear();
+            hotListSongsTable.addModifyAction(() -> ((DefaultTableModel) hotListSongsTable.getModel()).setRowCount(0));
+            hotListPlaylistsTable.addModifyAction(() -> ((DefaultTableModel) hotListPlaylistsTable.getModel()).setRowCount(0));
+        }
     }
 }

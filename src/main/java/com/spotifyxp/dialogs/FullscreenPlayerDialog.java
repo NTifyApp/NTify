@@ -109,8 +109,8 @@ public class FullscreenPlayerDialog {
                                     xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(track.getAlbum().getCoverGroup().getImageList()).getFileId()).toLowerCase()
                     ).openStream());
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    ConsoleLogging.warning("Failed to load cover for track");
+                    ConsoleLogging.Throwable(e);
+                    ConsoleLogging.error("Failed to load cover for track");
                     PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
                 }
             } else {
@@ -122,8 +122,8 @@ public class FullscreenPlayerDialog {
                                     xyz.gianlu.librespot.common.Utils.bytesToHex(SpotifyUtils.getImageForSystem(episode.getCoverImage().getImageList()).getFileId()).toLowerCase()
                     ).openStream());
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    ConsoleLogging.warning("Failed to load cover for episode");
+                    ConsoleLogging.Throwable(e);
+                    ConsoleLogging.error("Failed to load cover for episode");
                     PlayerArea.playerImage.setImage(SVGUtils.svgToImageInputStreamSameSize(Graphics.NOTHINGPLAYING.getInputStream(), PlayerArea.playerImage.getSize()));
                 }
             }
@@ -141,7 +141,7 @@ public class FullscreenPlayerDialog {
     }
 
     public void open() throws IOException {
-        frame = new JFrame(ApplicationUtils.getName() + " - Fullscreen Player");
+        frame = new JFrame(PublicValues.language.translate("dialogs.fullscreen_player.title"));
         frame.setContentPane(contentPanel);
         frame.setUndecorated(true);
         frame.setAlwaysOnTop(true);

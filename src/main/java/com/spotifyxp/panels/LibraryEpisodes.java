@@ -44,19 +44,37 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class LibraryEpisodes extends JScrollPane {
+    private static final String CACHE_ID = "episodes";
+
     public static DefTable episodesTable;
     public static ArrayList<String> episodesUris;
     public static ContextMenu contextMenu;
+
+    private static class EpisodeRow {
+        String uri;
+        String episodeName;
+        String showName;
+        String filesize;
+        String length;
+
+        EpisodeRow(String uri, String episodeName, String showName, String filesize, String length) {
+            this.uri = uri;
+            this.episodeName = episodeName;
+            this.showName = showName;
+            this.filesize = filesize;
+            this.length = length;
+        }
+    }
 
     public LibraryEpisodes() {
         episodesUris = new ArrayList<>();
 
         episodesTable = new DefTable();
         episodesTable.setModel(new DefaultTableModel(new Object[][]{}, new Object[]{
-                PublicValues.language.translate("ui.navigation.library.episodes.table.column1"),
-                PublicValues.language.translate("ui.navigation.library.episodes.table.column2"),
-                PublicValues.language.translate("ui.navigation.library.episodes.table.column3"),
-                PublicValues.language.translate("ui.navigation.library.episodes.table.column4")
+                PublicValues.language.translate("library.episodes.table.episode_name"),
+                PublicValues.language.translate("library.general.show_name"),
+                PublicValues.language.translate("general.filesize"),
+                PublicValues.language.translate("general.length")
         }));
         episodesTable.setForeground(PublicValues.globalFontColor);
         episodesTable.getTableHeader().setForeground(PublicValues.globalFontColor);
@@ -74,15 +92,20 @@ public class LibraryEpisodes extends JScrollPane {
         });
 
         contextMenu = new ContextMenu(episodesTable, episodesUris, getClass());
-        contextMenu.addItem(PublicValues.language.translate("ui.general.refresh"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("general.refresh"), new Runnable() {
             @Override
             public void run() {
-                ((DefaultTableModel) episodesTable.getModel()).setRowCount(0);
+                episodesTable.addModifyAction(() -> ((DefaultTableModel) episodesTable.getModel()).setRowCount(0));
                 episodesUris.clear();
+                try {
+                    PublicValues.cache.namespace("LibraryEpisodes").remove(CACHE_ID);
+                } catch (IOException e) {
+                    ConsoleLogging.Throwable(e);
+                }
                 new Thread(() -> fetch()).start();
             }
         });
-        contextMenu.addItem(PublicValues.language.translate("ui.library.tabs.episodes.ctxmenu.remove"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("library.episodes.context_menu.remove"), new Runnable() {
             @Override
             public void run() {
                 if(episodesTable.getSelectedRow() == -1) return;
@@ -103,14 +126,14 @@ public class LibraryEpisodes extends JScrollPane {
                 }).start();
             }
         });
-        contextMenu.addItem(PublicValues.language.translate("ui.library.tabs.episodes.ctxmenu.getdescep"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("library.episodes.context_menu.view_description"), new Runnable() {
             @Override
             public void run() {
                 new Thread(() -> {
                     try {
                         Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(episodesUris.get(episodesTable.getSelectedRow())));
                         openDialog(
-                                String.format(PublicValues.language.translate("ui.library.tabs.episodes.epdescdialog.title"), episode.getName()),
+                                String.format(PublicValues.language.translate("dialogs.library.episode_description.title"), episode.getName()),
                                 episode.getDescription()
                         );
                     }catch (IOException | TokenProvider.TokenException e) {
@@ -119,14 +142,14 @@ public class LibraryEpisodes extends JScrollPane {
                 }).start();
             }
         });
-        contextMenu.addItem(PublicValues.language.translate("ui.library.tabs.episodes.ctxmenu.getdescshow"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("library.episodes.context_menu.view_show_description"), new Runnable() {
             @Override
             public void run() {
                 new Thread(() -> {
                     try {
                         Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(episodesUris.get(episodesTable.getSelectedRow())));
                         openDialog(
-                                String.format(PublicValues.language.translate("ui.library.tabs.episodes.showdescdialog.title"), episode.getShow().getName()),
+                                String.format(PublicValues.language.translate("dialogs.library.show_description.title"), episode.getShow().getName()),
                                 episode.getShow().getDescription()
                         );
                     }catch (IOException | TokenProvider.TokenException e) {
@@ -166,7 +189,8 @@ public class LibraryEpisodes extends JScrollPane {
                 for(int uri = 0; uri < episodesUris.size(); uri++) {
                     if(episodesUris.get(uri).equals(change.getUri())) {
                         episodesUris.remove(uri);
-                        ((DefaultTableModel) episodesTable.getModel()).removeRow(uri);
+                        int removeIndex = uri;
+                        episodesTable.addModifyAction(() -> ((DefaultTableModel) episodesTable.getModel()).removeRow(removeIndex));
                         return;
                     }
                 }
@@ -177,7 +201,21 @@ public class LibraryEpisodes extends JScrollPane {
     }
 
     private void fetch() {
+        if (PublicValues.cache.namespace("LibraryEpisodes").has(CACHE_ID)) {
+            try {
+                EpisodeRow[] rows = PublicValues.cache.namespace("LibraryEpisodes").get(CACHE_ID, EpisodeRow[].class);
+                for (EpisodeRow row : rows) {
+                    episodesUris.add(row.uri);
+                    episodesTable.addModifyAction(() -> ((DefaultTableModel) episodesTable.getModel()).addRow(new Object[]{row.episodeName, row.showName, row.filesize, row.length}));
+                }
+            } catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+            }
+            return;
+        }
+
         try {
+            ArrayList<EpisodeRow> cacheRows = new ArrayList<>();
             UnofficialSpotifyAPI.LibraryResponse userLibraryResponse = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Playlists"}, new String[] {"YOUR_EPISODES_V2"}, 10, 0);
             String episodePlaylistUri = null;
             for(UnofficialSpotifyAPI.LibraryItemEntry item : userLibraryResponse.data.me.libraryV3.items) {
@@ -204,20 +242,24 @@ public class LibraryEpisodes extends JScrollPane {
                         .build(), data -> {
                     Metadata.Episode episode = Metadata.Episode.parseFrom(data[0].getValue());
                     episodesUris.add(episodeItem.getUri());
+                    String filesize = TrackUtils.calculateFileSizeKb(episode.getDuration());
+                    String length = TrackUtils.getHHMMSSOfTrack(episode.getDuration());
+                    cacheRows.add(new EpisodeRow(episodeItem.getUri(), episode.getName(), episode.getShow().getName(), filesize, length));
                     episodesTable.addModifyAction(new Runnable() {
                         @Override
                         public void run() {
                             ((DefaultTableModel) episodesTable.getModel()).addRow(new Object[]{
                                     episode.getName(),
                                     episode.getShow().getName(),
-                                    TrackUtils.calculateFileSizeKb(episode.getDuration()),
-                                    TrackUtils.getHHMMSSOfTrack(episode.getDuration())
+                                    filesize,
+                                    length
                             });
                         }
                     });
                 });
             }
             requestHelper.execute(PublicValues.session.api(), (exception, response) -> ConsoleLogging.Throwable(exception));
+            PublicValues.cache.namespace("LibraryEpisodes").put(CACHE_ID, cacheRows);
         } catch (IOException | TokenProvider.TokenException e) {
             ConsoleLogging.Throwable(e);
         }
@@ -245,5 +287,23 @@ public class LibraryEpisodes extends JScrollPane {
 
     public void fill() {
         new Thread(() -> fetch()).start();
+    }
+
+    public static void evict() {
+        if (episodesUris == null || episodesUris.isEmpty()) return;
+
+        DefaultTableModel model = (DefaultTableModel) episodesTable.getModel();
+        ArrayList<EpisodeRow> rows = new ArrayList<>();
+        for (int i = 0; i < model.getRowCount() && i < episodesUris.size(); i++) {
+            rows.add(new EpisodeRow(episodesUris.get(i), (String) model.getValueAt(i, 0), (String) model.getValueAt(i, 1), (String) model.getValueAt(i, 2), (String) model.getValueAt(i, 3)));
+        }
+        try {
+            PublicValues.cache.namespace("LibraryEpisodes").put(CACHE_ID, rows);
+        } catch (IOException e) {
+            ConsoleLogging.Throwable(e);
+        }
+
+        episodesUris.clear();
+        episodesTable.addModifyAction(() -> model.setRowCount(0));
     }
 }

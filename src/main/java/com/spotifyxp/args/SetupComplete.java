@@ -1,5 +1,5 @@
 /*
- * Copyright [2023] [Gianluca Beil]
+ * Copyright [2023-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class SetupComplete implements Argument {
 
     @Override
     public String getDescription() {
-        return "Run SpotifyXP without Setup";
+        return "Run NTIfy without Setup";
     }
 
     @Override

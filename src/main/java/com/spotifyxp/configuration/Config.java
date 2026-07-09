@@ -49,6 +49,7 @@ public class Config {
     public @interface HiddenConfigValue {
         String id();
         String category();
+        String translationKey() default "";
         Class<? extends ConfigValueProvider> allowedValues() default DefaultConfigValueProvider.class;
     }
 
@@ -57,6 +58,7 @@ public class Config {
     public @interface CheckBox {
         String id();
         String category();
+        String translationKey() default "";
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -64,6 +66,7 @@ public class Config {
     public @interface Text {
         String id();
         String category();
+        String translationKey() default "";
         int characterLimit() default Integer.MAX_VALUE;
         boolean allowEmpty() default true;
         Class<? extends ConfigValueProvider> allowedValues() default DefaultConfigValueProvider.class;
@@ -74,6 +77,7 @@ public class Config {
     public @interface Numbers {
         String id();
         String category();
+        String translationKey() default "";
         int min() default 0;
         int max() default Integer.MAX_VALUE;
     }
@@ -83,6 +87,7 @@ public class Config {
     public @interface Dropdown {
         String id();
         String category();
+        String translationKey() default "";
         Class<? extends ConfigValueProvider<String>> values();
         Class<? extends ConfigValueProvider<?>> mapping() default DefaultIntMappingProvider.class;
     }
@@ -93,6 +98,8 @@ public class Config {
         String id();
 
         String category();
+
+        String translationKey() default "";
 
         Class<? extends CustomComponentCallback> component();
 
@@ -157,7 +164,7 @@ public class Config {
                 }
                 try {
                     if (!new File(configPath).createNewFile()) {
-                        ConsoleLogging.error(PublicValues.language.translate("configuration.error.failedcreateconfig"));
+                        ConsoleLogging.error("Can't create config file");
                     }
                 } catch (IOException e) {
                     ConsoleLogging.Throwable(e);

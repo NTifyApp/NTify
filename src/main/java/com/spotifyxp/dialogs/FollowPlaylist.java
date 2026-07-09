@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,25 +83,25 @@ public class FollowPlaylist extends JDialog {
     public FollowPlaylist(OnOptionSelected onOptionSelected) throws IOException {
         super();
 
-        description.setText(PublicValues.language.translate("followplaylist.dialog.description"));
+        description.setText(PublicValues.language.translate("dialogs.follow_playlist.visibility.name"));
         description.setForeground(PublicValues.globalFontColor);
 
         String[] items = new String[]{
-                PublicValues.language.translate("followplaylist.dialog.option1"),
-                PublicValues.language.translate("followplaylist.dialog.option2"),
+                PublicValues.language.translate("dialogs.follow_playlist.visibility.public"),
+                PublicValues.language.translate("dialogs.follow_playlist.visibility.private"),
         };
         DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(items);
         options.setModel(model);
         options.setForeground(PublicValues.globalFontColor);
-        options.setSelectedItem(PublicValues.language.translate("followplaylist.dialog.option2"));
+        options.setSelectedItem(items[1]);
 
-        okButton.setText(PublicValues.language.translate("followplaylist.dialog.ok"));
+        okButton.setText(PublicValues.language.translate("general.ok"));
         okButton.addActionListener(e -> {
             onOptionSelected.optionSelected(options.getSelectedIndex() == 0);
             dispose();
         });
 
-        cancelButton.setText(PublicValues.language.translate("followplaylist.dialog.cancel"));
+        cancelButton.setText(PublicValues.language.translate("general.cancel"));
         cancelButton.addActionListener(e -> dispose());
     }
 
@@ -117,7 +117,7 @@ public class FollowPlaylist extends JDialog {
                 dispose();
             }
         });
-        setTitle(PublicValues.language.translate("followplaylist.dialog.title"));
+        setTitle(PublicValues.language.translate("dialogs.follow_playlist.title"));
         pack();
         setVisible(true);
     }

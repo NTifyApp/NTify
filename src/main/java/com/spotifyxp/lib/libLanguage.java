@@ -1,5 +1,5 @@
 /*
- * Copyright [2023-2026] [Gianluca Beil]
+ * Copyright [2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,41 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.spotifyxp.lib;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
-import com.spotifyxp.utils.ApplicationUtils;
 import org.apache.commons.io.IOUtils;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
-@SuppressWarnings("Convert2Lambda")
 public class libLanguage {
-    /*
-        How to use:
-
-        1. Define if library auto-finds the language or not (when not define the language code yourself look at: https://www.science.co.il/language/Locale-codes.php line 'Language Code' in the table)
-        2. Set Language Files folder
-        3. Enter translation key z.b hello.world
-
-        INFO: All files must be located in the resources folder
-
-
-        Language skeleton (Name the file as the language code it has z.b de.json)
-
-
-        {
-           "hello.world" : "Hello World",
-           "hello.world2" : "Hello World 2"
-         }
-         */
-    @SuppressWarnings("NonAsciiCharacters")
     public enum Language {
         ABKHAZIAN("Abkhazian", "ab"),
         AFAR("Afar", "aa"),
@@ -249,7 +232,7 @@ public class libLanguage {
         }
 
         public static String getNameFromCode(String code) {
-            for (Language e : Language.values()) {
+            for (libLanguage.Language e : libLanguage.Language.values()) {
                 if (e.sc.equalsIgnoreCase(code)) {
                     return e.sn;
                 }
@@ -258,7 +241,7 @@ public class libLanguage {
         }
 
         public static String getCodeFromName(String name) {
-            for (Language e : Language.values()) {
+            for (libLanguage.Language e : libLanguage.Language.values()) {
                 if (e.sn.equalsIgnoreCase(name)) {
                     return e.sc;
                 }
@@ -267,56 +250,104 @@ public class libLanguage {
         }
     }
 
+    public interface TranslationProvider {
+        void init() throws IOException;
+        String translate(String key);
+    }
+
+    public enum TranslationProviders {
+        JSON,
+        YAML
+    }
+
+    private class JSONTranslationProvider implements TranslationProvider {
+        private JsonObject jsonCache;
+
+        @Override
+        public void init() throws IOException {
+            jsonCache = new Gson().fromJson(IOUtils.toString(clazz.getResourceAsStream("/" + languageFolder + "/" + languageCode + ".json"), StandardCharsets.UTF_8), JsonObject.class);
+        }
+
+        @Override
+        public String translate(String key) {
+            return jsonCache.has(key) ? jsonCache.get(key).getAsString() : key;
+        }
+    }
+
+    private class YAMLTranslationProvider implements TranslationProvider {
+        private final Yaml yaml = new Yaml();
+        private Map<String, Object> yamlCache = new HashMap<>();
+
+        @Override
+        public void init() throws IOException {
+            try (InputStream inputStream = clazz.getResourceAsStream("/" + languageFolder + "/" + languageCode + ".yaml")) {
+                if (inputStream == null) {
+                    throw new IOException("Translation file not found for language code: " + languageCode);
+                }
+
+                yamlCache = yaml.load(inputStream);
+            }
+        }
+
+        @Override
+        public String translate(String key) {
+            if (key == null || key.isEmpty()) {
+                return key;
+            }
+
+            String[] parts = key.split("\\.");
+            Object current = yamlCache;
+
+            for (String part : parts) {
+                if (!(current instanceof Map)) {
+                    return key;
+                }
+                current = ((Map<?, ?>) current).get(part);
+                if (current == null) {
+                    return key;
+                }
+            }
+
+            return current.toString();
+        }
+    }
+
     private final Class<?> clazz;
+    private String languageCode = System.getProperty("user.language");
+    private String languageFolder = "";
+    private TranslationProvider translationProvider;
 
     public libLanguage(Class<?> clazz) {
         this.clazz = clazz;
     }
 
-    boolean afl = false;
-    String languageCode = System.getProperty("user.language");
-    String lf = "";
-
     public Locale getLocale() {
         return Locale.forLanguageTag(Language.getNameFromCode(languageCode));
     }
 
+    /**
+     * Stub, has no implementation. This method is retained because of compatibility reasons
+     */
+    @Deprecated
+    public void setAutoFindLanguage() {
+    }
+
     public void setNoAutoFindLanguage(String code) {
-        afl = false;
         languageCode = code;
     }
 
-    boolean langNotFound = false;
-
-    public void setAutoFindLanguage() {
-        afl = true;
-    }
-
     public void setLanguageFolder(String path) {
-        lf = path;
+        languageFolder = path;
     }
 
-    public String removeComment(String json) {
-        StringBuilder builder = new StringBuilder();
-        for (String s : json.split("\n")) {
-            if (s.replaceAll(" ", "").startsWith("//")) {
+    public String translateHTML(String htmlString) {
+        StringBuilder cache = new StringBuilder();
+        for (String s : htmlString.split("\n")) {
+            if (s.equalsIgnoreCase("")) {
                 continue;
             }
-            builder.append(s);
-        }
-        return builder.toString();
-    }
-
-    JsonObject jsoncache = null;
-
-    public String translateHTML(String htmlfile) throws IOException {
-        StringBuilder cache = new StringBuilder();
-        for (String s : htmlfile.split("\n")) {
-            if (s.equalsIgnoreCase("")) {
-                continue; //Don't waste time here
-            }
             if (s.contains("(TRANSLATE)")) {
-                s = s.replace(s.split("\\(TRANSLATE\\)")[1].replace("(TRANSLATE)", ""), PublicValues.language.translate(s.split("\\(TRANSLATE\\)")[1].replace("(TRANSLATE)", "")));
+                s = s.replace(s.split("\\(TRANSLATE\\)")[1].replace("(TRANSLATE)", ""), translate(s.split("\\(TRANSLATE\\)")[1].replace("(TRANSLATE)", "")));
                 s = s.replace("(TRANSLATE)", "");
             }
             cache.append(s);
@@ -325,33 +356,31 @@ public class libLanguage {
     }
 
     public String translate(String key) {
-        final String[] ret = {key};
-        if(jsoncache == null) {
+        if (translationProvider == null) {
+            // Compatibility with old versions, will be removed in the future
+            ConsoleLogging.warning("Translation provider not set, using legacy JSON provider. JSON i18n support will be removed in the future. Please set the translation provider using setTranslationProvider() to avoid this message in the future.");
             try {
-                jsoncache = new Gson().fromJson(removeComment(IOUtils.toString(clazz.getResourceAsStream("/" + lf + "/" + languageCode + ".json"), StandardCharsets.UTF_8)), JsonObject.class);
+                translationProvider = new JSONTranslationProvider();
+                translationProvider.init();
             } catch (Exception e) {
-                // Can be too early in init. So no ConsoleLogging.Throwable
-                ConsoleLogging.error("Failed to get translation for: " + key);
-                e.printStackTrace();
+                ConsoleLogging.Throwable(e);
                 return key;
             }
         }
-        try {
-            if(!jsoncache.has(key)) {
-                ConsoleLogging.error("Failed to get translation for: " + key);
-                return key;
-            }
-            ret[0] = jsoncache.get(key).getAsString();
-        } catch (Exception e) {
-            // Can be too early in init. So no ConsoleLogging.Throwable
-            e.printStackTrace();
+
+        return translationProvider.translate(key);
+    }
+
+    public void setTranslationProvider(TranslationProviders provider) throws IOException {
+        switch (provider) {
+            case JSON:
+                translationProvider = new JSONTranslationProvider();
+                break;
+            case YAML:
+                translationProvider = new YAMLTranslationProvider();
         }
-        try {
-            return ret[0].replaceAll("%APPNAME%", ApplicationUtils.getName());
-        }catch (IOException e) {
-            ConsoleLogging.Throwable(e);
-            return ret[0];
-        }
+
+        translationProvider.init();
     }
 
     public ArrayList<String> getAvailableLanguages() {
@@ -360,7 +389,7 @@ public class libLanguage {
             if (languages.contains(language.getName())) {
                 continue;
             }
-            if (clazz.getResourceAsStream("/lang/" + language.getCode() + ".json") != null) {
+            if (clazz.getResourceAsStream("/" + languageFolder + "/" + language.getCode() + ".yaml") != null) {
                 languages.add(language.getName());
             }
         }

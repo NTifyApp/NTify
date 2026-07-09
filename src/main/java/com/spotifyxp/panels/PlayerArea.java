@@ -89,55 +89,59 @@ public class PlayerArea extends JPanel {
         playerAreaShuffleButton.getJComponent().setBackground(frame.getBackground());
         add(playerAreaShuffleButton.getJComponent());
         playerAreaShuffleButton.setImage(Graphics.SHUFFLE.getPath());
-        playerAreaShuffleButton.getJComponent().addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        playerAreaShuffleButton.getJComponent().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                if (playerAreaShuffleButton.isFilled) {
-                    PublicValues.shuffle = false;
-                    InstanceManager.getPlayer().getPlayer().setShuffle(false);
-                    try {
-                        InstanceManager.getSpotifyPlayer().tracks(true).next.clear();
-                        for (String s : Shuffle.before) {
-                            InstanceManager.getSpotifyPlayer().addToQueue(s);
+                AsyncUtils.run(() -> {
+                    if (playerAreaShuffleButton.isFilled) {
+                        PublicValues.shuffle = false;
+                        InstanceManager.getPlayer().getPlayer().setShuffle(false);
+                        try {
+                            InstanceManager.getSpotifyPlayer().tracks(true).next.clear();
+                            for (String s : Shuffle.before) {
+                                InstanceManager.getSpotifyPlayer().addToQueue(s);
+                            }
+                            InstanceManager.getSpotifyPlayer().updateState();
+                        } catch (Exception e2) {
+                            ConsoleLogging.Throwable(e2);
+                            GraphicalMessage.openException(e2);
                         }
-                        InstanceManager.getSpotifyPlayer().updateState();
-                    } catch (Exception e2) {
-                        ConsoleLogging.Throwable(e2);
-                        GraphicalMessage.openException(e2);
+                        playerAreaShuffleButton.setImage(Graphics.SHUFFLE.getPath());
+                        playerAreaShuffleButton.isFilled = false;
+                    } else {
+                        PublicValues.shuffle = true;
+                        InstanceManager.getPlayer().getPlayer().setShuffle(true);
+                        Shuffle.makeShuffle();
+                        playerAreaShuffleButton.isFilled = true;
+                        playerAreaShuffleButton.setImage(Graphics.SHUFFLESELECTED.getPath());
                     }
-                    playerAreaShuffleButton.setImage(Graphics.SHUFFLE.getPath());
-                    playerAreaShuffleButton.isFilled = false;
-                } else {
-                    PublicValues.shuffle = true;
-                    InstanceManager.getPlayer().getPlayer().setShuffle(true);
-                    Shuffle.makeShuffle();
-                    playerAreaShuffleButton.isFilled = true;
-                    playerAreaShuffleButton.setImage(Graphics.SHUFFLESELECTED.getPath());
-                }
+                });
             }
-        }));
+        });
 
         playerAreaRepeatingButton = new JSVGPanel();
         playerAreaRepeatingButton.getJComponent().setBounds(540, 75, 20, 20);
         playerAreaRepeatingButton.getJComponent().setBackground(frame.getBackground());
         add(playerAreaRepeatingButton.getJComponent());
         playerAreaRepeatingButton.setImage(Graphics.REPEAT.getPath());
-        playerAreaRepeatingButton.getJComponent().addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        playerAreaRepeatingButton.getJComponent().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                if (playerAreaRepeatingButton.isFilled) {
-                    InstanceManager.getPlayer().getPlayer().setRepeat(false, false);
-                    playerAreaRepeatingButton.setImage(Graphics.REPEAT.getPath());
-                    playerAreaRepeatingButton.isFilled = false;
-                } else {
-                    InstanceManager.getPlayer().getPlayer().setRepeat(true, false);
-                    playerAreaRepeatingButton.isFilled = true;
-                    playerAreaRepeatingButton.setImage(Graphics.REPEATSELECTED.getPath());
-                }
+                AsyncUtils.run(() -> {
+                    if (playerAreaRepeatingButton.isFilled) {
+                        InstanceManager.getPlayer().getPlayer().setRepeat(false, false);
+                        playerAreaRepeatingButton.setImage(Graphics.REPEAT.getPath());
+                        playerAreaRepeatingButton.isFilled = false;
+                    } else {
+                        InstanceManager.getPlayer().getPlayer().setRepeat(true, false);
+                        playerAreaRepeatingButton.isFilled = true;
+                        playerAreaRepeatingButton.setImage(Graphics.REPEATSELECTED.getPath());
+                    }
+                });
             }
-        }));
+        });
 
         playerImage = new JImagePanel();
         playerImage.setBounds(10, 11, 78, 78);
@@ -152,34 +156,36 @@ public class PlayerArea extends JPanel {
         playerAreaLyricsButton.getJComponent().setBackground(frame.getBackground());
         add(playerAreaLyricsButton.getJComponent());
         playerAreaLyricsButton.setImage(Graphics.MICROPHONE.getPath());
-        playerAreaLyricsButton.getJComponent().addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        playerAreaLyricsButton.getJComponent().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                try {
-                    if (PublicValues.lyricsDialog == null) {
-                        PublicValues.lyricsDialog = new LyricsDialog();
-                    }
-                    if (playerAreaLyricsButton.isFilled) {
-                        PublicValues.lyricsDialog.close();
+                AsyncUtils.run(() -> {
+                    try {
+                        if (PublicValues.lyricsDialog == null) {
+                            PublicValues.lyricsDialog = new LyricsDialog();
+                        }
+                        if (playerAreaLyricsButton.isFilled) {
+                            PublicValues.lyricsDialog.close();
+                            playerAreaLyricsButton.setImage(Graphics.MICROPHONE.getPath());
+                            playerAreaLyricsButton.isFilled = false;
+                        } else {
+                            if (PublicValues.lyricsDialog.open(Objects.requireNonNull(InstanceManager.getSpotifyPlayer().currentPlayable()).toSpotifyUri())) {
+                                playerAreaLyricsButton.setImage(Graphics.MICROPHONESELECTED.getPath());
+                                playerAreaLyricsButton.isFilled = true;
+                            }
+                        }
+                    } catch (NullPointerException e2) {
                         playerAreaLyricsButton.setImage(Graphics.MICROPHONE.getPath());
                         playerAreaLyricsButton.isFilled = false;
-                    } else {
-                        if (PublicValues.lyricsDialog.open(Objects.requireNonNull(InstanceManager.getSpotifyPlayer().currentPlayable()).toSpotifyUri())) {
-                            playerAreaLyricsButton.setImage(Graphics.MICROPHONESELECTED.getPath());
-                            playerAreaLyricsButton.isFilled = true;
-                        }
+                    } catch (IOException ex) {
+                        ConsoleLogging.Throwable(ex);
+                        playerAreaLyricsButton.setImage(Graphics.MICROPHONE.getPath());
+                        playerAreaLyricsButton.isFilled = false;
                     }
-                } catch (NullPointerException e2) {
-                    playerAreaLyricsButton.setImage(Graphics.MICROPHONE.getPath());
-                    playerAreaLyricsButton.isFilled = false;
-                } catch (IOException ex) {
-                    ConsoleLogging.Throwable(ex);
-                    playerAreaLyricsButton.setImage(Graphics.MICROPHONE.getPath());
-                    playerAreaLyricsButton.isFilled = false;
-                }
+                });
             }
-        }));
+        });
 
         playerAreaVolumeIcon = new JSVGPanel();
         playerAreaVolumeIcon.getJComponent().setBounds(306, 75, 14, 14);
@@ -251,12 +257,12 @@ public class PlayerArea extends JPanel {
             }
         });
 
-        playerTitle = new JScrollText(PublicValues.language.translate("ui.player.title"));
+        playerTitle = new JScrollText(PublicValues.language.translate("player.nothing_playing.title"));
         playerTitle.setBounds(109, 11, 168, getFontMetrics(getFont()).getHeight());
         add(playerTitle);
         playerTitle.setForeground(PublicValues.globalFontColor);
 
-        playerDescription = new JScrollText(PublicValues.language.translate("ui.player.description"));
+        playerDescription = new JScrollText(PublicValues.language.translate("player.nothing_playing.artist"));
         playerDescription.setBounds(109, 40, 138, getFontMetrics(getFont()).getHeight());
         add(playerDescription);
         playerDescription.setForeground(PublicValues.globalFontColor);
@@ -265,7 +271,7 @@ public class PlayerArea extends JPanel {
         playerPlayPreviousButton.setBounds(287, 11, 70, 36);
         playerPlayPreviousButton.setColor(frame.getBackground());
         add(playerPlayPreviousButton);
-        playerPlayPreviousButton.addActionListener(new AsyncActionListener(e -> InstanceManager.getSpotifyPlayer().previous()));
+        playerPlayPreviousButton.addActionListener(e -> AsyncUtils.run(() -> InstanceManager.getSpotifyPlayer().previous()));
         playerPlayPreviousButton.setImage(Graphics.PLAYERPLAYPREVIOUS.getPath());
         playerPlayPreviousButton.setBorderPainted(false);
         playerPlayPreviousButton.setContentAreaFilled(false);
@@ -273,7 +279,7 @@ public class PlayerArea extends JPanel {
         playerPlayPauseButton = new JImageButton();
         playerPlayPauseButton.setColor(frame.getBackground());
         playerPlayPauseButton.setBounds(369, 11, 69, 36);
-        playerPlayPauseButton.addActionListener(new AsyncActionListener(e -> InstanceManager.getPlayer().getPlayer().playPause()));
+        playerPlayPauseButton.addActionListener(e -> AsyncUtils.run(() -> InstanceManager.getPlayer().getPlayer().playPause()));
         add(playerPlayPauseButton);
         playerPlayPauseButton.setImage(Graphics.PLAYERPlAY.getPath());
         playerPlayPauseButton.setBorderPainted(false);
@@ -286,7 +292,7 @@ public class PlayerArea extends JPanel {
         playerPlayNextButton.setImage(Graphics.PLAYERPLAYNEXT.getPath());
         playerPlayNextButton.setBorderPainted(false);
         playerPlayNextButton.setContentAreaFilled(false);
-        playerPlayNextButton.addActionListener(new AsyncActionListener(e -> InstanceManager.getPlayer().getPlayer().next()));
+        playerPlayNextButton.addActionListener(e -> AsyncUtils.run(() -> InstanceManager.getPlayer().getPlayer().next()));
 
         playerCurrentTime = new JSlider();
         playerCurrentTime.setValue(0);
@@ -295,24 +301,28 @@ public class PlayerArea extends JPanel {
         add(playerCurrentTime);
         playerCurrentTime.setForeground(PublicValues.globalFontColor);
         playerCurrentTime.addChangeListener(e -> playerPlayTime.setText(TrackUtils.getHHMMSSOfTrack(playerCurrentTime.getValue() * 1000L)));
-        playerCurrentTime.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        playerCurrentTime.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                wasPaused = InstanceManager.getSpotifyPlayer().isPaused();
-                InstanceManager.getPlayer().getPlayer().pause();
                 PlayerListener.pauseTimer = true;
+                AsyncUtils.run(() -> {
+                    wasPaused = InstanceManager.getSpotifyPlayer().isPaused();
+                    InstanceManager.getPlayer().getPlayer().pause();
+                });
             }
-        }));
-        playerCurrentTime.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        });
+        playerCurrentTime.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
                 PlayerListener.pauseTimer = false;
-                InstanceManager.getPlayer().getPlayer().seek(playerCurrentTime.getValue() * 1000);
-                if (!wasPaused) {
-                    InstanceManager.getPlayer().getPlayer().play();
-                }
+                AsyncUtils.run(() -> {
+                    InstanceManager.getPlayer().getPlayer().seek(playerCurrentTime.getValue() * 1000);
+                    if (!wasPaused) {
+                        InstanceManager.getPlayer().getPlayer().play();
+                    }
+                });
             }
-        }));
+        });
         playerCurrentTime.addChangeListener(e -> playerPlayTime.setText(TrackUtils.getHHMMSSOfTrack(InstanceManager.getPlayer().getPlayer().time())));
 
         playerPlayTime = new JLabel("00:00");
@@ -329,45 +339,47 @@ public class PlayerArea extends JPanel {
         heart = new JSVGPanel();
         heart.getJComponent().setBackground(frame.getBackground());
         heart.getJComponent().setBounds(525, 20, 24, 24);
-        heart.getJComponent().addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        heart.getJComponent().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                if (heart.isFilled) {
-                    try {
-                        PublicValues.session.api().track().remove(TrackId.fromUri(
-                                Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
-                        ));
-                        SpotifyXPEvents.libraryChange.trigger(
-                                new LibraryChange(
-                                        Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
-                                        LibraryChange.Type.TRACK,
-                                        LibraryChange.Action.REMOVE
-                                )
-                        );
-                    } catch (IOException | TokenProvider.TokenException ex) {
-                        throw new RuntimeException(ex);
+                AsyncUtils.run(() -> {
+                    if (heart.isFilled) {
+                        try {
+                            PublicValues.session.api().track().remove(TrackId.fromUri(
+                                    Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
+                            ));
+                            SpotifyXPEvents.libraryChange.trigger(
+                                    new LibraryChange(
+                                            Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
+                                            LibraryChange.Type.TRACK,
+                                            LibraryChange.Action.REMOVE
+                                    )
+                            );
+                        } catch (IOException | TokenProvider.TokenException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                        heart.setImage(Graphics.HEART.getPath());
+                        heart.isFilled = false;
+                    } else {
+                        try {
+                            PublicValues.session.api().track().like(TrackId.fromUri(
+                                    Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
+                            ));
+                            SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
+                                    Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
+                                    LibraryChange.Type.TRACK,
+                                    LibraryChange.Action.ADD
+                            ));
+                        } catch (IOException | TokenProvider.TokenException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                        heart.setImage(Graphics.HEARTFILLED.getPath());
+                        heart.isFilled = true;
                     }
-                    heart.setImage(Graphics.HEART.getPath());
-                    heart.isFilled = false;
-                } else {
-                    try {
-                        PublicValues.session.api().track().like(TrackId.fromUri(
-                                Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
-                        ));
-                        SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
-                                Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
-                                LibraryChange.Type.TRACK,
-                                LibraryChange.Action.ADD
-                        ));
-                    } catch (IOException | TokenProvider.TokenException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    heart.setImage(Graphics.HEARTFILLED.getPath());
-                    heart.isFilled = true;
-                }
+                });
             }
-        }));
+        });
         heart.setImage(Graphics.HEART.getPath());
         add(heart.getJComponent());
 
@@ -397,21 +409,23 @@ public class PlayerArea extends JPanel {
         canvasPlayerButton.setImage(Graphics.VIDEO.getPath());
         canvasPlayerButton.getJComponent().setBackground(heart.getJComponent().getBackground());
         canvasPlayerButton.getJComponent().setBounds(720, 30, 20, 20);
-        canvasPlayerButton.getJComponent().addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        canvasPlayerButton.getJComponent().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                if (canvasPlayerButton.isFilled) {
-                    canvasPlayerButton.isFilled = false;
-                    canvasPlayerButton.setImage(Graphics.VIDEO.getPath());
-                    canvasPlayer.close();
-                } else {
-                    canvasPlayerButton.isFilled = true;
-                    canvasPlayerButton.setImage(Graphics.VIDEOSELECTED.getPath());
-                    canvasPlayer.open();
-                }
+                AsyncUtils.run(() -> {
+                    if (canvasPlayerButton.isFilled) {
+                        canvasPlayerButton.isFilled = false;
+                        canvasPlayerButton.setImage(Graphics.VIDEO.getPath());
+                        canvasPlayer.close();
+                    } else {
+                        canvasPlayerButton.isFilled = true;
+                        canvasPlayerButton.setImage(Graphics.VIDEOSELECTED.getPath());
+                        canvasPlayer.open();
+                    }
+                });
             }
-        }));
+        });
         if (PublicValues.vlcPlayer.isVideoPlaybackEnabled())
             PublicValues.contentPanel.add(canvasPlayerButton.getJComponent());
 
@@ -420,33 +434,35 @@ public class PlayerArea extends JPanel {
         historyButton.setImage(Graphics.HISTORY.getPath());
         historyButton.getJComponent().setBackground(heart.getJComponent().getBackground());
         historyButton.getJComponent().setBounds(720, 55, 20, 20);
-        historyButton.getJComponent().addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        historyButton.getJComponent().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                if (historyButton.isFilled) {
-                    historyButton.isFilled = false;
-                    historyButton.setImage(Graphics.HISTORY.getPath());
-                    PublicValues.history.dispose();
-                } else {
-                    historyButton.isFilled = true;
-                    historyButton.setImage(Graphics.HISTORYSELECTED.getPath());
-                    PublicValues.history.open();
-                }
+                AsyncUtils.run(() -> {
+                    if (historyButton.isFilled) {
+                        historyButton.isFilled = false;
+                        historyButton.setImage(Graphics.HISTORY.getPath());
+                        PublicValues.history.dispose();
+                    } else {
+                        historyButton.isFilled = true;
+                        historyButton.setImage(Graphics.HISTORYSELECTED.getPath());
+                        PublicValues.history.open();
+                    }
+                });
             }
-        }));
+        });
         PublicValues.contentPanel.add(historyButton.getJComponent());
 
         pipPlayer = new PiPPlayer();
 
         contextMenu = new ContextMenu();
-        contextMenu.addItem(PublicValues.language.translate("ui.playerarea.ctxmenu.item1"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("player.context_menu.open_in_pip"), new Runnable() {
             @Override
             public void run() {
                 pipPlayer.open();
             }
         });
-        contextMenu.addItem(PublicValues.language.translate("ui.playerarea.ctxmenu.item2"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("player.context_menu.switch_fullscreen"), new Runnable() {
             @Override
             public void run() {
                 try {

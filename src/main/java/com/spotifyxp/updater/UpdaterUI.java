@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class UpdaterUI extends JFrame {
         setContentPane(contents);
         setResizable(false);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        setTitle(PublicValues.language.translate("updater.availableui.title"));
+        setTitle(PublicValues.language.translate("dialogs.updater.title"));
 
         addWindowListener(new WindowAdapter() {
             @Override
@@ -71,7 +71,7 @@ public class UpdaterUI extends JFrame {
             }
         });
 
-        updateButton.setText(PublicValues.language.translate("updater.availableui.updateButton"));
+        updateButton.setText(PublicValues.language.translate("dialogs.updater.update_available.update_button"));
         updateButton.addActionListener(e -> {
             if (disableUpdateFunc) {
                 try {
@@ -89,14 +89,14 @@ public class UpdaterUI extends JFrame {
             Thread downloadThread = new Thread(() -> {
                 download();
                 cancelButton.setEnabled(true);
-                cancelButton.setText(PublicValues.language.translate("updater.availableui.cancelButtonDone"));
+                cancelButton.setText(PublicValues.language.translate("dialogs.updater.update_available.cancel_button_done"));
                 updateButton.setVisible(false);
                 updateDone = true;
             });
             downloadThread.start();
         });
 
-        cancelButton.setText(PublicValues.language.translate("updater.availableui.cancelButton"));
+        cancelButton.setText(PublicValues.language.translate("dialogs.updater.update_available.cancel_button"));
         cancelButton.addActionListener(e -> {
             if (disableUpdateFunc) {
                 dispose();
@@ -118,7 +118,7 @@ public class UpdaterUI extends JFrame {
             System.exit(0);
         });
 
-        progresslabel.setText(PublicValues.language.translate("updater.availableui.progresslabel"));
+        progresslabel.setText(PublicValues.language.translate("dialogs.updater.update_available.progress_label"));
 
         changelog.setEditable(false);
         changelog.setContentType("text/html");
@@ -127,7 +127,7 @@ public class UpdaterUI extends JFrame {
     private void download() {
         try {
             int dotState = 0;
-            progresslabel.setText(PublicValues.language.translate("updater.availableui.updating"));
+            progresslabel.setText(PublicValues.language.translate("dialogs.updater.update_available.updating"));
             progress.setMaximum(100000);
             Request request = new Request.Builder().url(updateInfo.release.assets.get(0).url).build();
             Response response = PublicValues.defaultHttpClient.newCall(request).execute();
@@ -142,15 +142,15 @@ public class UpdaterUI extends JFrame {
                 progress.setValue(currentProgress);
                 switch (dotState) {
                     case 0:
-                        progresslabel.setText(PublicValues.language.translate("updater.availableui.updating") + ".");
+                        progresslabel.setText(PublicValues.language.translate("dialogs.updater.update_available.updating") + ".");
                         dotState++;
                         break;
                     case 1:
-                        progresslabel.setText(PublicValues.language.translate("updater.availableui.updating") + "..");
+                        progresslabel.setText(PublicValues.language.translate("dialogs.updater.update_available.updating") + "..");
                         dotState++;
                         break;
                     case 2:
-                        progresslabel.setText(PublicValues.language.translate("updater.availableui.updating") + "...");
+                        progresslabel.setText(PublicValues.language.translate("dialogs.updater.update_available.updating") + "...");
                         dotState = 0;
                         break;
                 }
@@ -164,9 +164,9 @@ public class UpdaterUI extends JFrame {
             download();
         } catch (Exception exception) {
             progress.setForeground(Color.red);
-            progresslabel.setText(PublicValues.language.translate("updater.availableui.failed").replace("%s", exception.getMessage()));
+            progresslabel.setText(PublicValues.language.translate("dialogs.updater.update_available.failed").replace("%s", exception.getMessage()));
         }
-        progresslabel.setText(PublicValues.language.translate("updater.availableui.done"));
+        progresslabel.setText(PublicValues.language.translate("dialogs.updater.update_available.done"));
     }
 
     public CompletableFuture<Boolean> openWithoutUpdateFunctionality(Updater.UpdateInfo updateInfo) throws IOException {

@@ -81,7 +81,7 @@ public class Feedback extends JPanel implements View {
         SimpleAttributeSet center = new SimpleAttributeSet();
         StyleConstants.setAlignment(center, StyleConstants.ALIGN_CENTER);
         try {
-            doc.insertString(doc.getLength(), PublicValues.language.translate("ui.feedback.thankyoutext"), null);
+            doc.insertString(doc.getLength(), PublicValues.language.translate("feedback.thank_you_text"), null);
             doc.setParagraphAttributes(0, doc.getLength(), center, false);
         } catch (BadLocationException ignored) {
         }
@@ -93,7 +93,7 @@ public class Feedback extends JPanel implements View {
         thankYouText.setFont(thankYouText.getFont().deriveFont(17f));
         thankYouTextContainer.add(thankYouText, thankYouTextConstraints);
 
-        browserinfo = new JTextArea(PublicValues.language.translate("ui.feedback.browserinfo"));
+        browserinfo = new JTextArea(PublicValues.language.translate("feedback.browser_info"));
         browserinfo.setForeground(PublicValues.globalFontColor);
         browserinfo.setFont(getFont().deriveFont(14f));
         browserinfo.setWrapStyleWord(true);
@@ -105,12 +105,12 @@ public class Feedback extends JPanel implements View {
         reportBugContainer.setLayout(new BorderLayout());
         contentContainer.add(reportBugContainer, getConstraintsFor(1));
 
-        foundABugLabel = new JLabel(PublicValues.language.translate("ui.feedback.foundabug"));
+        foundABugLabel = new JLabel(PublicValues.language.translate("feedback.found_a_bug"));
         foundABugLabel.setForeground(PublicValues.globalFontColor);
         foundABugLabel.setFont(titleFont);
         reportBugContainer.add(foundABugLabel, BorderLayout.NORTH);
 
-        reportBugButton = new JButton(PublicValues.language.translate("ui.feedback.reportbug"));
+        reportBugButton = new JButton(PublicValues.language.translate("feedback.report_bug"));
         reportBugButton.setForeground(PublicValues.globalFontColor);
         reportBugButton.addActionListener(new ActionListener() {
             @Override
@@ -129,12 +129,12 @@ public class Feedback extends JPanel implements View {
         bugsContainer.setLayout(new BorderLayout());
         contentContainer.add(bugsContainer, getConstraintsFor(2));
 
-        whichBugsLabel = new JLabel(PublicValues.language.translate("ui.feedback.seeknownbugs"));
+        whichBugsLabel = new JLabel(PublicValues.language.translate("feedback.see_reported_bugs"));
         whichBugsLabel.setFont(titleFont);
         whichBugsLabel.setForeground(PublicValues.globalFontColor);
         bugsContainer.add(whichBugsLabel, BorderLayout.NORTH);
 
-        viewBugsButton = new JButton(PublicValues.language.translate("ui.feedback.viewbugs"));
+        viewBugsButton = new JButton(PublicValues.language.translate("feedback.view_bugs"));
         viewBugsButton.setForeground(PublicValues.globalFontColor);
         viewBugsButton.setPreferredSize(buttonSize);
         viewBugsButton.addActionListener(new ActionListener() {
@@ -153,12 +153,12 @@ public class Feedback extends JPanel implements View {
         visitProjectContainer.setLayout(new BorderLayout());
         contentContainer.add(visitProjectContainer, getConstraintsFor(3));
 
-        visitProjectLabel = new JLabel(PublicValues.language.translate("ui.feedback.visitprojectlabel"));
+        visitProjectLabel = new JLabel(PublicValues.language.translate("feedback.visit_project_label"));
         visitProjectLabel.setForeground(PublicValues.globalFontColor);
         visitProjectLabel.setFont(titleFont);
         visitProjectContainer.add(visitProjectLabel, BorderLayout.NORTH);
 
-        visitProjectButton = new JButton(PublicValues.language.translate("ui.feedback.viewproject"));
+        visitProjectButton = new JButton(PublicValues.language.translate("feedback.visit_project"));
         visitProjectButton.setForeground(PublicValues.globalFontColor);
         visitProjectButton.setPreferredSize(buttonSize);
         visitProjectButton.addActionListener(new ActionListener() {

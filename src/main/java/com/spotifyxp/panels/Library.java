@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,12 +45,12 @@ public class Library extends JScrollPane implements View {
         tabbedPane.setForeground(PublicValues.globalFontColor);
         contentPanel.add(tabbedPane, BorderLayout.CENTER);
 
-        tabbedPane.addTab(PublicValues.language.translate("ui.library.tabs.tracks"), null);
-        tabbedPane.addTab(PublicValues.language.translate("ui.library.tabs.albums"), null);
-        tabbedPane.addTab(PublicValues.language.translate("ui.library.tabs.playlists"), null);
-        tabbedPane.addTab(PublicValues.language.translate("ui.library.tabs.artists"), null);
-        tabbedPane.addTab(PublicValues.language.translate("ui.library.tabs.episodes"), null);
-        tabbedPane.addTab(PublicValues.language.translate("ui.library.tabs.shows"), null);
+        tabbedPane.addTab(PublicValues.language.translate("library.tabs.tracks"), null);
+        tabbedPane.addTab(PublicValues.language.translate("general.albums"), null);
+        tabbedPane.addTab(PublicValues.language.translate("library.tabs.playlists"), null);
+        tabbedPane.addTab(PublicValues.language.translate("library.tabs.artists"), null);
+        tabbedPane.addTab(PublicValues.language.translate("library.tabs.episodes"), null);
+        tabbedPane.addTab(PublicValues.language.translate("library.tabs.shows"), null);
 
         tabbedPane.addChangeListener(new ChangeListener() {
             @Override
@@ -133,5 +133,12 @@ public class Library extends JScrollPane implements View {
     @Override
     public void makeInvisible() {
         setVisible(false);
+
+        if (libraryTracks != null) libraryTracks.makeInvisible();
+        if (libraryAlbums != null) LibraryAlbums.evict();
+        if (libraryPlaylists != null) LibraryPlaylists.evict();
+        if (libraryArtists != null) LibraryArtists.evict();
+        if (libraryEpisodes != null) LibraryEpisodes.evict();
+        if (libraryShows != null) LibraryShows.evict();
     }
 }

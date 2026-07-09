@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ public class ExtensionModule {
         } else {
             updateButton.setVisible(!pluginJSON.getVersion().equals(extension.getVersion()));
         }
-        updateButton.setText(PublicValues.language.translate("extensions.module.updateButton"));
+        updateButton.setText(PublicValues.language.translate("dialogs.extension_store.update_extension_button"));
         updateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -110,23 +110,23 @@ public class ExtensionModule {
         if (installedPath == null) {
             removeButton.setVisible(false);
         }
-        removeButton.setText(PublicValues.language.translate("extensions.module.removeButton"));
+        removeButton.setText(PublicValues.language.translate("general.remove"));
         removeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 uninstall(onRemoveFinished);
-                JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("extensions.module.removal.dialog.description"), PublicValues.language.translate("extensions.module.removal.dialog.title"), JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.extension_store.dialogs.remove_extension.message"), PublicValues.language.translate("general.info"), JOptionPane.INFORMATION_MESSAGE);
             }
         });
 
-        installButton.setText(PublicValues.language.translate("extensions.module.installButton"));
+        installButton.setText(PublicValues.language.translate("dialogs.extension_store.install_extension_button"));
         installButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new Thread(() -> {
                     try {
                         install(onInstallFinished);
-                        JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("extensions.module.install.dialog.description"), PublicValues.language.translate("extensions.module.install.dialog.title"), JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.extension_store.dialogs.install_extension.message"), PublicValues.language.translate("general.info"), JOptionPane.INFORMATION_MESSAGE);
                     } catch (IOException ex) {
                         ConsoleLogging.Throwable(ex);
                     }
@@ -177,7 +177,7 @@ public class ExtensionModule {
                         if (downloaded == completeSize) {
                             if (onUpdateDone != null) onUpdateDone.run(contentPanel);
                             installProgress.setVisible(false);
-                            JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("extensions.module.update.dialog.description"), PublicValues.language.translate("extensions.module.update.dialog.title"), JOptionPane.INFORMATION_MESSAGE);
+                            JOptionPane.showMessageDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.extension_store.dialogs.update_extension.message"), PublicValues.language.translate("general.info"), JOptionPane.INFORMATION_MESSAGE);
                         }
                     }
                 },

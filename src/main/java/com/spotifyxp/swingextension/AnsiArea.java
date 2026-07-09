@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class AnsiArea extends JTextPane {
         setEditable(false);
 
         contextMenu = new ContextMenu();
-        contextMenu.addItem(PublicValues.language.translate("ui.general.copy"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("general.copy"), new Runnable() {
             @Override
             public void run() {
                 ClipboardUtil.set(itself.getText());

@@ -37,9 +37,23 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class LibraryShows extends JScrollPane {
+    private static final String CACHE_ID = "shows";
+
     public static DefTable showsTable;
     public static ArrayList<String> showsUris;
     public static ContextMenu contextMenu;
+
+    private static class ShowRow {
+        String uri;
+        String name;
+        String publisher;
+
+        ShowRow(String uri, String name, String publisher) {
+            this.uri = uri;
+            this.name = name;
+            this.publisher = publisher;
+        }
+    }
 
     public LibraryShows() {
         showsUris = new ArrayList<>();
@@ -48,8 +62,8 @@ public class LibraryShows extends JScrollPane {
         showsTable.setForeground(PublicValues.globalFontColor);
         showsTable.getTableHeader().setForeground(PublicValues.globalFontColor);
         showsTable.setModel(new DefaultTableModel(new Object[][]{}, new Object[]{
-                PublicValues.language.translate("ui.library.tabs.shows.table.column1"),
-                PublicValues.language.translate("ui.library.tabs.shows.table.column2")
+                PublicValues.language.translate("library.general.show_name"),
+                PublicValues.language.translate("library.shows.table.publisher")
         }));
         showsTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -65,15 +79,20 @@ public class LibraryShows extends JScrollPane {
         });
 
         contextMenu = new ContextMenu(showsTable, showsUris, getClass());
-        contextMenu.addItem(PublicValues.language.translate("ui.general.refresh"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("general.refresh"), new Runnable() {
             @Override
             public void run() {
-                ((DefaultTableModel) showsTable.getModel()).setRowCount(0);
+                showsTable.addModifyAction(() -> ((DefaultTableModel) showsTable.getModel()).setRowCount(0));
                 showsUris.clear();
+                try {
+                    PublicValues.cache.namespace("LibraryShows").remove(CACHE_ID);
+                } catch (IOException e) {
+                    ConsoleLogging.Throwable(e);
+                }
                 fill();
             }
         });
-        contextMenu.addItem(PublicValues.language.translate("ui.library.tabs.shows.ctxmenu.remove"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("general.remove"), new Runnable() {
             @Override
             public void run() {
                 if(showsTable.getSelectedRow() == -1) return;
@@ -93,7 +112,7 @@ public class LibraryShows extends JScrollPane {
                 }).start();
             }
         });
-        contextMenu.addItem(PublicValues.language.translate("ui.library.tabs.shows.ctxmenu.showdesc"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("library.shows.context_menu.view_description"), new Runnable() {
             @Override
             public void run() {
                 if(showsTable.getSelectedRow() == -1) return;
@@ -101,7 +120,7 @@ public class LibraryShows extends JScrollPane {
                     try {
                         Metadata.Show show = PublicValues.session.api().show().getMetadata(ShowId.fromUri(showsUris.get(showsTable.getSelectedRow())));
                         openDialog(
-                                String.format(PublicValues.language.translate("ui.library.tabs.shows.descdialog.title"), show.getName()),
+                                String.format(PublicValues.language.translate("dialogs.library.show_description.title"), show.getName()),
                                 show.getDescription()
                         );
                     }catch (IOException | TokenProvider.TokenException e) {
@@ -139,7 +158,8 @@ public class LibraryShows extends JScrollPane {
                 for(int uri = 0; uri < showsUris.size(); uri++) {
                     if(showsUris.get(uri).equals(change.getUri())) {
                         showsUris.remove(uri);
-                        ((DefaultTableModel) showsTable.getModel()).removeRow(uri);
+                        int removeIndex = uri;
+                        showsTable.addModifyAction(() -> ((DefaultTableModel) showsTable.getModel()).removeRow(removeIndex));
                     }
                 }
             }
@@ -169,7 +189,21 @@ public class LibraryShows extends JScrollPane {
     }
 
     private void fetch() {
+        if (PublicValues.cache.namespace("LibraryShows").has(CACHE_ID)) {
+            try {
+                ShowRow[] rows = PublicValues.cache.namespace("LibraryShows").get(CACHE_ID, ShowRow[].class);
+                for (ShowRow row : rows) {
+                    showsUris.add(row.uri);
+                    showsTable.addModifyAction(() -> ((DefaultTableModel) showsTable.getModel()).addRow(new Object[]{row.name, row.publisher}));
+                }
+            } catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+            }
+            return;
+        }
+
         try {
+            ArrayList<ShowRow> cacheRows = new ArrayList<>();
             UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Podcasts & Shows"}, null, 999999, 0);
 
             Gson gson = new Gson();
@@ -177,13 +211,16 @@ public class LibraryShows extends JScrollPane {
                 UnofficialSpotifyAPI.ShowItem show = gson.fromJson(item.item.data, UnofficialSpotifyAPI.ShowItem.class);
 
                 showsUris.add(show.uri);
+                String publisherName = show.publisher != null ? show.publisher.name : "";
+                cacheRows.add(new ShowRow(show.uri, show.name, publisherName));
                 showsTable.addModifyAction(() -> {
                     ((DefaultTableModel) showsTable.getModel()).addRow(new Object[]{
                             show.name,
-                            show.publisher
+                            publisherName
                     });
                 });
             }
+            PublicValues.cache.namespace("LibraryShows").put(CACHE_ID, cacheRows);
         }catch (IOException | TokenProvider.TokenException e) {
             ConsoleLogging.Throwable(e);
         }
@@ -191,5 +228,23 @@ public class LibraryShows extends JScrollPane {
 
     public void fill() {
         new Thread(() -> fetch()).start();
+    }
+
+    public static void evict() {
+        if (showsUris == null || showsUris.isEmpty()) return;
+
+        DefaultTableModel model = (DefaultTableModel) showsTable.getModel();
+        ArrayList<ShowRow> rows = new ArrayList<>();
+        for (int i = 0; i < model.getRowCount() && i < showsUris.size(); i++) {
+            rows.add(new ShowRow(showsUris.get(i), (String) model.getValueAt(i, 0), (String) model.getValueAt(i, 1)));
+        }
+        try {
+            PublicValues.cache.namespace("LibraryShows").put(CACHE_ID, rows);
+        } catch (IOException e) {
+            ConsoleLogging.Throwable(e);
+        }
+
+        showsUris.clear();
+        showsTable.addModifyAction(() -> model.setRowCount(0));
     }
 }

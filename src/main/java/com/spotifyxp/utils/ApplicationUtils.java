@@ -34,22 +34,20 @@ public class ApplicationUtils {
         object = JsonParser.parseString(IOUtils.toString(Initiator.class.getResourceAsStream("/Application.json"), StandardCharsets.UTF_8)).getAsJsonObject();
     }
 
-    public static String getName() throws IOException {
-        if (object == null) {
-            fetch();
-        }
-        if (object.has("Name")) {
-            return object.get("Name").getAsString();
-        } else {
-            return ErrorMessage;
-        }
-    }
-
     public static String getVersion() throws IOException {
         if(PublicValues.updaterDisabled || Initiator.class.getResourceAsStream("/commit_id.txt") == null) {
             return "Debug Build";
         }
         return IOUtils.toString(Initiator.class.getResourceAsStream("/commit_id.txt"), StandardCharsets.UTF_8).substring(0, 7);
+    }
+
+    /**
+     * Application name is no longer stored in Application.json, so this method is deprecated and will be removed in a future release.
+     * @return NTify
+     */
+    @Deprecated
+    public static String getName() throws IOException {
+        return "NTify";
     }
 
     public static String getFullVersion() throws IOException {
@@ -78,8 +76,7 @@ public class ApplicationUtils {
         String osVersion = System.getProperty("os.version"); //10.15
         String browserSpecifier = "Java"; //Java
         String browserDate = LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")); //21012024
-        String applicationName = getName(); //SpotifyXP
         String applicationVersion = getVersion(); //2.0.2
-        return "Mozilla/5.0 (" + osSpecifier + "; " + osName + " " + osVersion + ") " + browserSpecifier + "/" + browserDate + " " + applicationName + "/" + applicationVersion;
+        return "Mozilla/5.0 (" + osSpecifier + "; " + osName + " " + osVersion + ") " + browserSpecifier + "/" + browserDate + " NTify/" + applicationVersion;
     }
 }

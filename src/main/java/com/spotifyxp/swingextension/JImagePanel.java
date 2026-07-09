@@ -17,6 +17,7 @@ package com.spotifyxp.swingextension;
 
 import com.spotifyxp.Initiator;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.GraphicalMessage;
 import org.apache.commons.io.IOUtils;
 
@@ -103,14 +104,34 @@ public class JImagePanel extends JPanel {
         refresh();
     }
 
+    /**
+     * Fetches and decodes the image on a background thread so a careless caller on the EDT
+     * can't block it on network I/O - the actual field assignment/repaint is marshalled back
+     * onto the EDT once decoding finishes.
+     */
     public void setImage(URL url) {
         recalculate = null;
-        try (InputStream in = url.openStream()) {
-            imageBytes = IOUtils.toByteArray(in);
-        } catch (IOException ex) {
-            ConsoleLogging.Throwable(ex);
-        }
-        refresh();
+        AsyncUtils.run(() -> {
+            byte[] bytes;
+            try (InputStream in = url.openStream()) {
+                bytes = IOUtils.toByteArray(in);
+            } catch (IOException ex) {
+                ConsoleLogging.Throwable(ex);
+                return;
+            }
+            BufferedImage decoded;
+            try {
+                decoded = ImageIO.read(new ByteArrayInputStream(bytes));
+            } catch (IOException ex) {
+                ConsoleLogging.Throwable(ex);
+                return;
+            }
+            SwingUtilities.invokeLater(() -> {
+                imageBytes = bytes;
+                image = decoded;
+                repaint();
+            });
+        });
     }
 
     public void setImage(InputStream inputStream) {

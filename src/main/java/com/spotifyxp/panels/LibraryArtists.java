@@ -26,6 +26,7 @@ import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.SpotifyUtils;
 import xyz.gianlu.librespot.api.ApiClient;
 import xyz.gianlu.librespot.core.TokenProvider;
@@ -37,20 +38,38 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class LibraryArtists extends JScrollPane {
+    private static final String CACHE_ID = "artists";
+
     public static DefTable artistsTable;
     public static ArrayList<String> artistsUris;
     public static ContextMenu contextMenu;
+
+    private static class ArtistRow {
+        String uri;
+        String name;
+        String monthlyListeners;
+        String genres;
+
+        ArtistRow(String uri, String name, String monthlyListeners, String genres) {
+            this.uri = uri;
+            this.name = name;
+            this.monthlyListeners = monthlyListeners;
+            this.genres = genres;
+        }
+    }
 
     public LibraryArtists() {
         artistsUris = new ArrayList<>();
 
         artistsTable = new DefTable();
         artistsTable.setModel(new DefaultTableModel(new Object[][]{}, new String[]{
-                PublicValues.language.translate("ui.navigation.library.artists.table.column1"),
-                PublicValues.language.translate("ui.navigation.library.artists.table.column2"),
-                PublicValues.language.translate("ui.navigation.library.artists.table.column3")
+                PublicValues.language.translate("general.name"),
+                PublicValues.language.translate("general.monthly_listeners"),
+                PublicValues.language.translate("general.genres")
         }));
         artistsTable.getTableHeader().setForeground(PublicValues.globalFontColor);
         artistsTable.setForeground(PublicValues.globalFontColor);
@@ -64,15 +83,20 @@ public class LibraryArtists extends JScrollPane {
         });
 
         contextMenu = new ContextMenu(artistsTable, artistsUris, getClass());
-        contextMenu.addItem(PublicValues.language.translate("ui.general.refresh"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("general.refresh"), new Runnable() {
             @Override
             public void run() {
-                ((DefaultTableModel) artistsTable.getModel()).setRowCount(0);
+                artistsTable.addModifyAction(() -> ((DefaultTableModel) artistsTable.getModel()).setRowCount(0));
                 artistsUris.clear();
+                try {
+                    PublicValues.cache.namespace("LibraryArtists").remove(CACHE_ID);
+                } catch (IOException e) {
+                    ConsoleLogging.Throwable(e);
+                }
                 new Thread(() -> fetch()).start();
             }
         });
-        contextMenu.addItem(PublicValues.language.translate("ui.library.tabs.artists.ctxmenu.remove"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("library.artists.context_menu.unfollow"), new Runnable() {
             @Override
             public void run() {
                 new Thread(() -> {
@@ -149,7 +173,21 @@ public class LibraryArtists extends JScrollPane {
 
 
     private void fetch() {
+        if (PublicValues.cache.namespace("LibraryArtists").has(CACHE_ID)) {
+            try {
+                ArtistRow[] rows = PublicValues.cache.namespace("LibraryArtists").get(CACHE_ID, ArtistRow[].class);
+                for (ArtistRow row : rows) {
+                    artistsUris.add(row.uri);
+                    artistsTable.addModifyAction(() -> ((DefaultTableModel) artistsTable.getModel()).addRow(new Object[]{row.name, row.monthlyListeners, row.genres}));
+                }
+            } catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+            }
+            return;
+        }
+
         try {
+            ArrayList<ArtistRow> cacheRows = new ArrayList<>();
             int limit = 50;
             UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Artists"}, null, limit, 0);
             UnofficialSpotifyAPI.LibraryPage libraryV3 = response.data.me.libraryV3;
@@ -157,6 +195,14 @@ public class LibraryArtists extends JScrollPane {
             int offset = 0;
             Gson gson = new Gson();
             while(offset < total) {
+                int nextOffset = offset + libraryV3.items.size();
+                //Start fetching the next page's listing while this page's metadata batch is
+                //still executing, instead of waiting for the batch to finish first - the two
+                //were previously fully serialized even though they're independent requests.
+                Future<UnofficialSpotifyAPI.LibraryResponse> nextPageFuture = nextOffset < total
+                        ? AsyncUtils.submit(() -> UnofficialSpotifyAPI.getLibraryPage(new String[] {"Artists"}, null, limit, nextOffset))
+                        : null;
+
                 ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
                 for(UnofficialSpotifyAPI.LibraryItemEntry artistItem : libraryV3.items) {
                     UnofficialSpotifyAPI.ArtistItem artistItemData = gson.fromJson(artistItem.item.data, UnofficialSpotifyAPI.ArtistItem.class);
@@ -172,31 +218,54 @@ public class LibraryArtists extends JScrollPane {
                         Metadata.Artist artist = Metadata.Artist.parseFrom(data[0].getValue());
                         ExtendedMetadata.OnPlatformReputationTrait reputationTrait = ExtendedMetadata.OnPlatformReputationTrait.parseFrom(data[1].getValue());
                         artistsUris.add(artistItemData.uri);
+                        String monthlyListeners = SpotifyUtils.formatMonthlyListeners(reputationTrait.getMonthlyListeners());
+                        String genres = String.join(", ", artist.getGenreList());
+                        cacheRows.add(new ArtistRow(artistItemData.uri, artist.getName(), monthlyListeners, genres));
                         artistsTable.addModifyAction(new Runnable() {
                             @Override
                             public void run() {
                                 ((DefaultTableModel) artistsTable.getModel()).addRow(new Object[]{
                                         artist.getName(),
-                                        SpotifyUtils.formatMonthlyListeners(reputationTrait.getMonthlyListeners()),
-                                        String.join(", ", artist.getGenreList())
+                                        monthlyListeners,
+                                        genres
                                 });
                             }
                         });
                     });
-                    offset++;
                 }
                 helper.execute(PublicValues.session.api(), (exception, resp) -> {
                     ConsoleLogging.Throwable(exception);
                 });
-                response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Artists"}, null, limit, offset);
+                offset = nextOffset;
+                if (nextPageFuture == null) break;
+                response = nextPageFuture.get();
                 libraryV3 = response.data.me.libraryV3;
             }
-        }catch (IOException | TokenProvider.TokenException e) {
+            PublicValues.cache.namespace("LibraryArtists").put(CACHE_ID, cacheRows);
+        }catch (IOException | TokenProvider.TokenException | InterruptedException | ExecutionException e) {
             ConsoleLogging.Throwable(e);
         }
     }
 
     public void fill() {
         new Thread(this::fetch).start();
+    }
+
+    public static void evict() {
+        if (artistsUris == null || artistsUris.isEmpty()) return;
+
+        DefaultTableModel model = (DefaultTableModel) artistsTable.getModel();
+        ArrayList<ArtistRow> rows = new ArrayList<>();
+        for (int i = 0; i < model.getRowCount() && i < artistsUris.size(); i++) {
+            rows.add(new ArtistRow(artistsUris.get(i), (String) model.getValueAt(i, 0), (String) model.getValueAt(i, 1), (String) model.getValueAt(i, 2)));
+        }
+        try {
+            PublicValues.cache.namespace("LibraryArtists").put(CACHE_ID, rows);
+        } catch (IOException e) {
+            ConsoleLogging.Throwable(e);
+        }
+
+        artistsUris.clear();
+        artistsTable.addModifyAction(() -> model.setRowCount(0));
     }
 }

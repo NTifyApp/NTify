@@ -71,6 +71,7 @@ public class ArtistPanel extends JScrollPane implements View {
     public static ArrayList<Runnable> runWhenOpeningArtistPanel = new ArrayList<>();
     public static ArrayList<String> relatedArtistsUriCache = new ArrayList<>();
     public static ArrayList<String> discoveredOnUriCache = new ArrayList<>();
+    private static final ReentryGuard fillWithGuard = new ReentryGuard();
 
     public ArtistPanel() {
         contentPanel = new JPanel();
@@ -95,13 +96,13 @@ public class ArtistPanel extends JScrollPane implements View {
         documentStyle.setParagraphAttributes(0, documentStyle.getLength(), centerAttribute, false);
         contentPanel.add(artistTitle);
 
-        backButton = new JButton(PublicValues.language.translate("ui.back"));
+        backButton = new JButton(PublicValues.language.translate("general.back"));
         backButton.setBounds(0, 0, 100, 27);
         backButton.setForeground(PublicValues.globalFontColor);
-        backButton.addActionListener(new AsyncActionListener(e -> ContentPanel.switchView(ContentPanel.lastView)));
+        backButton.addActionListener(e -> ContentPanel.switchView(ContentPanel.lastView));
         contentPanel.add(backButton);
 
-        artistPopularLabel = new JLabel(PublicValues.language.translate("ui.artist.popular"));
+        artistPopularLabel = new JLabel(PublicValues.language.translate("artist.popular"));
         artistPopularLabel.setBounds(5, 291, 137, 27);
         artistPopularLabel.setForeground(PublicValues.globalFontColor);
         contentPanel.add(artistPopularLabel);
@@ -111,19 +112,21 @@ public class ArtistPanel extends JScrollPane implements View {
                 new Object[][]{
                 },
                 new String[]{
-                        PublicValues.language.translate("ui.search.songlist.songname"), PublicValues.language.translate("ui.search.songlist.filesize"), PublicValues.language.translate("ui.search.songlist.bitrate"), PublicValues.language.translate("ui.search.songlist.length")
+                        PublicValues.language.translate("general.name"), PublicValues.language.translate("general.filesize"), PublicValues.language.translate("general.bitrate"), PublicValues.language.translate("general.length")
                 }
         ));
-        artistPopularSongList.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        artistPopularSongList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 2) {
-                    InstanceManager.getPlayer().getPlayer().load(popularUriCache.get(artistPopularSongList.getSelectedRow()), true, PublicValues.shuffle);
-                    TrackUtils.addAllToQueue(popularUriCache, artistPopularSongList);
+                    AsyncUtils.run(() -> {
+                        InstanceManager.getPlayer().getPlayer().load(popularUriCache.get(artistPopularSongList.getSelectedRow()), true, PublicValues.shuffle);
+                        TrackUtils.addAllToQueue(popularUriCache, artistPopularSongList);
+                    });
                 }
             }
-        }));
+        });
         artistPopularSongList.setForeground(PublicValues.globalFontColor);
         artistPopularSongList.getTableHeader().setForeground(PublicValues.globalFontColor);
 
@@ -135,35 +138,40 @@ public class ArtistPanel extends JScrollPane implements View {
         artistAlbumTable = new DefTable();
         artistAlbumTable.setForeground(PublicValues.globalFontColor);
         artistAlbumTable.getTableHeader().setForeground(PublicValues.globalFontColor);
-        artistAlbumTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        artistAlbumTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 2) {
+                    if (!Search.searchplaylisttableGuard.tryEnter()) return;
                     isLastArtist = true;
                     setVisible(false);
                     Search.searchplaylistpanel.setVisible(true);
                     Search.searchplaylistsongscache.clear();
                     ((DefaultTableModel) Search.searchplaylisttable.getModel()).setRowCount(0);
-                    try {
-                        for (Metadata.Track track : SpotifyUtils.getAllTracksAlbum(albumUriCache.get(artistAlbumTable.getSelectedRow()))) {
-                            artistAlbumTable.addModifyAction(() -> {
-                                ((DefaultTableModel) Search.searchplaylisttable.getModel()).addRow(new Object[]{track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
-                                Search.searchplaylistsongscache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
-                            });
+                    AsyncUtils.run(() -> {
+                        try {
+                            try {
+                                for (Metadata.Track track : SpotifyUtils.getAllTracksAlbum(albumUriCache.get(artistAlbumTable.getSelectedRow()))) {
+                                    ((DefaultTableModel) Search.searchplaylisttable.getModel()).addRow(new Object[]{track.getName(), TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())});
+                                    Search.searchplaylistsongscache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
+                                }
+                            } catch (IOException | TokenProvider.TokenException ex) {
+                                GraphicalMessage.openException(ex);
+                                ConsoleLogging.Throwable(ex);
+                            }
+                        } finally {
+                            Search.searchplaylisttableGuard.exit();
                         }
-                    } catch (IOException | TokenProvider.TokenException ex) {
-                        GraphicalMessage.openException(ex);
-                        ConsoleLogging.Throwable(ex);
-                    }
+                    });
                 }
             }
-        }));
+        });
         artistAlbumTable.setModel(new DefaultTableModel(
                 new Object[][]{
                 },
                 new String[]{
-                        PublicValues.language.translate("ui.search.songlist.songname")
+                        PublicValues.language.translate("general.name")
                 }
         ));
 
@@ -172,12 +180,12 @@ public class ArtistPanel extends JScrollPane implements View {
         artistAlbumScrollPane.setViewportView(artistAlbumTable);
         contentPanel.add(artistAlbumScrollPane);
 
-        artistAlbumLabel = new JLabel(PublicValues.language.translate("ui.artist.albums"));
+        artistAlbumLabel = new JLabel(PublicValues.language.translate("general.albums"));
         artistAlbumLabel.setBounds(5, 642, 102, 14);
         artistAlbumLabel.setForeground(PublicValues.globalFontColor);
         contentPanel.add(artistAlbumLabel);
 
-        relatedArtistsLabel = new JLabel(PublicValues.language.translate("ui.artist.relatedartists"));
+        relatedArtistsLabel = new JLabel(PublicValues.language.translate("artist.related_artists"));
         relatedArtistsLabel.setBounds(5, 1372, 102, 14);
         relatedArtistsLabel.setForeground(PublicValues.globalFontColor);
         contentPanel.add(relatedArtistsLabel);
@@ -189,27 +197,29 @@ public class ArtistPanel extends JScrollPane implements View {
                 new Object[][]{
                 },
                 new String[]{
-                        PublicValues.language.translate("ui.general.artist")
+                        PublicValues.language.translate("general.artist")
                 }
         ));
-        relatedArtistsTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        relatedArtistsTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if(e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && relatedArtistsTable.getSelectedRow() != -1) {
-                    try {
-                        fillWith(relatedArtistsUriCache.get(relatedArtistsTable.getSelectedRow()));
-                    } catch (IOException | MercuryClient.MercuryException | TokenProvider.TokenException ex) {
-                        ConsoleLogging.Throwable(ex);
-                    }
+                    AsyncUtils.run(() -> {
+                        try {
+                            fillWith(relatedArtistsUriCache.get(relatedArtistsTable.getSelectedRow()));
+                        } catch (IOException | MercuryClient.MercuryException | TokenProvider.TokenException ex) {
+                            ConsoleLogging.Throwable(ex);
+                        }
+                    });
                 }
             }
-        }));
+        });
 
         relatedArtistsScrollPane = new JScrollPane(relatedArtistsTable);
         relatedArtistsScrollPane.setBounds(5, 1397, 760, 295);
         contentPanel.add(relatedArtistsScrollPane);
 
-        discoveredOnLabel = new JLabel(PublicValues.language.translate("ui.artist.discoveredon"));
+        discoveredOnLabel = new JLabel(PublicValues.language.translate("artist.discovered_on"));
         discoveredOnLabel.setForeground(PublicValues.globalFontColor);
         discoveredOnLabel.setBounds(5, 1007, 102, 14);
         contentPanel.add(discoveredOnLabel);
@@ -221,45 +231,47 @@ public class ArtistPanel extends JScrollPane implements View {
                 new Object[][]{
                 },
                 new String[]{
-                        PublicValues.language.translate("ui.general.name"), PublicValues.language.translate("ui.general.description")
+                        PublicValues.language.translate("general.name"), PublicValues.language.translate("general.description")
                 }
         ));
-        discoveredOnTable.addMouseListener(new AsyncMouseListener(new MouseAdapter() {
+        discoveredOnTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && discoveredOnTable.getSelectedRow() != -1) {
-                    HomePanel.ContentTypes contentType;
-                    switch (discoveredOnUriCache.get(discoveredOnTable.getSelectedRow()).split(":")[1].toLowerCase(Locale.ENGLISH)) {
-                        case "album":
-                            contentType = HomePanel.ContentTypes.album;
-                            break;
-                        case "episode":
-                        case "track":
-                            InstanceManager.getSpotifyPlayer().load(discoveredOnUriCache.get(discoveredOnTable.getSelectedRow()), true, PublicValues.shuffle);
-                            return;
-                        case "show":
-                            contentType = HomePanel.ContentTypes.show;
-                            break;
-                        case "playlist":
-                            contentType = HomePanel.ContentTypes.playlist;
-                            break;
-                        default:
-                            ConsoleLogging.Throwable(new RuntimeException("Invalid uri in artist discovered on: " + discoveredOnUriCache.get(discoveredOnTable.getSelectedRow()).split(":")[1].toLowerCase(Locale.ENGLISH)));
-                            return;
-                    }
-                    setVisible(false);
-                    ContentPanel.trackPanel.open(discoveredOnUriCache.get(discoveredOnTable.getSelectedRow()), contentType, new Runnable() {
-                        @Override
-                        public void run() {
-                            ContentPanel.trackPanel.makeInvisible();
-                            setVisible(true);
-                            ContentPanel.tabPanel.revalidate();
-                            ContentPanel.tabPanel.repaint();
+                    AsyncUtils.run(() -> {
+                        HomePanel.ContentTypes contentType;
+                        switch (discoveredOnUriCache.get(discoveredOnTable.getSelectedRow()).split(":")[1].toLowerCase(Locale.ENGLISH)) {
+                            case "album":
+                                contentType = HomePanel.ContentTypes.album;
+                                break;
+                            case "episode":
+                            case "track":
+                                InstanceManager.getSpotifyPlayer().load(discoveredOnUriCache.get(discoveredOnTable.getSelectedRow()), true, PublicValues.shuffle);
+                                return;
+                            case "show":
+                                contentType = HomePanel.ContentTypes.show;
+                                break;
+                            case "playlist":
+                                contentType = HomePanel.ContentTypes.playlist;
+                                break;
+                            default:
+                                ConsoleLogging.Throwable(new RuntimeException("Invalid uri in artist discovered on: " + discoveredOnUriCache.get(discoveredOnTable.getSelectedRow()).split(":")[1].toLowerCase(Locale.ENGLISH)));
+                                return;
                         }
+                        setVisible(false);
+                        ContentPanel.trackPanel.open(discoveredOnUriCache.get(discoveredOnTable.getSelectedRow()), contentType, new Runnable() {
+                            @Override
+                            public void run() {
+                                ContentPanel.trackPanel.makeInvisible();
+                                setVisible(true);
+                                ContentPanel.tabPanel.revalidate();
+                                ContentPanel.tabPanel.repaint();
+                            }
+                        });
                     });
                 }
             }
-        }));
+        });
 
         discoveredOnScrollPane = new JScrollPane(discoveredOnTable);
         discoveredOnScrollPane.setBounds(5, 1032, 760, 295);
@@ -310,6 +322,8 @@ public class ArtistPanel extends JScrollPane implements View {
     }
 
     public void fillWith(String uri) throws IOException, TokenProvider.TokenException, MercuryClient.MercuryException {
+        if (!fillWithGuard.tryEnter()) return;
+        try {
         reset();
 
         ArtistResponse artistResponse = fetchArtist(uri);
@@ -331,7 +345,7 @@ public class ArtistPanel extends JScrollPane implements View {
                     style);
 
 
-            artistTitle.getStyledDocument().insertString(artistTitle.getStyledDocument().getLength(), SpotifyUtils.formatMonthlyListeners(artistResponse.reputationTrait.getMonthlyListeners()) + " " + PublicValues.language.translate("ui.artist.monthlylisteners"), null);
+            artistTitle.getStyledDocument().insertString(artistTitle.getStyledDocument().getLength(), SpotifyUtils.formatMonthlyListeners(artistResponse.reputationTrait.getMonthlyListeners()) + " " + PublicValues.language.translate("general.monthly_listeners"), null);
         } catch (BadLocationException e) {
             ConsoleLogging.Throwable(e);
         }
@@ -341,13 +355,8 @@ public class ArtistPanel extends JScrollPane implements View {
         UnofficialSpotifyAPI.ArtistUnionRelatedArtists relatedArtists = UnofficialSpotifyAPI.getArtistRelatedArtists(artistUri);
         for(UnofficialSpotifyAPI.ArtistUnionRelatedArtistsArtist relatedArtist : relatedArtists.items) {
             relatedArtistsUriCache.add(relatedArtist.uri);
-            relatedArtistsTable.addModifyAction(new Runnable() {
-                @Override
-                public void run() {
-                    ((DefaultTableModel) relatedArtistsTable.getModel()).addRow(new Object[]{
-                            relatedArtist.profile.name
-                    });
-                }
+            ((DefaultTableModel) relatedArtistsTable.getModel()).addRow(new Object[]{
+                    relatedArtist.profile.name
             });
         }
 
@@ -355,14 +364,9 @@ public class ArtistPanel extends JScrollPane implements View {
         for(UnofficialSpotifyAPI.ArtistUnionDiscoveredOnItem discoveredOnItem : discoveredOn.items) {
             if(discoveredOnItem.data.__typename.toLowerCase(Locale.ENGLISH).contains("error")) continue;
             discoveredOnUriCache.add(discoveredOnItem.data.uri);
-            discoveredOnTable.addModifyAction(new Runnable() {
-                @Override
-                public void run() {
-                    ((DefaultTableModel) discoveredOnTable.getModel()).addRow(new Object[]{
-                            discoveredOnItem.data.name,
-                            discoveredOnItem.data.description
-                    });
-                }
+            ((DefaultTableModel) discoveredOnTable.getModel()).addRow(new Object[]{
+                    discoveredOnItem.data.name,
+                    discoveredOnItem.data.description
             });
         }
 
@@ -377,16 +381,11 @@ public class ArtistPanel extends JScrollPane implements View {
                                 .build())
                         .build(), (data) -> {
                     Metadata.Track track = Metadata.Track.parseFrom(data[0].getValue());
-                    artistPopularSongList.addModifyAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            ((DefaultTableModel) artistPopularSongList.getModel()).addRow(new Object[]{
-                                    track.getName(),
-                                    TrackUtils.calculateFileSizeKb(track.getDuration()),
-                                    TrackUtils.getBitrate(),
-                                    TrackUtils.getHHMMSSOfTrack(track.getDuration())
-                            });
-                        }
+                    ((DefaultTableModel) artistPopularSongList.getModel()).addRow(new Object[]{
+                            track.getName(),
+                            TrackUtils.calculateFileSizeKb(track.getDuration()),
+                            TrackUtils.getBitrate(),
+                            TrackUtils.getHHMMSSOfTrack(track.getDuration())
                     });
 
                     popularUriCache.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
@@ -403,13 +402,8 @@ public class ArtistPanel extends JScrollPane implements View {
                                 .build())
                         .build(), (data) -> {
                     Metadata.Album album = Metadata.Album.parseFrom(data[0].getValue());
-                    artistAlbumTable.addModifyAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            ((DefaultTableModel) artistAlbumTable.getModel()).addRow(new Object[]{
-                                    album.getName()
-                            });
-                        }
+                    ((DefaultTableModel) artistAlbumTable.getModel()).addRow(new Object[]{
+                            album.getName()
                     });
 
                     albumUriCache.add(AlbumId.fromHex(Utils.bytesToHex(album.getGid())).toSpotifyUri());
@@ -426,13 +420,8 @@ public class ArtistPanel extends JScrollPane implements View {
                                 .build())
                         .build(), (data) -> {
                     Metadata.Album album = Metadata.Album.parseFrom(data[0].getValue());
-                    artistAlbumTable.addModifyAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            ((DefaultTableModel) artistAlbumTable.getModel()).addRow(new Object[]{
-                                    album.getName()
-                            });
-                        }
+                    ((DefaultTableModel) artistAlbumTable.getModel()).addRow(new Object[]{
+                            album.getName()
                     });
 
                     albumUriCache.add(AlbumId.fromHex(Utils.bytesToHex(album.getGid())).toSpotifyUri());
@@ -441,6 +430,9 @@ public class ArtistPanel extends JScrollPane implements View {
         }
 
         batchedRequestHelper.execute(PublicValues.session.api(), null);
+        } finally {
+            fillWithGuard.exit();
+        }
     }
 
     public void reset() {

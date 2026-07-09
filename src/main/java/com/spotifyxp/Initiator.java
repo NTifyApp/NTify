@@ -22,6 +22,7 @@ import com.spotifyxp.background.BackgroundService;
 import com.spotifyxp.cache.Cache;
 import com.spotifyxp.configuration.Config;
 import com.spotifyxp.configuration.ConfigValues;
+import com.spotifyxp.history.PlaybackHistory;
 import com.spotifyxp.injector.Injector;
 import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.lib.libLanguage;
@@ -44,6 +45,7 @@ import com.spotifyxp.utils.ArchitectureDetection;
 import com.spotifyxp.utils.GraphicalMessage;
 import com.spotifyxp.utils.Utils;
 import okhttp3.*;
+import okhttp3.Authenticator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,23 +56,28 @@ import javax.net.ssl.X509TrustManager;
 import javax.swing.*;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URISyntaxException;
+import java.net.*;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class Initiator {
-    static final Thread hook = new Thread(PlayerArea::saveCurrentState, "Save play state");
+    static final Thread hook = new Thread(() -> {
+        PlayerArea.saveCurrentState();
+        if (PublicValues.cache != null) {
+            PublicValues.cache.clearAll();
+        }
+        PlaybackHistory.shutdown();
+    }, "Save play state");
 
     public static void main(String[] args) {
         try {
             PublicValues.argParser.parseArguments(args); //Parsing the arguments
             new SplashPanel().show(); //Initializing the splash panel
-            System.setProperty("http.agent", ApplicationUtils.getUserAgent()); //Setting the user agent string that SpotifyXP uses
+            System.setProperty("http.agent", ApplicationUtils.getUserAgent()); //Setting the user agent string that NTify uses
             checkDebug(); //Checking if debug is enabled
             detectOS(); //Detecting the operating system
             detectArchitecture();
@@ -104,7 +111,7 @@ public class Initiator {
             if (Flags.videoPlaybackSupport) initializeVideoPlayback();
             loadExtensions(); //Loading extensions if there are any
             initGEH(); //Initializing the global exception handler
-            storeArguments(args); //Storing the program arguments in PublicValues.class
+            PublicValues.args = args; //Storing the program arguments in PublicValues.class
             parseAudioQuality(); //Parsing the audio quality
             initThemes(); //Initializing the theming support
             addShutdownHook(); //Adding the shutdown hook
@@ -134,15 +141,18 @@ public class Initiator {
             PublicValues.defaultHttpClient.newCall(request).execute();
         }catch (SSLHandshakeException e) {
             // TrustStore outdated
-            int response = JOptionPane.showConfirmDialog(null, "", "", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE);
+            int response = GraphicalMessage.showConfirmDialog("dialogs.trust_store_outdated.title", "dialogs.trust_store_outdated.message", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE);
             if (response == JOptionPane.OK_OPTION) {
                 try {
                     Utils.openBrowser("https://github.com/JohnTHaller/RootCertificateUpdatesForLegacyWindows");
                 } catch (URISyntaxException | IOException ex) {
-                    throw new RuntimeException(ex);
+                    ConsoleLogging.Throwable(ex);
                 }
             }
-        } catch (IOException ignored) {
+
+            System.exit(0);
+        } catch (IOException e) {
+            ConsoleLogging.warning("Failed to check for trust store issues");
         }
     }
 
@@ -193,8 +203,12 @@ public class Initiator {
                     clientBuilder.hostnameVerifier((hostname, session) -> true);
                 }
                 PublicValues.defaultHttpClient = clientBuilder.build();
-            } catch (Exception e) {
+            } catch (UnknownHostException e) {
                 ConsoleLogging.Throwable(e);
+                ConsoleLogging.error("Invalid proxy address");
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                ConsoleLogging.Throwable(e);
+                ConsoleLogging.error("Proxy init failed");
             }
         }
     }
@@ -224,19 +238,19 @@ public class Initiator {
         }
     }
 
-    static void detectOS() throws IOException {
+    static void detectOS() {
         SplashPanel.linfo.setText("Detecting operating system...");
         PublicValues.osType = libDetect.getDetectedOS();
         new SupportModuleLoader().loadModules();
         if(!Flags.linuxSupport) {
             if(PublicValues.osType == libDetect.OSType.Linux) {
-                JOptionPane.showMessageDialog(null, ApplicationUtils.getName() + " was built without Linux support", "Fatal error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "NTify was built without Linux support", "Fatal error", JOptionPane.ERROR_MESSAGE);
                 System.exit(0);
             }
         }
         if(!Flags.macosSupport) {
             if(PublicValues.osType == libDetect.OSType.MacOS) {
-                JOptionPane.showMessageDialog(null, ApplicationUtils.getName() + " was built without MacOS support", "Fatal error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "NTify was built without MacOS support", "Fatal error", JOptionPane.ERROR_MESSAGE);
                 System.exit(0);
             }
         }
@@ -252,14 +266,14 @@ public class Initiator {
         PublicValues.logPrintStream.checkLogFiles();
     }
 
-    static void initializeVideoPlayback() throws IOException {
+    static void initializeVideoPlayback() {
         if(Flags.videoPlaybackSupport) {
+            SplashPanel.linfo.setText("Initializing video playback...");
             try {
                 Class<?> util = Class.forName("uk.co.caprica.vlcj.SPXPInit");
                 util.getMethod("init").invoke(util);
             } catch (Exception ex) {
-                ex.printStackTrace();
-                ConsoleLogging.info(ApplicationUtils.getName() + " was built without video playback support");
+                ConsoleLogging.Throwable(ex);
             }
         }
     }
@@ -270,6 +284,7 @@ public class Initiator {
                 PublicValues.updaterDisabled = true;
                 return;
             }
+            SplashPanel.linfo.setText("Checking for updates...");
             Optional<Updater.UpdateInfo> updateInfoOptional = Updater.updateAvailable();
             if(updateInfoOptional.isPresent()) {
                 SplashPanel.frame.setAlwaysOnTop(false);
@@ -287,7 +302,8 @@ public class Initiator {
         try {
             PublicValues.config = Config.newInstance(PublicValues.configfilepath, ConfigValues.class, new Gson());
         } catch (IOException | IllegalAccessException | InstantiationException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
+            ConsoleLogging.Throwable(e);
+            GraphicalMessage.sorryErrorExit("Failed to initialize config! Exception: " + e.getMessage());
         }
     }
 
@@ -297,13 +313,8 @@ public class Initiator {
     }
 
     static void initGEH() {
-        SplashPanel.linfo.setText("Setting up globalexceptionhandler...");
+        SplashPanel.linfo.setText("Setting GlobalExceptionHandler...");
         Thread.setDefaultUncaughtExceptionHandler(new GlobalExceptionHandler());
-    }
-
-    static void storeArguments(String[] args) {
-        SplashPanel.linfo.setText("Storing program arguments...");
-        PublicValues.args = args;
     }
 
     static void initLanguageSupport() {
@@ -315,6 +326,11 @@ public class Initiator {
     static void setLanguage() {
         SplashPanel.linfo.setText("Setting language...");
         PublicValues.language.setNoAutoFindLanguage(libLanguage.Language.getCodeFromName(PublicValues.config.getFields().language));
+        try {
+            PublicValues.language.setTranslationProvider(libLanguage.TranslationProviders.YAML);
+        }catch (IOException e) {
+            ConsoleLogging.Throwable(e);
+        }
     }
 
     static void parseAudioQuality() {
@@ -322,7 +338,7 @@ public class Initiator {
         try {
             PublicValues.quality = Quality.valueOf(PublicValues.config.getFields().audioQuality);
         } catch (Exception exception) {
-            //This should not happen but when it happens don't crash SpotifyXP
+            //This should not happen but when it happens don't crash NTify
             PublicValues.quality = Quality.NORMAL;
             ConsoleLogging.warning("Can't find the right audio quality! Defaulting to 'NORMAL'");
         }
@@ -341,7 +357,7 @@ public class Initiator {
     }
 
     static void initThemes() {
-        SplashPanel.linfo.setText("Init Themes...");
+        SplashPanel.linfo.setText("Setting application theme...");
         ThemeLoader loader = PublicValues.themeLoader;
         try {
             loader.loadTheme(PublicValues.config.getFields().theme);
@@ -350,7 +366,7 @@ public class Initiator {
             try {
                 loader.tryLoadTheme(PublicValues.config.getFields().theme);
             } catch (Exception e2) {
-                ConsoleLogging.warning("Failed loading theme! SpotifyXP is now ugly");
+                ConsoleLogging.warning("Failed loading theme! NTify is now ugly");
             }
         }
     }
@@ -358,13 +374,13 @@ public class Initiator {
     static void creatingLock() {
         try {
             if (Utils.checkOrLockFile()) {
-                JOptionPane.showMessageDialog(null, "Another instance of SpotifyXP is already running! Exiting...");
+                JOptionPane.showMessageDialog(null, "Another instance of NTify is already running! Exiting...");
                 System.exit(-1);
             }
         } catch (Exception e) {
             GraphicalMessage.openException(e);
             ConsoleLogging.Throwable(e);
-            ConsoleLogging.warning("Couldn't create LOCK! SpotifyXP may be unstable");
+            ConsoleLogging.warning("Couldn't create LOCK! NTify may be unstable");
         }
     }
 
@@ -379,14 +395,13 @@ public class Initiator {
     }
 
     static void initAPI() {
-        SplashPanel.linfo.setText("Creating api...");
+        SplashPanel.linfo.setText("Connecting to spotify...");
         InstanceManager.getPlayer();
-        SplashPanel.linfo.setText("Create advanced api key...");
         InstanceManager.getUnofficialSpotifyApi();
     }
 
     static void initGUI() throws IOException {
-        SplashPanel.linfo.setText("Creating contentPanel...");
+        SplashPanel.linfo.setText("Building the ui...");
         new ContentPanel().open();
     }
 

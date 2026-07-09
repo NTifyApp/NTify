@@ -40,7 +40,7 @@ public class InjectorAPI {
     public static ArrayList<InjectorAPI.InjectorRepository> injectorRepos = new ArrayList<>();
 
     public InjectorAPI() {
-        injectorRepos.add(new InjectorAPI.InjectorRepository("https://ntifyapp.werwolf2303.de/Extensions-Repository/repo/"));
+        injectorRepos.add(new InjectorAPI.InjectorRepository("http://ntifyapp.werwolf2303.de/Extensions-Repository/repo/"));
     }
 
     @FunctionalInterface
@@ -50,26 +50,32 @@ public class InjectorAPI {
 
     public static class InjectorRepository {
         private final String url;
-        private final boolean isAvailable;
+        private Boolean isAvailable;
 
         public InjectorRepository(String url) {
             this.url = url;
-            try {
-                this.isAvailable = InetAddress.getByName(this.url.replace("https://", "").replace("http://", "").split("/")[0]).isReachable(2000);
-            }catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            if (!this.isAvailable) {
-                ConsoleLogging.error("Repository with url '" + this.url + "' is not reachable");
-            }
         }
 
         public String getUrl() {
             return this.url;
         }
 
+        /**
+         * Performs a blocking reachability check (up to 2s) on first call, then caches the result.
+         * Must not be called from the EDT.
+         */
         public boolean isAvailable() {
-            return this.isAvailable;
+            if (isAvailable == null) {
+                try {
+                    isAvailable = InetAddress.getByName(this.url.replace("https://", "").replace("http://", "").split("/")[0]).isReachable(2000);
+                } catch (IOException e) {
+                    isAvailable = false;
+                }
+                if (!isAvailable) {
+                    ConsoleLogging.error("Repository with url '" + this.url + "' is not reachable");
+                }
+            }
+            return isAvailable;
         }
     }
 

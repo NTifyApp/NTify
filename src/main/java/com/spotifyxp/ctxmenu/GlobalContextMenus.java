@@ -15,6 +15,8 @@
  */
 package com.spotifyxp.ctxmenu;
 
+import com.spotify.extendedmetadata.ExtendedMetadata;
+import com.spotify.extendedmetadata.ExtensionKindOuterClass;
 import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.dialogs.FollowPlaylist;
@@ -22,10 +24,13 @@ import com.spotifyxp.dialogs.SelectPlaylist;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.panels.Queue;
 import com.spotifyxp.utils.ClipboardUtil;
+import com.spotifyxp.utils.TrackUtils;
 import org.jetbrains.annotations.Nullable;
+import xyz.gianlu.librespot.api.ApiClient;
 import xyz.gianlu.librespot.common.Utils;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.metadata.*;
@@ -51,7 +56,7 @@ public enum GlobalContextMenus {
 
         @Override
         public String name() {
-            return PublicValues.language.translate("ui.general.copyuri");
+            return PublicValues.language.translate("general.copy_uri");
         }
 
         @Override
@@ -172,7 +177,7 @@ public enum GlobalContextMenus {
 
         @Override
         public String name() {
-            return PublicValues.language.translate("ui.general.addtolibrary");
+            return PublicValues.language.translate("general.add_to_library");
         }
 
         @Override
@@ -232,7 +237,7 @@ public enum GlobalContextMenus {
 
         @Override
         public String name() {
-            return PublicValues.language.translate("ui.general.addtoplaylist");
+            return PublicValues.language.translate("general.add_to_playlist");
         }
 
         @Override
@@ -253,8 +258,37 @@ public enum GlobalContextMenus {
             return new Runnable() {
                 @Override
                 public void run() {
+                    //Add to the player's queue per-item (cheap - in-memory mutation, the resulting
+                    //state sync to Spotify Connect is debounced by librespot regardless of call rate)
+                    //but fetch all metadata for the UI list in one batch instead of the N sequential
+                    //blocking fetches that SpotifyXPEvents.addToQueue's per-item subscriber would do.
                     for(String s : uris) {
-                        SpotifyXPEvents.addToQueue.trigger(s);
+                        InstanceManager.getSpotifyPlayer().addToQueue(s);
+                    }
+                    //Match SpotifyXPEvents.addToQueue's subscriber in Queue.java: only append to
+                    //the local UI cache if it's already populated, otherwise leave it for the next
+                    //full rebuild (queueUpdate/makeVisible) so the view doesn't go out of sync with
+                    //the player's real queue.
+                    if (!Queue.queueUriCache.isEmpty()) {
+                        try {
+                            ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
+                            for(String s : uris) {
+                                helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
+                                        .setEntityUri(s)
+                                        .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
+                                                .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.TRACK_V4)
+                                                .build())
+                                        .build(), data -> {
+                                    Metadata.Track track = Metadata.Track.parseFrom(data[0].getValue());
+                                    Queue.queueUriCache.add(s);
+                                    String a = TrackUtils.getArtists(track.getArtistList());
+                                    Queue.queueListModel.addElement(track.getName() + " - " + a);
+                                });
+                            }
+                            helper.execute(PublicValues.session.api(), (exception, response) -> ConsoleLogging.Throwable(exception));
+                        } catch (Exception e) {
+                            ConsoleLogging.Throwable(e);
+                        }
                     }
                 }
             };
@@ -262,7 +296,7 @@ public enum GlobalContextMenus {
 
         @Override
         public String name() {
-            return PublicValues.language.translate("ui.general.addalltoqueue");
+            return PublicValues.language.translate("general.add_all_to_queue");
         }
 
         @Override
@@ -298,7 +332,7 @@ public enum GlobalContextMenus {
 
         @Override
         public String name() {
-            return PublicValues.language.translate("ui.general.addtoqueue");
+            return PublicValues.language.translate("general.add_to_queue");
         }
 
         @Override

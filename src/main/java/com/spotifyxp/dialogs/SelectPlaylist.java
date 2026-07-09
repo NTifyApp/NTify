@@ -1,5 +1,5 @@
 /*
- * Copyright [2025] [Gianluca Beil]
+ * Copyright [2025-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,10 +92,10 @@ public class SelectPlaylist extends JDialog {
 
     public SelectPlaylist(onPlaylistSelected selected) throws IOException {
         super();
-        selectPlaylistLabel.setText(PublicValues.language.translate("selectplaylist.dialog.description"));
+        selectPlaylistLabel.setText(PublicValues.language.translate("dialogs.select_playlist.description"));
         selectPlaylistLabel.setForeground(PublicValues.globalFontColor);
 
-        okButton.setText(PublicValues.language.translate("selectplaylist.dialog.ok"));
+        okButton.setText(PublicValues.language.translate("general.ok"));
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -106,7 +106,7 @@ public class SelectPlaylist extends JDialog {
         });
         okButton.setEnabled(false);
 
-        cancelButton.setText(PublicValues.language.translate("selectplaylist.dialog.cancel"));
+        cancelButton.setText(PublicValues.language.translate("general.cancel"));
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -163,7 +163,7 @@ public class SelectPlaylist extends JDialog {
                 dispose();
             }
         });
-        setTitle(PublicValues.language.translate("selectplaylist.dialog.title"));
+        setTitle(PublicValues.language.translate("dialogs.select_playlist.title"));
         pack();
         setVisible(true);
     }

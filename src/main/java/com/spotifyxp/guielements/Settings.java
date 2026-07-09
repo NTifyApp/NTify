@@ -47,11 +47,6 @@ public class Settings extends JFrame {
     HashMap<String, Object> custom_settings;
     Settings itself;
 
-    @FunctionalInterface
-    public interface OnWrite {
-        void run(Object data);
-    }
-
     /**
      * You may not instantiate this class yourself
      */
@@ -82,7 +77,7 @@ public class Settings extends JFrame {
                 setMinimumSize(getSize());
             }
         });
-        setTitle(PublicValues.language.translate("ui.settings.title"));
+        setTitle(PublicValues.language.translate("dialogs.settings.title"));
 
         if (!initializeDefault) return;
 
@@ -129,8 +124,10 @@ public class Settings extends JFrame {
         Class<?> annotationClass = annotation.annotationType();
         String id = (String) annotationClass.getDeclaredMethod("id").invoke(annotation);
         String category = (String) annotationClass.getDeclaredMethod("category").invoke(annotation);
+        String translationKey = (String) annotationClass.getDeclaredMethod("translationKey").invoke(annotation);
         Object currentValue = field.get(configClassInstance);
         Object defaultValue = field.get(configClassInstance);
+        String translation = configClassInstance.translate(translationKey.isEmpty() ? id : translationKey);
 
         if(!tabs.containsKey(category)) {
             JPanel panel = new JPanel();
@@ -143,7 +140,7 @@ public class Settings extends JFrame {
         }
 
         JPanel panel = tabs.get(category);
-        JLabel label = new JLabel(configClassInstance.translate(id), SwingConstants.RIGHT);
+        JLabel label = new JLabel(translation, SwingConstants.RIGHT);
         label.setForeground(PublicValues.globalFontColor);
         panel.add(label, createGbc(0, panel.getComponentCount() + 1, -1));
 
@@ -303,7 +300,7 @@ public class Settings extends JFrame {
                 }
             }
             PublicValues.config.save();
-            JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("ui.settings.pleaserestart"), PublicValues.language.translate("joptionpane.info"), JOptionPane.OK_CANCEL_OPTION);
+            JOptionPane.showConfirmDialog(ContentPanel.frame, PublicValues.language.translate("dialogs.settings.dialogs.please_restart.title"), PublicValues.language.translate("general.info"), JOptionPane.OK_CANCEL_OPTION);
         }
     }
 }

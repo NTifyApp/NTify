@@ -45,7 +45,7 @@ public class CanvasPlayer extends JFrame {
     private boolean videoLoaded = false;
 
     public CanvasPlayer() throws IOException {
-        setTitle(PublicValues.language.translate("ui.canvasplayer.title").replace("%APPNAME%", ApplicationUtils.getName()));
+        setTitle(PublicValues.language.translate("dialogs.canvas_player.title"));
         setPreferredSize(new Dimension(290, 460));
         if (!PublicValues.config.getFields().cacheDisabled) {
             cachePath = new File(PublicValues.fileslocation, "cvnscache");

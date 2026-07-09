@@ -1626,7 +1626,7 @@ public class UnofficialSpotifyAPI {
 
     public static LibraryResponse getLibraryPage(String[] filters, String[] features, int limit, int offset) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
-                PublicValues.session.api().user().getLibrary(filters, features, limit, offset).toString(),
+                PublicValues.session.api().user().getLibrary(filters, features, limit, offset),
                 LibraryResponse.class
         );
     }
@@ -1650,26 +1650,26 @@ public class UnofficialSpotifyAPI {
 
     public static ArtistUnionDiscoveredOn getArtistDiscoveredOn(String uri) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
-                PublicValues.session.api().artist().getArtistDiscoveredOn(uri).toString(),
+                PublicValues.session.api().artist().getArtistDiscoveredOn(uri),
                 ArtistUnionDiscoveredOn.class);
     }
 
     public static LibraryTracksResponse getLibraryTracks(int limit, int offset) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
-                PublicValues.session.api().user().getLibraryTracks(limit, offset).toString(),
+                PublicValues.session.api().user().getLibraryTracks(limit, offset),
                 LibraryTracksResponse.class
         );
     }
 
     public static ArtistUnionRelatedArtists getArtistRelatedArtists(String uri) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
-                PublicValues.session.api().artist().getArtistRelatedArtists(uri).toString(),
+                PublicValues.session.api().artist().getArtistRelatedArtists(uri),
                 ArtistUnionRelatedArtists.class);
     }
 
     public static ArtistUnionHeaderImage getArtistHeaderImage(String uri) throws IOException, TokenProvider.TokenException {
         return new Gson().fromJson(
-                PublicValues.session.api().artist().getArtistHeaderImage(uri).toString(),
+                PublicValues.session.api().artist().getArtistHeaderImage(uri),
                 ArtistUnionHeaderImage.class);
     }
 

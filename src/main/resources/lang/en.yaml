@@ -1,0 +1,439 @@
+# Keys that are used in multiple places
+general:
+  monthly_listeners: "Monthly listeners"
+  add_to_library: "Add to library"
+  add_to_playlist: "Add to playlist"
+  add_all_to_queue: "Add all to queue"
+  remove_playlist: "Remove playlist"
+  add_to_queue: "Add to queue"
+  copy_uri: "Copy URI"
+  load_more: "Load more"
+  refresh: "Refresh"
+  remove: "Remove"
+  copy: "Copy"
+  location: "Location"
+  date: "Date"
+  error: "Error"
+  artist: "Artist"
+  name: "Name"
+  description: "Description"
+  warning: "Warning"
+  bitrate: "Bitrate"
+  filesize: "File size"
+  length: "Length"
+  genres: "Genres"
+  back: "Back"
+  ok: "OK"
+  info: "Info"
+  albums: "Albums"
+  cancel: "Cancel"
+
+
+# Keys used in the menu bar
+menubar:
+  file:
+    name: "File"
+    play_uri: "Play song from URI"
+    exit: "Exit"
+
+  account:
+    name: "Account"
+    logout: "Logout"
+
+  edit:
+    name: "Edit"
+    settings: "Settings"
+
+  view:
+    name: "View"
+    audio_visualizer: "Audio Visualizer"
+
+  help:
+    name: "Help"
+    extension_store: "Open Extension Store"
+    open_log_viewer: "Open Log Viewer"
+    check_update: "Check for update"
+    about: "About NTify"
+
+  theme:
+    name: "Theme"
+    change_color: "Change color"
+
+
+# Keys used in the library view
+library:
+  general:
+    show_name: "Show name"
+
+  tabs:
+    artists: "Artists"
+    episodes: "Episodes"
+    playlists: "Playlists"
+    shows: "Shows"
+    tracks: "Tracks"
+
+  artists:
+    context_menu:
+      unfollow: "Unfollow artist"
+
+  episodes:
+    context_menu:
+      remove: "Remove episode"
+      view_description: "View episode description"
+      view_show_description: "View show description"
+
+    table:
+      episode_name: "Episode name"
+
+  playlists:
+    context_menu:
+      change_playlist: "Change playlist"
+      create_playlist: "Create playlist"
+
+  shows:
+    context_menu:
+      view_description: "View description"
+
+    table:
+      publisher: "Publisher"
+
+
+# Keys that are used in the feedback view
+feedback:
+  found_a_bug: "Found a bug?"
+  report_bug: "Report on GitHub (account required)"
+  see_reported_bugs: "Want to see reported bugs?"
+  view_bugs: "View bugs on GitHub"
+  visit_project_label: "Want to give the project a visit?"
+  visit_project: "Visit project on GitHub"
+  browser_info: "Clicking any button will open the corresponding web page in a browser. You can choose the browser by setting the browser path in NTify settings, or by setting the default browser in your system settings."
+  thank_you_text: |
+    Thank you for using NTify :)
+
+
+    It would really help if you report bugs that you come across
+
+
+# Keys used in the search view
+search:
+  input_fields:
+    border_title: "Search fields"
+
+    artist_field: "Filter for Artist:"
+    title_field: "Title:"
+
+  clear_button: "Clear Fields"
+  find_it_button: "Find It!"
+
+  filters:
+    border_title: "Search filters"
+
+    exclude_explicit: "Exclude Explicit"
+    artist: "Search Artists"
+    track: "Search Tracks"
+    album: "Search Albums"
+    playlist: "Search Playlists"
+    show: "Search Shows"
+
+
+# Keys used in the browse view
+browse:
+  context_menu:
+    metro: "Metro layout"
+    table: "Table layout"
+
+  events: "Events"
+
+
+# Keys used in the tab titles
+tabs:
+  feedback: "Feedback"
+  home: "Home"
+  hotlist: "Hot List"
+  library: "Library"
+  queue: "Queue"
+  search: "Search"
+  browse: "Browse"
+
+
+# Keys used in dialogs
+# Everything that opens in another window is considered a dialog
+dialogs:
+  general:
+    playlist_name: "Playlist name"
+    playlist_description: "Playlist description"
+
+  about:
+    deps: "Open-Source Dependencies"
+    description: "Plays real Spotify music on Windows XP"
+    tested: "Tested on an Amilo PA1510 with Windows XP Home Edition x86"
+
+  critical:
+    title: "Critical"
+    text: "A critical error occurred and NTify can't start. NTify will now close! Sorry :("
+
+  error:
+    title: "NTify - Exception"
+    description: "An error occurred"
+
+  bug_occurred:
+    description: "A bug was encountered please report this! Where: "
+
+  logout:
+    message: "NTify will now close. To use NTify again, login with either Zeroconf (with the Spotify app) or OAuth (with the browser)"
+
+  play_track_uri:
+    title: "Play song from URI"
+    message: "Enter URI"
+
+  audio_visualizer:
+    title: "NTify - Audio Visualizer"
+
+  login:
+    title: "NTify - Login"
+
+    open_proxy_settings: "Open proxy settings"
+    choose_login_method: "Choose login method"
+
+    dialogs:
+      login_oauth_error:
+        message: "Could not open OAuth URL! Press 'Copy' and open it manually"
+
+    login_method:
+      zeroconf:
+        title: "Log in via Zeroconf"
+        message: "Click on 'Devices' in an official Spotify client and click on 'NTify'"
+
+      oauth:
+        title: "Log in via OAuth"
+        message: "If no browser opens, click 'Copy' to copy the URL"
+
+  settings:
+    title: "NTify - Settings"
+
+    dialogs:
+      please_restart:
+        title: "Please restart NTify to apply the changes"
+
+    browser:
+      name: "Browser"
+      mypal_path: "Mypal executable path"
+
+    playback:
+      name: "Playback"
+      quality: "Quality"
+      cache: "Disable cache"
+      autoqueue: "Disable auto-queuing"
+
+    proxy:
+      name: "Proxy"
+      enable: "Enable proxy"
+      type: "Proxy type"
+      address: "Proxy address"
+      username: "Proxy username"
+      password: "Proxy password"
+      trust_all_certificates: "Trust all certificates"
+
+    other:
+      name: "Other"
+      autoplay_enabled: "Autoplay enabled"
+      crossfade_duration: "Crossfade duration"
+      enable_normalization: "Enable normalization"
+      normalization_pregain: "Normalization pregain"
+      mixer_search_keywords: "Mixer search keywords"
+      preload_enabled: "Preload enabled"
+      release_line_delay: "Release line delay"
+      bypass_sink_volume: "Bypass sink volume"
+      preferred_locale: "Preferred locale"
+
+    ui:
+      name: "UI"
+      theme: "Theme"
+      language: "Language"
+      browse_view_style: "Browse tab style"
+      exception_visibility: "Hide exceptions"
+
+    logging:
+      name: "Logging"
+      enable_file_logging: "Enable file logging"
+      max_kept_logs: "Max kept logs"
+
+  custom_theme:
+    fields:
+      background_color: "Background color"
+      font_color: "Font color"
+      border_color: "Border color"
+      tabpanel_color: "Tab panel background color"
+      theme_to_use: "Theme to use"
+
+    dialogs:
+      color_chooser:
+        title: "Choose a color"
+
+    select_color_button: "Select color"
+
+  library:
+    show_description:
+      title: "NTify - Show description for: %s"
+
+    episode_description:
+      title: "NTify - Episode description for: %s"
+
+  extension_store:
+    title: "NTify - Extension Store"
+
+    tabs:
+      installed: "Installed"
+      store: "Store"
+
+    update_extension_button: "Update"
+    install_extension_button: "Install"
+
+    dialogs:
+      remove_extension:
+        message: "The extension will be uninstalled upon closing NTify"
+
+      install_extension:
+        message: "The extension will be loaded upon restarting NTify"
+
+      update_extension:
+        message: "The extension will be updated upon restarting NTify"
+
+  trust_store_outdated:
+    title: "Outdated trust store"
+    message: "Your Java TrustStore is outdated and that may cause connection issues. Please update your TrustStore. Click OK to open github.com/JohnTHaller/RootCertificateUpdatesForLegacyWindows"
+
+  canvas_player:
+    title: "NTify - Canvas"
+
+  lyrics:
+    title: "NTify - Song Lyrics"
+
+  log_viewer:
+    title: "NTify - Log Viewer"
+
+    info: "Double-click an entry to view it"
+
+    tabs:
+      logs: "Logs"
+      log: "Log"
+
+  unable_to_open_page:
+    title: "Unable to open page"
+    message: "Java reports that the Desktop class is not supported and that no browser was set in NTify's settings"
+
+  updater:
+    title: "NTify - Updater"
+
+    update_available:
+      progress_label: "Update available! Click 'Start update' to update"
+      update_button: "Start update"
+      cancel_button: "Cancel update"
+      failed: "Update failed! %s"
+      cancel_button_done: "Close"
+      updating: "Updating"
+      done: "Done"
+
+    dialogs:
+      no_update_available:
+        message: "No update available"
+
+  create_playlist:
+    title: "NTify - Create playlist"
+
+    context_menu:
+      from_url: "From URL"
+      from_file: "From file"
+
+    playlist_visibility:
+      public: "Make playlist public"
+      collaborative: "Make playlist collaborative"
+
+    change_image_button: "Change image"
+
+    dialogs:
+      general:
+        unable_to_get_image: "Unable to get image! Error message: "
+
+      select_image_url:
+        title: "NTify - Select playlist image URL"
+        description: "Image URL"
+
+      select_image_file:
+        mime_type_description: "Supported Image Files"
+
+      no_playlist_name:
+        message: "Please enter a playlist name"
+
+  change_playlist:
+    title: "NTify - Change playlist"
+
+    playlist_visibility:
+      public: "Playlist public"
+      collaborative: "Playlist collaborative"
+
+    dialogs:
+      no_playlist_selected:
+        message: "No playlist selected"
+
+  follow_playlist:
+    title: "NTify - Follow Playlist"
+
+    visibility:
+      name: "Visibility"
+      public: "Public"
+      private: "Private"
+
+  select_playlist:
+    title: "NTify - Select playlist"
+    description: "Playlist"
+
+  picture_in_picture:
+    change_button_height: "Change button height"
+
+  history:
+    title: "NTify - Playback History"
+    tree_root: "Playback History"
+    remove_all_button: "Remove all"
+
+  error_queue:
+    title: "NTify - Error queue"
+    clear_errors_button: "Clear errors"
+
+  fullscreen_player:
+    title: "NTify - Fullscreen Player"
+
+
+# Keys used in the artist view
+artist:
+  popular: "Popular"
+  discovered_on: "Discovered on"
+  related_artists: "Related artists"
+
+
+# Keys used in the artist event view
+artist_event_view:
+    dialogs:
+        no_ticket_info:
+          message: "No ticket info found"
+        no_venue_info:
+          message: "No venue info found"
+
+    view_event: "View event"
+    view_on_apple_maps: "View on Apple Maps"
+    view_on_google_maps: "View on Google Maps"
+
+
+# Keys used in the player section
+player:
+  nothing_playing:
+    title: "No Title"
+    artist: "No Artist"
+
+  context_menu:
+    open_in_pip: "Open in PiP"
+    switch_fullscreen: "Switch to Fullscreen Mode"
+
+
+# The key for the red button that appears when an error occurred
+error_queue_button: "Errors"

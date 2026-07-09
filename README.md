@@ -69,9 +69,8 @@ If not existing, we'll resolve it 😊
 
 ## Translating
 
-<p>If you want to translate this project look into src/main/resources/lang/skeleton.json</p>
-<p>Make sure you have run 'python3 i18nhelper.py -skeleton' to make sure the skeleton is up to date</p>
-<p>Rename skeleton.json to [2DigitLanguageCode].json</p>
+<p>If you want to translate this project look into src/main/resources/lang/en.yaml</p>
+<p>Create a new file named [ISO 639-1 Language Code].yaml under src/main/resources/lang</p>
 
 ## Built With
 

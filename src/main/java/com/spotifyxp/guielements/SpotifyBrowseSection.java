@@ -1,5 +1,5 @@
 /*
- * Copyright [2024-2025] [Gianluca Beil]
+ * Copyright [2024-2026] [Gianluca Beil]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class SpotifyBrowseSection extends JScrollPane {
                 new Object[][]{
                 },
                 new String[]{
-                        PublicValues.language.translate("ui.general.name"), PublicValues.language.translate("ui.general.description"), ""
+                        PublicValues.language.translate("general.name"), PublicValues.language.translate("general.description"), ""
                 }
         ));
         table.setForeground(PublicValues.globalFontColor);
@@ -114,7 +114,7 @@ public class SpotifyBrowseSection extends JScrollPane {
                 new Object[][]{
                 },
                 new String[]{
-                        PublicValues.language.translate("ui.general.name"), ""
+                        PublicValues.language.translate("general.name"), ""
                 }
         ));
         table.setForeground(PublicValues.globalFontColor);

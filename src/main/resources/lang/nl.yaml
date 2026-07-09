@@ -1,0 +1,429 @@
+# Keys that are used in multiple places
+general:
+  monthly_listeners: "Maandelijkse luisteraars"
+  add_to_library: "Toevoegen aan bibliotheek"
+  add_to_playlist: "Toevoegen aan afspeellijst"
+  add_all_to_queue: "Alles toevoegen aan wachtrij"
+  add_to_queue: "Toevoegen aan wachtrij"
+  copy_uri: "URI kopiëren"
+  load_more: "Meer laden"
+  refresh: "Verversen"
+  remove: "Verwijderen"
+  copy: "Kopiëren"
+  remove_playlist: "Afspeellijst verwijderen"
+  location: "Locatie"
+  date: "Datum"
+  error: "Fout"
+  artist: "Artiest"
+  name: "Naam"
+  description: "Beschrijving"
+  warning: "Waarschuwing"
+  bitrate: "Bitrate"
+  filesize: "Bestandsgrootte"
+  length: "Lengte"
+  title: "Titel"
+  genres: "Genres"
+  back: "Terug"
+  ok: "OK"
+  info: "Info"
+  albums: "Albums"
+  cancel: "Annuleren"
+
+
+# Keys used in the menu bar
+menubar:
+  file:
+    name: "Bestand"
+    play_uri: "Nummer afspelen met URI"
+    exit: "Afsluiten"
+
+  account:
+    name: "Account"
+    logout: "Uitloggen"
+
+  edit:
+    name: "Bewerken"
+    settings: "Instellingen"
+
+  view:
+    name: "Beeld"
+    audio_visualizer: "Audio-visualizer"
+
+  help:
+    name: "Help"
+    extension_store: "Extensiewinkel openen"
+    open_log_viewer: "Logviewer openen"
+    check_update: "Controleren op updates"
+    about: "Over NTify"
+
+  theme:
+    name: "Thema"
+    change_color: "Kleur wijzigen"
+
+
+# Keys used in the library view
+library:
+  general:
+    table:
+      show_name: "Naam tonen"
+
+  tabs:
+    artists: "Artiesten"
+    episodes: "Afleveringen"
+    playlists: "Afspeellijsten"
+    shows: "Shows"
+    tracks: "Nummers"
+
+  artists:
+    context_menu:
+      unfollow: "Artiest ontvolgen"
+
+  episodes:
+    context_menu:
+      remove: "Aflevering verwijderen"
+      view_description: "Beschrijving van aflevering bekijken"
+      view_show_description: "Beschrijving van show bekijken"
+
+    table:
+      episode_name: "Afleveringsnaam"
+
+  shows:
+    context_menu:
+      view_description: "Beschrijving bekijken"
+
+    table:
+      publisher: "Uitgever"
+
+
+# Keys that are used in the feedback view
+feedback:
+  found_a_bug: "Een bug gevonden?"
+  report_bug: "Melden op GitHub (account vereist)"
+  see_reported_bugs: "Wil je bekende bugs zien?"
+  view_bugs: "Bugs bekijken op GitHub"
+  visit_project_label: "Wil je het project eens bekijken?"
+  visit_project: "Project bekijken op GitHub"
+  browser_info: "Als je op een knop klikt, wordt de bijbehorende webpagina geopend in een browser. Je kunt de browser kiezen door het browserpad in de NTify-instellingen in te stellen, of door je standaardbrowser in je systeeminstellingen in te stellen."
+  thank_you_text: |
+    Bedankt voor het gebruiken van NTify :)
+
+
+    Het zou erg helpen als je bugs die je tegenkomt meldt
+
+
+# Keys used in the search view
+search:
+  input_fields:
+    border_title: "Zoekvelden"
+
+    artist_field: "Filter op artiest:"
+    title_field: "Titel:"
+
+  clear_button: "Velden wissen"
+  find_it_button: "Zoeken!"
+
+  filters:
+    border_title: "Zoekfilters"
+
+    exclude_explicit: "Expliciete inhoud uitsluiten"
+    artist: "Artiesten zoeken"
+    track: "Nummers zoeken"
+    album: "Albums zoeken"
+    playlist: "Afspeellijsten zoeken"
+    show: "Shows zoeken"
+
+
+# Keys used in the browse view
+browse:
+  context_menu:
+    metro: "Metro-indeling"
+    table: "Tabelindeling"
+
+  events: "Evenementen"
+
+
+# Keys used in the tab titles
+tabs:
+  feedback: "Feedback"
+  home: "Start"
+  hotlist: "Hotlist"
+  library: "Bibliotheek"
+  queue: "Wachtrij"
+  search: "Zoeken"
+  browse: "Bladeren"
+
+
+# Keys used in dialogs
+# Everything that opens in another window is considered a dialog
+dialogs:
+  general:
+    playlist_name: "Afspeellijstnaam"
+    playlist_description: "Afspeellijstbeschrijving"
+
+  about:
+    deps: "Open-source afhankelijkheden"
+    description: "Speelt echte Spotify-muziek af op Windows XP"
+    tested: "Getest op een Amilo PA1510 met Windows XP Home Edition x86"
+
+  critical:
+    title: "Kritiek"
+    text: "Er is een kritieke fout opgetreden en NTify kan niet starten. NTify wordt nu afgesloten! Sorry :("
+
+  error:
+    title: "NTify - Uitzondering"
+    description: "Er is een fout opgetreden"
+
+  bug_occurred:
+    description: "Er is een bug gevonden, meld dit alsjeblieft! Waar: "
+
+  logout:
+    text: "NTify wordt nu afgesloten. Om NTify opnieuw te gebruiken, log je in met Zeroconf (via de Spotify-app) of OAuth (via de browser)"
+
+  play_track_uri:
+    title: "Nummer afspelen met URI"
+    message: "Voer URI in"
+
+  audio_visualizer:
+    title: "NTify - Audio-visualizer"
+
+  login:
+    title: "NTify - Inloggen"
+
+    open_proxy_settings: "Proxy-instellingen openen"
+    choose_login_method: "Inlogmethode kiezen"
+
+    login_method:
+      zeroconf:
+        title: "Inloggen via Zeroconf"
+        message: "Klik in een officiële Spotify-client op 'Apparaten' en vervolgens op 'NTify'"
+
+      oauth:
+        title: "Inloggen via OAuth"
+        message: "Als er geen browser wordt geopend, klik dan op 'Kopiëren' om de URL te kopiëren"
+
+  login_oauth_error:
+    message: "OAuth-URL kon niet worden geopend! Druk op 'Kopiëren' en open de URL handmatig"
+
+  settings:
+    title: "NTify - Instellingen"
+
+    dialogs:
+      please_restart:
+        title: "Start NTify opnieuw op om de wijzigingen toe te passen"
+
+    browser:
+      name: "Browser"
+      mypal_path: "Pad naar uitvoerbaar bestand van Mypal"
+
+    playback:
+      name: "Afspelen"
+      quality: "Kwaliteit"
+      cache: "Cache uitschakelen"
+      autoqueue: "Automatische wachtrij uitschakelen"
+
+    proxy:
+      name: "Proxy"
+      enable: "Proxy inschakelen"
+      type: "Proxytype"
+      address: "Proxyadres"
+      username: "Proxygebruikersnaam"
+      password: "Proxiewachtwoord"
+      trust_all_certificates: "Alle certificaten vertrouwen"
+
+    other:
+      name: "Overig"
+      autoplay_enabled: "Automatisch afspelen ingeschakeld"
+      crossfade_duration: "Crossfade-duur"
+      enable_normalization: "Normalisatie inschakelen"
+      normalization_pregain: "Normalisatie pregain"
+      mixer_search_keywords: "Mixer-zoekwoorden"
+      preload_enabled: "Voorladen inschakelen"
+      release_line_delay: "Vertragingsregel voor release"
+      bypass_sink_volume: "Sink-volume omzeilen"
+      preferred_locale: "Voorkeurslocale"
+
+    ui:
+      name: "UI"
+      theme: "Thema"
+      language: "Taal"
+      browse_view_style: "Stijl van het blader-tabblad"
+      exception_visibility: "Uitzonderingen verbergen"
+
+    logging:
+      name: "Loggen"
+      enable_file_logging: "Bestandslogboeken inschakelen"
+      max_kept_logs: "Maximaal aantal bewaarde logs"
+
+  custom_theme:
+    fields:
+      background_color: "Achtergrondkleur"
+      font_color: "Letterkleur"
+      border_color: "Randkleur"
+      tabpanel_color: "Achtergrondkleur van tabbladpaneel"
+      theme_to_use: "Te gebruiken thema"
+
+    select_color_button: "Kleur kiezen"
+
+  library:
+    show_description:
+      title: "NTify - Beschrijving van show: %s"
+
+    episode_description:
+      title: "NTify - Beschrijving van aflevering: %s"
+
+  extension_store:
+    title: "NTify - Extensiewinkel"
+
+    tabs:
+      installed: "Geïnstalleerd"
+      store: "Winkel"
+
+    update_extension_button: "Bijwerken"
+    install_extension_button: "Installeren"
+
+    dialogs:
+      remove_extension:
+        message: "De extensie wordt verwijderd zodra NTify wordt afgesloten"
+
+      install_extension:
+        message: "De extensie wordt geladen na het opnieuw opstarten van NTify"
+
+      update_extension:
+        message: "De extensie wordt bijgewerkt na het opnieuw opstarten van NTify"
+
+  trust_store_outdated:
+    title: "Verouderde truststore"
+    message: "Je Java TrustStore is verouderd en kan verbindingsproblemen veroorzaken. Werk je TrustStore bij. Klik op OK om github.com/JohnTHaller/RootCertificateUpdatesForLegacyWindows te openen"
+
+  canvas_player:
+    title: "NTify - Canvas"
+
+  lyrics:
+    title: "NTify - Songteksten"
+
+  log_viewer:
+    title: "NTify - Logviewer"
+
+    info: "Dubbelklik op een item om het te bekijken"
+
+    tabs:
+      logs: "Logs"
+      log: "Log"
+
+  unable_to_open_page:
+    title: "Pagina kan niet worden geopend"
+    message: "Java meldt dat de Desktop-klasse niet wordt ondersteund en dat er geen browser is ingesteld in de NTify-instellingen"
+
+  updater:
+    title: "NTify - Updater"
+
+    update_available:
+      progress_label: "Update beschikbaar! Klik op 'Update starten' om bij te werken"
+      update_button: "Update starten"
+      cancel_button: "Update annuleren"
+      failed: "Update mislukt! %s"
+      cancel_button_done: "Sluiten"
+      updating: "Bezig met bijwerken"
+      done: "Gereed"
+
+    no_update_available:
+      message: "Geen update beschikbaar"
+
+  create_playlist:
+    title: "NTify - Afspeellijst maken"
+
+    context_menu:
+      from_url: "Van URL"
+      from_file: "Van bestand"
+
+    playlist_visibility:
+      public: "Afspeellijst openbaar maken"
+      collaborative: "Afspeellijst samenwerkend maken"
+
+    change_image_button: "Afbeelding wijzigen"
+
+    dialogs:
+      select_image_url:
+        title: "NTify - Selecteer URL van afspeellijstafbeelding"
+        description: "Afbeeldings-URL"
+
+        unable_to_get_image: "Kan afbeelding niet ophalen van URL! Foutmelding: "
+
+      select_image_file:
+        mime_type_description: "Ondersteunde afbeeldingsbestanden"
+
+      image_too_big:
+        message: "Afbeelding is groter dan 255 kilobyte!"
+
+      no_playlist_name:
+        message: "Voer een afspeellijstnaam in"
+
+  change_playlist:
+    title: "NTify - Afspeellijst wijzigen"
+
+    playlist_visibility:
+      public: "Afspeellijst openbaar"
+      collaborative: "Afspeellijst samenwerkend"
+
+    dialogs:
+      no_playlist_selected:
+        message: "Geen afspeellijst geselecteerd"
+
+  follow_playlist:
+    title: "NTify - Afspeellijst volgen"
+
+    visibility:
+      name: "Zichtbaarheid"
+      public: "Openbaar"
+      private: "Privé"
+
+  select_playlist:
+    title: "NTify - Afspeellijst selecteren"
+    description: "Afspeellijst"
+
+  picture_in_picture:
+    change_button_height: "Knophoogte wijzigen"
+
+  history:
+    title: "NTify - Afspeelgeschiedenis"
+    tree_root: "Afspeelgeschiedenis"
+    remove_all_button: "Alles verwijderen"
+
+  error_queue:
+    title: "NTify - Foutenwachtrij"
+    clear_errors_button: "Fouten wissen"
+
+
+# Keys used in the artist view
+artist:
+  popular: "Populair"
+  discovered_on: "Ontdekt op"
+  related_artists: "Gerelateerde artiesten"
+
+
+# Keys used in the artist event view
+artist_event_view:
+  error:
+    no_ticket_info: "Geen ticketinformatie gevonden"
+    no_venue_info: "Geen locatie-informatie gevonden"
+
+  view_event: "Evenement bekijken"
+  view_on_apple_maps: "Bekijken in Apple Maps"
+  view_on_google_maps: "Bekijken in Google Maps"
+
+
+# Keys used in the player section
+player:
+  nothing_playing:
+    title: "Geen titel"
+    artist: "Geen artiest"
+
+  context_menu:
+    open_in_pip: "Openen in PiP"
+    switch_fullscreen: "Overschakelen naar volledig scherm"
+
+  unknown_playable_type: "Het geselecteerde afspeelbare item kan mogelijk worden afgespeeld, maar verschijnt misschien niet in de spelerweergave omdat titelinformatie niet kan worden opgehaald"
+
+
+# The key for the red button that appears when an error occurred
+error_queue_button: "Fouten"

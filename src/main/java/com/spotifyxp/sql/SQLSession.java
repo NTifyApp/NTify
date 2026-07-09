@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class SQLSession {
     private static SQLSession itself;
@@ -13,6 +14,13 @@ public class SQLSession {
     private static String username = "";
     private static String password = "";
     private static final ArrayList<SQLElement> elements = new ArrayList<>();
+    /**
+     * Guards connect()/disconnect()/the shared connection field and every SQLTable operation
+     * (via SQLSessionPrivate.connect()/disconnect()) - the connection is process-wide static state
+     * and callers (track-change events, HotList's background recommendation reads, the history UI's
+     * own background thread) can call into it concurrently.
+     */
+    static final ReentrantLock lock = new ReentrantLock();
 
     public SQLSession(String username, String password, String database) {
         SQLSession.database = database;
@@ -32,27 +40,35 @@ public class SQLSession {
     }
 
     public boolean isConnected() throws SQLException {
-        return !connection.isClosed();
+        return connection != null && !connection.isClosed();
     }
 
     public boolean tryIsConnected() {
         try {
-            return !connection.isClosed();
+            return isConnected();
         } catch (SQLException e) {
             return false;
         }
     }
 
     public boolean connect() throws SQLException {
-        if (username.isEmpty() || password.isEmpty()) {
-            connection = DriverManager.getConnection(sqlBaseURL);
-        } else {
-            connection = DriverManager.getConnection(sqlBaseURL, username, password);
+        lock.lock();
+        try {
+            if (connection != null && !connection.isClosed()) {
+                return true;
+            }
+            if (username.isEmpty() || password.isEmpty()) {
+                connection = DriverManager.getConnection(sqlBaseURL);
+            } else {
+                connection = DriverManager.getConnection(sqlBaseURL, username, password);
+            }
+            for (SQLElement element : elements) {
+                element.provideSession(new SQLSessionPrivate());
+            }
+            return isConnected();
+        } finally {
+            lock.unlock();
         }
-        for (SQLElement element : elements) {
-            element.provideSession(new SQLSessionPrivate());
-        }
-        return isConnected();
     }
 
     public boolean tryConnect() {
@@ -75,7 +91,14 @@ public class SQLSession {
     }
 
     public void disconnect() throws SQLException {
-        connection.close();
+        lock.lock();
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void tryDisconnect() {
@@ -123,6 +146,20 @@ public class SQLSession {
 
         public Connection getConnection() {
             return connection;
+        }
+
+        /**
+         * Acquires the session-wide lock. Callers must always release it via unlock() in a
+         * finally block, and should hold it across an entire logical operation (not just the
+         * connect() call) so another thread's connect()/disconnect() can't swap out the
+         * connection mid-statement.
+         */
+        public void lock() {
+            SQLSession.lock.lock();
+        }
+
+        public void unlock() {
+            SQLSession.lock.unlock();
         }
     }
 }

@@ -38,17 +38,31 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class LibraryAlbums extends JScrollPane{
+    private static final String CACHE_ID = "albums";
+
     public static DefTable albumsTable;
     public static ArrayList<String> albumsUris;
     public static ContextMenu contextMenu;
+
+    private static class AlbumRow {
+        String uri;
+        String name;
+        String artists;
+
+        AlbumRow(String uri, String name, String artists) {
+            this.uri = uri;
+            this.name = name;
+            this.artists = artists;
+        }
+    }
 
     public LibraryAlbums() {
         albumsUris = new ArrayList<>();
 
         albumsTable = new DefTable();
         albumsTable.setModel(new DefaultTableModel(new Object[][] {}, new String[] {
-                PublicValues.language.translate("ui.general.name"),
-                PublicValues.language.translate("ui.general.artist")
+                PublicValues.language.translate("general.name"),
+                PublicValues.language.translate("general.artist")
         }));
         albumsTable.getTableHeader().setForeground(PublicValues.globalFontColor);
         albumsTable.setForeground(PublicValues.globalFontColor);
@@ -62,15 +76,20 @@ public class LibraryAlbums extends JScrollPane{
         });
 
         contextMenu = new ContextMenu(albumsTable, albumsUris, getClass());
-        contextMenu.addItem(PublicValues.language.translate("ui.general.refresh"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("general.refresh"), new Runnable() {
             @Override
             public void run() {
-                ((DefaultTableModel) albumsTable.getModel()).setRowCount(0);
+                albumsTable.addModifyAction(() -> ((DefaultTableModel) albumsTable.getModel()).setRowCount(0));
                 albumsUris.clear();
+                try {
+                    PublicValues.cache.namespace("LibraryAlbums").remove(CACHE_ID);
+                } catch (IOException e) {
+                    ConsoleLogging.Throwable(e);
+                }
                 new Thread(() -> fetch()).start();
             }
         });
-        contextMenu.addItem(PublicValues.language.translate("ui.general.remove"), new Runnable() {
+        contextMenu.addItem(PublicValues.language.translate("general.remove"), new Runnable() {
             @Override
             public void run() {
                 new Thread(() -> {
@@ -126,7 +145,21 @@ public class LibraryAlbums extends JScrollPane{
     }
 
     private void fetch() {
+        if (PublicValues.cache.namespace("LibraryAlbums").has(CACHE_ID)) {
+            try {
+                AlbumRow[] rows = PublicValues.cache.namespace("LibraryAlbums").get(CACHE_ID, AlbumRow[].class);
+                for (AlbumRow row : rows) {
+                    albumsUris.add(row.uri);
+                    albumsTable.addModifyAction(() -> ((DefaultTableModel) albumsTable.getModel()).addRow(new Object[]{row.name, row.artists}));
+                }
+            } catch (IOException e) {
+                ConsoleLogging.Throwable(e);
+            }
+            return;
+        }
+
         try {
+            ArrayList<AlbumRow> cacheRows = new ArrayList<>();
             int limit = 50;
             UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Albums"}, null, limit, 0);
             UnofficialSpotifyAPI.LibraryPage libraryV3 = response.data.me.libraryV3;
@@ -137,18 +170,20 @@ public class LibraryAlbums extends JScrollPane{
                 for(UnofficialSpotifyAPI.LibraryItemEntry albumItem : libraryV3.items) {
                     UnofficialSpotifyAPI.AlbumOfTrack album = gson.fromJson(albumItem.item.data.toString(), UnofficialSpotifyAPI.AlbumOfTrack.class);
                     albumsUris.add(album.uri);
+                    StringBuilder artists = new StringBuilder();
+                    for(UnofficialSpotifyAPI.ArtistItem artist : album.artists.items) {
+                        artists.append(artist.profile.name).append(", ");
+                    }
+                    if (artists.length() != 0)
+                        artists.delete(artists.length() - 2, artists.length());
+                    String artistsStr = artists.toString();
+                    cacheRows.add(new AlbumRow(album.uri, album.name, artistsStr));
                     albumsTable.addModifyAction(new Runnable() {
                         @Override
                         public void run() {
-                            StringBuilder artists = new StringBuilder();
-                            for(UnofficialSpotifyAPI.ArtistItem artist : album.artists.items) {
-                                artists.append(artist.profile.name).append(", ");
-                            }
-                            if (artists.length() != 0)
-                                artists.append(artists, 0, artists.length() - 2);
                             ((DefaultTableModel) albumsTable.getModel()).addRow(new Object[]{
                                     album.name,
-                                    artists,
+                                    artistsStr,
                             });
                         }
                     });
@@ -157,6 +192,7 @@ public class LibraryAlbums extends JScrollPane{
                 response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Albums"}, null, limit, offset);
                 libraryV3 = response.data.me.libraryV3;
             }
+            PublicValues.cache.namespace("LibraryAlbums").put(CACHE_ID, cacheRows);
         }catch (IOException | TokenProvider.TokenException e) {
             ConsoleLogging.Throwable(e);
         }
@@ -166,5 +202,23 @@ public class LibraryAlbums extends JScrollPane{
         new Thread(() -> {
             fetch();
         }).start();
+    }
+
+    public static void evict() {
+        if (albumsUris == null || albumsUris.isEmpty()) return;
+
+        DefaultTableModel model = (DefaultTableModel) albumsTable.getModel();
+        ArrayList<AlbumRow> rows = new ArrayList<>();
+        for (int i = 0; i < model.getRowCount() && i < albumsUris.size(); i++) {
+            rows.add(new AlbumRow(albumsUris.get(i), (String) model.getValueAt(i, 0), (String) model.getValueAt(i, 1)));
+        }
+        try {
+            PublicValues.cache.namespace("LibraryAlbums").put(CACHE_ID, rows);
+        } catch (IOException e) {
+            ConsoleLogging.Throwable(e);
+        }
+
+        albumsUris.clear();
+        albumsTable.addModifyAction(() -> model.setRowCount(0));
     }
 }
