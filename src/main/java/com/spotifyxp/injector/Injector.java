@@ -109,7 +109,7 @@ public class Injector {
         boolean foundAuthor = false;
         try {
             URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{new File(path).toURI().toURL()});
-            InjectorAPI.JarExtension pluginJSON = new Gson().fromJson(IOUtils.toString(Objects.requireNonNull(classLoader.getResourceAsStream("plugin.json")), Charset.defaultCharset()), InjectorAPI.JarExtension.class);
+            InjectorAPI.JarExtension pluginJSON = PublicValues.gson.fromJson(IOUtils.toString(Objects.requireNonNull(classLoader.getResourceAsStream("plugin.json")), Charset.defaultCharset()), InjectorAPI.JarExtension.class);
             Class<?> jarclass = classLoader.loadClass(pluginJSON.getMain());
             Object t = jarclass.newInstance();
             for (Method m : jarclass.getDeclaredMethods()) {

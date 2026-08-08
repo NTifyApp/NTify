@@ -27,7 +27,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @SuppressWarnings("unused")
 public class Cache {
-    private static final Gson gson = new Gson();
     private static final long MAX_CHUNK_SIZE = 8L * 1024 * 1024; //8MB
     private static final long MIN_COMPACT_SIZE = 1L * 1024 * 1024; //1MB
     private static final double DEAD_RATIO_THRESHOLD = 0.5;
@@ -208,7 +207,7 @@ public class Cache {
         }
 
         public void put(String id, Object value) throws IOException {
-            put(id, gson.toJson(value).getBytes(StandardCharsets.UTF_8));
+            put(id, PublicValues.gson.toJson(value).getBytes(StandardCharsets.UTF_8));
         }
 
         public byte[] get(String id) throws IOException {
@@ -231,7 +230,7 @@ public class Cache {
         }
 
         public <T> T get(String id, Class<T> type) throws IOException {
-            return gson.fromJson(new String(get(id), StandardCharsets.UTF_8), type);
+            return PublicValues.gson.fromJson(new String(get(id), StandardCharsets.UTF_8), type);
         }
 
         public void remove(String id) throws IOException {

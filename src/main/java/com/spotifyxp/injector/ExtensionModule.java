@@ -70,7 +70,7 @@ public class ExtensionModule {
         this.installedPath = installedPath;
 
         if (installedPath != null) {
-            pluginJSON = new Gson().fromJson(
+            pluginJSON = PublicValues.gson.fromJson(
                     IOUtils.toString(
                             new URLClassLoader(new URL[]{installedPath.toPath().toUri().toURL()}).getResourceAsStream("plugin.json"),
                             StandardCharsets.UTF_8

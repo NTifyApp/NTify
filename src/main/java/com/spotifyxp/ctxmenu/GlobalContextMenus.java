@@ -30,7 +30,7 @@ import com.spotifyxp.panels.Queue;
 import com.spotifyxp.utils.ClipboardUtil;
 import com.spotifyxp.utils.TrackUtils;
 import org.jetbrains.annotations.Nullable;
-import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.dealer.ApiClient;
 import xyz.gianlu.librespot.common.Utils;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.metadata.*;
@@ -86,10 +86,10 @@ public enum GlobalContextMenus {
                                     public void optionSelected(boolean isPublic) {
                                         new Thread(() -> {
                                             try {
-                                                PublicValues.session.api().playlist().follow(PlaylistId.fromUri(
-                                                        uris.get(table.getSelectedRow())
-                                                ), isPublic);
-                                            }catch (IOException | TokenProvider.TokenException e) {
+                                                PublicValues.spotAPI.playlist().follow()
+                                                        .setPlaylistsToFollow(new com.spotifyxp.spotapi.pojos.Playlist(isPublic, uris.get(table.getSelectedRow())))
+                                                        .execute();
+                                            }catch (IOException e) {
                                                 ConsoleLogging.Throwable(e);
                                             }
                                         }, "Follow playlist").start();
@@ -104,10 +104,11 @@ public enum GlobalContextMenus {
                         case "show":
                             new Thread(() -> {
                                 try {
-                                    PublicValues.session.api().show().follow(ShowId.fromUri(
-                                            uris.get(table.getSelectedRow()).split(":")[2]
-                                    ));
-                                }catch (IOException | TokenProvider.TokenException e) {
+                                    PublicValues.spotAPI.collection().write()
+                                            .setSet(com.spotifyxp.spotapi.requests.collection.CollectionSet.SHOW)
+                                            .addUris(uris.get(table.getSelectedRow()))
+                                            .execute();
+                                }catch (IOException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save album").start();
@@ -116,10 +117,11 @@ public enum GlobalContextMenus {
                         case "artist":
                             new Thread(() -> {
                                 try {
-                                    PublicValues.session.api().artist().follow(
-                                            ArtistId.fromUri(uris.get(table.getSelectedRow()))
-                                    );
-                                }catch (IOException | TokenProvider.TokenException e) {
+                                    PublicValues.spotAPI.collection().write()
+                                            .setSet(com.spotifyxp.spotapi.requests.collection.CollectionSet.ARTIST)
+                                            .addUris(uris.get(table.getSelectedRow()))
+                                            .execute();
+                                }catch (IOException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save Artist").start();
@@ -128,10 +130,11 @@ public enum GlobalContextMenus {
                         case "track":
                             new Thread(() -> {
                                 try {
-                                    PublicValues.session.api().track().like(
-                                            TrackId.fromUri(uris.get(table.getSelectedRow()))
-                                    );
-                                }catch (IOException | TokenProvider.TokenException e) {
+                                    PublicValues.spotAPI.collection().write()
+                                            .setSet(com.spotifyxp.spotapi.requests.collection.CollectionSet.COLLECTION)
+                                            .addUris(uris.get(table.getSelectedRow()))
+                                            .execute();
+                                }catch (IOException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save track").start();
@@ -156,10 +159,11 @@ public enum GlobalContextMenus {
                         case "album":
                             new Thread(() -> {
                                 try {
-                                    PublicValues.session.api().album().add(
-                                            AlbumId.fromUri(uris.get(table.getSelectedRow()))
-                                    );
-                                }catch (IOException | TokenProvider.TokenException e) {
+                                    PublicValues.spotAPI.collection().write()
+                                            .setSet(com.spotifyxp.spotapi.requests.collection.CollectionSet.COLLECTION)
+                                            .addUris(uris.get(table.getSelectedRow()))
+                                            .execute();
+                                }catch (IOException e) {
                                     ConsoleLogging.Throwable(e);
                                 }
                             }, "Save album").start();
@@ -210,7 +214,7 @@ public enum GlobalContextMenus {
                                             urisToBeAdded.add(uris.get(table.getSelectedRow()));
                                             break;
                                         case "album":
-                                            Metadata.Album album = PublicValues.session.api().album().getMetadata(AlbumId.fromUri(
+                                            Metadata.Album album = PublicValues.session.api().getMetadata4Album(AlbumId.fromUri(
                                                     uris.get(table.getSelectedRow())
                                             ));
                                             for (Metadata.Disc disc : album.getDiscList())
@@ -218,10 +222,10 @@ public enum GlobalContextMenus {
                                                     urisToBeAdded.add(TrackId.fromHex(Utils.bytesToHex(track.getGid())).toSpotifyUri());
                                     }
 
-                                    PublicValues.session.api().playlist().addItems(
-                                            PlaylistId.fromUri(uri),
-                                            urisToBeAdded.toArray(new String[0])
-                                    );
+                                    PublicValues.spotAPI.playlist().modifyPlaylistContent()
+                                            .setPlaylistId(PlaylistId.fromUri(uri).id())
+                                            .addPlayables(urisToBeAdded.toArray(new String[0]))
+                                            .execute();
                                 }catch (IOException | TokenProvider.TokenException e) {
                                     ConsoleLogging.Throwable(e);
                                 }

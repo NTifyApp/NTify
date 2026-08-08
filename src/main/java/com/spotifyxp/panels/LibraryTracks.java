@@ -17,13 +17,14 @@ package com.spotifyxp.panels;
 
 import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.spotapi.pojos.LibraryTracksResponse;
+import com.spotifyxp.spotapi.requests.collection.CollectionSet;
 import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.TrackUtils;
 import xyz.gianlu.librespot.core.TokenProvider;
@@ -92,7 +93,7 @@ public class LibraryTracks extends JScrollPane implements View {
                     @Override
                     public void run() {
                         try {
-                            Metadata.Track track = PublicValues.session.api().track().getMetadata(TrackId.fromUri(change.getUri()));
+                            Metadata.Track track = PublicValues.session.api().getMetadata4Track(TrackId.fromUri(change.getUri()));
                             libraryUriCache.add(0, change.getUri());
                             String a = TrackUtils.getArtists(track.getArtistList());
                             librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).insertRow(0, new Object[]{track.getName() + " - " + a, TrackUtils.calculateFileSizeKb(track.getDuration()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(track.getDuration())}));
@@ -121,20 +122,20 @@ public class LibraryTracks extends JScrollPane implements View {
             public void run() {
                 try {
                     ArrayList<TrackRow> rows = new ArrayList<>();
-                    UnofficialSpotifyAPI.LibraryTracksResponse response = UnofficialSpotifyAPI.getLibraryTracks(5000, 0);
+                    LibraryTracksResponse response = PublicValues.spotAPI.library().tracks().setLimit(5000).setOffset(0).execute();
 
-                    for (UnofficialSpotifyAPI.UserLibraryTrackResponse item : response.data.me.library.tracks.items) {
+                    for (LibraryTracksResponse.LibraryTrackItem item : response.getItems()) {
                         addTrackRow(rows, item);
                     }
 
-                    if (response.data.me.library.tracks.totalCount > 5000) {
+                    if (response.getTotalCount() > 5000) {
                         int loaded = 5000;
-                        while (loaded < response.data.me.library.tracks.totalCount) {
-                            UnofficialSpotifyAPI.LibraryTracksResponse pagedResponse = UnofficialSpotifyAPI.getLibraryTracks(5000, loaded);
-                            for (UnofficialSpotifyAPI.UserLibraryTrackResponse item : pagedResponse.data.me.library.tracks.items) {
+                        while (loaded < response.getTotalCount()) {
+                            LibraryTracksResponse pagedResponse = PublicValues.spotAPI.library().tracks().setLimit(5000).setOffset(loaded).execute();
+                            for (LibraryTracksResponse.LibraryTrackItem item : pagedResponse.getItems()) {
                                 addTrackRow(rows, item);
                             }
-                            loaded += pagedResponse.data.me.library.tracks.items.size();
+                            loaded += pagedResponse.getItems().size();
                         }
                     }
 
@@ -148,20 +149,21 @@ public class LibraryTracks extends JScrollPane implements View {
         libraryThread.start();
     }
 
-    private void addTrackRow(ArrayList<TrackRow> rows, UnofficialSpotifyAPI.UserLibraryTrackResponse item) {
-        libraryUriCache.add(item.track.uri);
+    private void addTrackRow(ArrayList<TrackRow> rows, LibraryTracksResponse.LibraryTrackItem item) {
+        LibraryTracksResponse.TrackData data = item.getTrack().getData();
+        libraryUriCache.add(item.getTrack().getUri());
         StringBuilder artists = new StringBuilder();
-        for (int i = 0; i < item.track.data.artists.items.size(); i++)
-            artists.append(item.track.data.artists.items.get(i).profile.name).append(", ");
+        for (int i = 0; i < data.getArtists().getItems().size(); i++)
+            artists.append(data.getArtists().getItems().get(i).getProfile().getName()).append(", ");
         if (artists.length() > 0)
             artists = new StringBuilder(artists.substring(0, artists.length() - 2));
 
-        String display = item.track.data.name + " - " + artists;
-        String filesize = TrackUtils.calculateFileSizeKb(item.track.data.duration.totalMilliseconds);
+        String display = data.getName() + " - " + artists;
+        String filesize = TrackUtils.calculateFileSizeKb(data.getDuration().getTotalMilliseconds());
         String bitrate = TrackUtils.getBitrate();
-        String length = TrackUtils.getHHMMSSOfTrack(item.track.data.duration.totalMilliseconds);
+        String length = TrackUtils.getHHMMSSOfTrack(data.getDuration().getTotalMilliseconds());
 
-        rows.add(new TrackRow(item.track.uri, display, filesize, bitrate, length));
+        rows.add(new TrackRow(item.getTrack().getUri(), display, filesize, bitrate, length));
         librarySongList.addModifyAction(() -> ((DefaultTableModel) librarySongList.getModel()).addRow(new Object[]{display, filesize, bitrate, length}));
     }
 
@@ -214,16 +216,17 @@ public class LibraryTracks extends JScrollPane implements View {
         });
         contextMenu.addItem(PublicValues.language.translate("general.remove"), () -> {
             try {
-                PublicValues.session.api().track().remove(TrackId.fromUri(
-                        libraryUriCache.get(librarySongList.getSelectedRow())
-                ));
+                PublicValues.spotAPI.collection().write()
+                        .setSet(CollectionSet.COLLECTION)
+                        .removeUris(libraryUriCache.get(librarySongList.getSelectedRow()))
+                        .execute();
 
                 SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                         libraryUriCache.get(librarySongList.getSelectedRow()),
                         LibraryChange.Type.TRACK,
                         LibraryChange.Action.REMOVE
                 ));
-            } catch (IOException | TokenProvider.TokenException e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });

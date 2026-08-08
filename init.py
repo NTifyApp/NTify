@@ -75,6 +75,12 @@ def doInit(interactive=False):
         shell=True,
         cwd="deps/mslinks"
     ).wait()
+    subprocess.Popen(
+        executable="mvn",
+        args=["clean", "package", "-DskipTests"],
+        shell=True,
+        cwd="deps/NTify-SpotAPI"
+    ).wait()
 
 
 if __name__ == '__main__':

@@ -15,16 +15,16 @@
  */
 package com.spotifyxp.panels;
 
-import com.spotify.api.ConcertOuterClass;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.guielements.ArtistEventView;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.guielements.SpotifyBrowseModule;
 import com.spotifyxp.guielements.SpotifyBrowseSection;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.spotapi.pojos.BrowseResponse;
+import com.spotifyxp.spotapi.pojos.ConcertDetailsResponse;
+import com.spotifyxp.spotapi.pojos.ConcertFeedResponse;
 import com.spotifyxp.utils.ReentryGuard;
-import xyz.gianlu.librespot.core.TokenProvider;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class BrowsePanel extends JScrollPane implements View {
     private static final String CACHE_ID = "spotifyBrowse";
 
-    public static UnofficialSpotifyAPI.SpotifyBrowse spotifyBrowse;
+    public static BrowseResponse spotifyBrowse;
     public static JPanel contentPanel;
     public static JPopupMenu popupMenu;
     public static DefTable table;
@@ -165,19 +165,19 @@ public class BrowsePanel extends JScrollPane implements View {
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBounds(10, 10, 774,  461);
 
-        for(UnofficialSpotifyAPI.SpotifyBrowseEntry entry : spotifyBrowse.getBody()) {
-            if(entry.getMetadata().isPresent()) {
-                if(!entry.getMetadata().get().getVideoUrl().isPresent()
-                        && !entry.getComponent().getCategory().equals("row")
+        for(BrowseResponse.Item entry : spotifyBrowse.getBody()) {
+            if(entry.getMetadata() != null) {
+                if(!entry.getComponent().getCategory().equals("row")
                         && !entry.getComponent().getCategory().toLowerCase(Locale.ENGLISH).contains("sectionheader")
-                        && entry.getCustom().isPresent()
-                        && entry.getCustom().get().getBackgroundColor().isPresent()) {
+                        && entry.getCustom() != null
+                        && entry.getCustom().get("backgroundColor") != null) {
                     table.addModifyAction(() -> ((DefaultTableModel) table.getModel()).addRow(new Object[] {entry.getText().getTitle()}));
-                    if (!entry.getImages().isPresent()
-                            || !entry.getEvents().isPresent()
-                            || !entry.getEvents().get().getEvents().get(0).getData_uri().isPresent()
+                    if (entry.getImages() == null
+                            || entry.getEvents() == null
+                            || entry.getEvents().getClick() == null
+                            || entry.getEvents().getClick().getData().get("uri") == null
                     ) throw new NoSuchElementException();
-                    genreIds.add(entry.getEvents().get().getEvents().get(0).getData_uri().get().getUri());
+                    genreIds.add(entry.getEvents().getClick().getData().get("uri").toString());
                 }
             }
         }
@@ -202,13 +202,12 @@ public class BrowsePanel extends JScrollPane implements View {
         int xCount = 0;
         int elementWidth = (784 / 4) - 23;
         int elementHeight = (421 / 4) - 5;
-        for(UnofficialSpotifyAPI.SpotifyBrowseEntry entry : spotifyBrowse.getBody()) {
-            if(entry.getMetadata().isPresent()) {
-                if(!entry.getMetadata().get().getVideoUrl().isPresent()
-                        && !entry.getComponent().getCategory().equals("row")
+        for(BrowseResponse.Item entry : spotifyBrowse.getBody()) {
+            if(entry.getMetadata() != null) {
+                if(!entry.getComponent().getCategory().equals("row")
                         && !entry.getComponent().getCategory().toLowerCase(Locale.ENGLISH).contains("sectionheader")
-                        && entry.getCustom().isPresent()
-                        && entry.getCustom().get().getBackgroundColor().isPresent()) {
+                        && entry.getCustom() != null
+                        && entry.getCustom().get("backgroundColor") != null) {
                     if(xCount == 4) {
                         xCount = 0;
                         xCache = 10;
@@ -216,19 +215,15 @@ public class BrowsePanel extends JScrollPane implements View {
                     }
 
                     try {
-                        String uri = "";
-                        if (!entry.getImages().isPresent()
-                                || !entry.getEvents().isPresent()
-                                || !entry.getEvents().get().getEvents().get(0).getData_uri().isPresent()
+                        if (entry.getImages() == null
+                                || entry.getImages().getMain() == null
+                                || entry.getEvents() == null
+                                || entry.getEvents().getClick() == null
+                                || entry.getEvents().getClick().getData().get("uri") == null
                         ) throw new NoSuchElementException();
-                        for(UnofficialSpotifyAPI.SpotifyBrowseEntryImagesImage image : entry.getImages().get().getImages()) {
-                            if(image.getType() == UnofficialSpotifyAPI.SpotifyBrowseEntryImagesImageTypes.MAIN) {
-                                uri = image.getUri();
-                                break;
-                            }
-                        }
-                        SpotifyBrowseModule panel = new SpotifyBrowseModule(xCache, yCache, entry.getText().getTitle(), new URL(uri).openStream(), elementWidth, elementHeight, entry.getEvents().get().getEvents().get(0).getData_uri().get().getUri(), xyRunnable, idRunnable);
-                        panel.setBackground(Color.decode(entry.getCustom().get().getBackgroundColor().get()));
+                        String uri = entry.getImages().getMain().getUri();
+                        SpotifyBrowseModule panel = new SpotifyBrowseModule(xCache, yCache, entry.getText().getTitle(), new URL(uri).openStream(), elementWidth, elementHeight, entry.getEvents().getClick().getData().get("uri").toString(), xyRunnable, idRunnable);
+                        panel.setBackground(Color.decode(entry.getCustom().get("backgroundColor").toString()));
                         panel.setBounds(xCache, yCache, elementWidth, elementHeight);
                         contentPanel.add(panel);
                     } catch (IOException e) {
@@ -262,15 +257,15 @@ public class BrowsePanel extends JScrollPane implements View {
             switch (id) {
                 case "spotify:concerts":
                     try {
-                        ContentPanel.sectionPanel.fillWith(concertsToViewDescriptor(PublicValues.session.api().getConcerts()));
-                    } catch (IOException | TokenProvider.TokenException e) {
+                        ContentPanel.sectionPanel.fillWith(concertsToViewDescriptor(PublicValues.spotAPI.feed().concertFeed().execute()));
+                    } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                     break;
                 default:
                     try {
-                        ContentPanel.sectionPanel.fillWith(browseSectionToViewDescriptor(UnofficialSpotifyAPI.getSpotifyBrowseSection(id)));
-                    } catch (IOException | TokenProvider.TokenException e) {
+                        ContentPanel.sectionPanel.fillWith(browseSectionToViewDescriptor(PublicValues.spotAPI.feed().browse().setSectionId(id).execute()));
+                    } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
             }
@@ -279,12 +274,12 @@ public class BrowsePanel extends JScrollPane implements View {
         ContentPanel.blockTabSwitch();
     };
 
-    private SpotifySectionPanel.ViewDescriptorBuilder concertsToViewDescriptor(ConcertOuterClass.Concerts concerts) {
+    private SpotifySectionPanel.ViewDescriptorBuilder concertsToViewDescriptor(ConcertFeedResponse concerts) {
         SpotifySectionPanel.ViewDescriptorBuilder builder = new SpotifySectionPanel.ViewDescriptorBuilder();
 
-        builder.setTitle(concerts.getHeader().getTitle());
+        builder.setTitle(PublicValues.language.translate("browse.concerts"));
 
-        for(ConcertOuterClass.Concerts.SectionsContainer container : concerts.getSectionsContainer().getSectionsContainerList()) {
+        for(ConcertFeedResponse.Section section : concerts.getSections()) {
             DefTable eventsTable = new DefTable();
             JScrollPane eventsTableScrollPane = new JScrollPane(eventsTable);
             JPanel contentPanel = new JPanel();
@@ -297,8 +292,8 @@ public class BrowsePanel extends JScrollPane implements View {
 
             AtomicBoolean isOnTicketView = new AtomicBoolean(false);
 
-            HashMap<String, List<ConcertOuterClass.Concerts.ArtistConcertConcert>> concertsMap = new HashMap<>();
-            ArrayList<ConcertOuterClass.Concerts.ArtistConcertConcert> currentEventsList = new ArrayList<>();
+            HashMap<String, List<ConcertFeedResponse.ConcertData>> concertsMap = new HashMap<>();
+            ArrayList<ConcertFeedResponse.ConcertData> currentEventsList = new ArrayList<>();
             ReentryGuard eventsListLoadGuard = new ReentryGuard();
 
             alternateTablesTableContainer.setLayout(new BoxLayout(alternateTablesTableContainer, BoxLayout.Y_AXIS));
@@ -353,7 +348,7 @@ public class BrowsePanel extends JScrollPane implements View {
                     if(e.getClickCount() == 2
                             && !SwingUtilities.isRightMouseButton(e)
                             && eventsTable.getSelectedRow() != -1) {
-                        List<ConcertOuterClass.Concerts.ArtistConcertConcert> concerts = concertsMap.get(
+                        List<ConcertFeedResponse.ConcertData> concerts = concertsMap.get(
                                 eventsTable.getModel().getValueAt(eventsTable.getSelectedRow(), 0).toString()
                         );
 
@@ -371,14 +366,14 @@ public class BrowsePanel extends JScrollPane implements View {
 
                             eventsList.clear();
 
-                            for(ConcertOuterClass.Concerts.ArtistConcertConcert concert : concerts) {
-                                eventsList.add(concert.getConcertUri().split(":")[2]);
+                            for(ConcertFeedResponse.ConcertData concert : concerts) {
+                                eventsList.add(concert.getUri());
                                 eventsListTable.addModifyAction(new Runnable() {
                                     @Override
                                     public void run() {
                                         ((DefaultTableModel) eventsListTable.getModel()).addRow(new Object[]{
-                                                concert.getLocationName(),
-                                                formatDate(parseDate(concert.getDate().getTime()))
+                                                concert.getLocation() != null ? concert.getLocation().getName() : "",
+                                                formatDate(parseDate(concert.getStartDateIsoString()))
                                         });
                                     }
                                 });
@@ -388,14 +383,14 @@ public class BrowsePanel extends JScrollPane implements View {
                             new Thread(() -> {
                                 try {
                                     backButton.setVisible(true);
-                                    eventView.set(new ArtistEventView(PublicValues.session.api().getConcert(concerts.get(0).getConcertUri().split(":")[2])));
+                                    eventView.set(new ArtistEventView(PublicValues.spotAPI.feed().concert().setUri(concerts.get(0).getUri()).execute()));
                                     eventsTableScrollPane.setVisible(false);
                                     alternateTablesTableContainer.add(eventView.get());
                                     contentPanel.setBorder(new LineBorder(Color.GRAY, 1));
                                     contentPanel.revalidate();
                                     contentPanel.repaint();
                                     isOnTicketView.set(true);
-                                } catch (IOException | TokenProvider.TokenException ex) {
+                                } catch (IOException ex) {
                                     ConsoleLogging.Throwable(ex);
                                 }
                             }).start();
@@ -421,13 +416,13 @@ public class BrowsePanel extends JScrollPane implements View {
                             try {
                                 backButton.setVisible(true);
                                 eventsListTableScrollPane.setVisible(false);
-                                eventView.set(new ArtistEventView(PublicValues.session.api().getConcert(eventsList.get(eventsListTable.getSelectedRow()))));
+                                eventView.set(new ArtistEventView(PublicValues.spotAPI.feed().concert().setUri(eventsList.get(eventsListTable.getSelectedRow())).execute()));
                                 alternateTablesTableContainer.add(eventView.get());
                                 contentPanel.setBorder(new LineBorder(Color.GRAY, 1));
                                 contentPanel.revalidate();
                                 contentPanel.repaint();
                                 isOnTicketView.set(true);
-                            } catch (IOException | TokenProvider.TokenException ex) {
+                            } catch (IOException ex) {
                                 ConsoleLogging.Throwable(ex);
                             }
                         }).start();
@@ -435,51 +430,51 @@ public class BrowsePanel extends JScrollPane implements View {
                 }
             });
 
-            for(ConcertOuterClass.Concerts.UNKNContainer unknContainer : container.getArtistContainerList()) {
-                for(ConcertOuterClass.Concerts.ArtistsContainer artistContainer : unknContainer.getArtistsList()) {
-                    if(artistContainer.hasArtist()) {
-                        ConcertOuterClass.Concerts.Artist artist = artistContainer.getArtist();
+            for(ConcertFeedResponse.ConcertEntry entry : section.getConcerts()) {
+                List<ConcertFeedResponse.GroupedConcert> group = entry.asGroup();
+                ConcertFeedResponse.ConcertData single = entry.asConcert();
 
-                        concertsMap.put(artist.getName(), artist.getArtistConcerts().getConcertsList());
-
-                        eventsTable.addModifyAction(new Runnable() {
-                            @Override
-                            public void run() {
-                                ((DefaultTableModel) eventsTable.getModel()).addRow(new Object[]{
-                                        artist.getName(),
-                                        artist.getArtistConcerts().getConcertsList().size() + " " + PublicValues.language.translate("browse.events")
-                                });
-                            }
-                        });
-                    }else if(artistContainer.hasConcert()) {
-                        ConcertOuterClass.Concerts.Concert concert = artistContainer.getConcert();
-
-                        concertsMap.put(concert.getArtist(), new ArrayList<ConcertOuterClass.Concerts.ArtistConcertConcert>() {{
-                            add(ConcertOuterClass.Concerts.ArtistConcertConcert.newBuilder()
-                                    .setDate(concert.getDate())
-                                    .setArtist(concert.getArtist())
-                                    .setConcertUri(concert.getConcertUri())
-                                    .setLocationName(concert.getLocationName())
-                                    .build());
-                        }});
-
-                        eventsTable.addModifyAction(new Runnable() {
-                            @Override
-                            public void run() {
-                                ((DefaultTableModel) eventsTable.getModel()).addRow(new Object[]{
-                                        concert.getArtist(),
-                                        concert.getLocationName() + " • " + formatDate(parseDate(concert.getDate().getTime()))
-                                });
-                            }
-                        });
-                    }else {
-                        ConsoleLogging.warning("[BrowsePanel events] Got artist container that doesn't have recognized content");
+                if(group != null) {
+                    List<ConcertFeedResponse.ConcertData> groupData = new ArrayList<>();
+                    for(ConcertFeedResponse.GroupedConcert grouped : group) {
+                        groupData.add(grouped.getData());
                     }
+
+                    if(groupData.isEmpty()) continue;
+
+                    String title = groupData.get(0).getTitle();
+                    concertsMap.put(title, groupData);
+
+                    eventsTable.addModifyAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((DefaultTableModel) eventsTable.getModel()).addRow(new Object[]{
+                                    title,
+                                    groupData.size() + " " + PublicValues.language.translate("browse.events")
+                            });
+                        }
+                    });
+                }else if(single != null) {
+                    concertsMap.put(single.getTitle(), new ArrayList<ConcertFeedResponse.ConcertData>() {{
+                        add(single);
+                    }});
+
+                    eventsTable.addModifyAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((DefaultTableModel) eventsTable.getModel()).addRow(new Object[]{
+                                    single.getTitle(),
+                                    (single.getLocation() != null ? single.getLocation().getName() + " • " : "") + formatDate(parseDate(single.getStartDateIsoString()))
+                            });
+                        }
+                    });
                 }
+                //Venue and playlist entries are promotional content with no equivalent
+                //in this artist-grouped table view, so they're intentionally skipped.
             }
 
             builder.addComponent(new SpotifySectionPanel.ViewDescriptorComponent(
-                    container.getDescription().getText(),
+                    section.getDescription() != null ? section.getDescription() : section.getKey(),
                     contentPanel
             ));
         }
@@ -488,8 +483,7 @@ public class BrowsePanel extends JScrollPane implements View {
     }
 
     private OffsetDateTime parseDate(String date) throws DateTimeParseException {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-        return OffsetDateTime.parse(date, formatter);
+        return OffsetDateTime.parse(date);
     }
 
     private String formatDate(OffsetDateTime date) {
@@ -497,10 +491,10 @@ public class BrowsePanel extends JScrollPane implements View {
         return date.format(formatter);
     }
 
-    private SpotifySectionPanel.ViewDescriptorBuilder browseSectionToViewDescriptor(UnofficialSpotifyAPI.SpotifyBrowseSection section) {
+    private SpotifySectionPanel.ViewDescriptorBuilder browseSectionToViewDescriptor(BrowseResponse section) {
         SpotifySectionPanel.ViewDescriptorBuilder builder = new SpotifySectionPanel.ViewDescriptorBuilder();
 
-        builder.setTitle(section.getHeader());
+        builder.setTitle(section.getTitle() != null ? section.getTitle() : "");
 
         ArrayList<Integer> skip = new ArrayList<>();
 
@@ -508,20 +502,21 @@ public class BrowsePanel extends JScrollPane implements View {
             if(skip.contains(i)) {
                 continue;
             }
-            UnofficialSpotifyAPI.SpotifyBrowseEntry entry = section.getBody().get(i);
-            if(entry.getComponent().getId().contains("carousel")) {
-                builder.addComponent(new SpotifySectionPanel.ViewDescriptorComponent(
-                        entry.getText().getTitle(),
-                        new SpotifyBrowseSection(entry.getChildren().get())
-                ));
-            }
-            if(entry.getComponent().getCategory().contains("card") && !entry.getChildren().isPresent()) {
+            BrowseResponse.Item entry = section.getBody().get(i);
+            if(entry.getComponent().getCategory() != null && entry.getComponent().getCategory().contains("card")) {
                 ArrayList<ArrayList<String>> entries = new ArrayList<>();
 
                 for(int j = 0; j < section.getBody().subList(i, section.getBody().size()).size(); j++) {
-                    UnofficialSpotifyAPI.SpotifyBrowseEntry cardEntry = section.getBody().subList(i, section.getBody().size()).get(j);
-                    if(cardEntry.getComponent().getCategory().contains("card")) {
-                        entries.add(new ArrayList<>(Arrays.asList(cardEntry.getText().getTitle(), cardEntry.getText().getDescription().orElse(""), cardEntry.getText().getSubtitle().orElse(""), cardEntry.getEvents().get().getEvents().get(0).getData_uri().get().getUri())));
+                    BrowseResponse.Item cardEntry = section.getBody().subList(i, section.getBody().size()).get(j);
+                    if(cardEntry.getComponent().getCategory() != null && cardEntry.getComponent().getCategory().contains("card")) {
+                        String uri = (cardEntry.getEvents() != null && cardEntry.getEvents().getClick() != null && cardEntry.getEvents().getClick().getData().get("uri") != null)
+                                ? cardEntry.getEvents().getClick().getData().get("uri").toString() : "";
+                        entries.add(new ArrayList<>(Arrays.asList(
+                                cardEntry.getText().getTitle(),
+                                cardEntry.getText().getDescription() != null ? cardEntry.getText().getDescription() : "",
+                                cardEntry.getText().getSubtitle() != null ? cardEntry.getText().getSubtitle() : "",
+                                uri
+                        )));
                         skip.add(i + j);
                     } else {
                         break;
@@ -556,12 +551,12 @@ public class BrowsePanel extends JScrollPane implements View {
                 });
                 try {
                     if (PublicValues.cache.namespace("BrowsePanel").has(CACHE_ID)) {
-                        spotifyBrowse = PublicValues.cache.namespace("BrowsePanel").get(CACHE_ID, UnofficialSpotifyAPI.SpotifyBrowse.class);
+                        spotifyBrowse = PublicValues.cache.namespace("BrowsePanel").get(CACHE_ID, BrowseResponse.class);
                     } else {
-                        spotifyBrowse = UnofficialSpotifyAPI.getSpotifyBrowse();
+                        spotifyBrowse = PublicValues.spotAPI.feed().browse().execute();
                         PublicValues.cache.namespace("BrowsePanel").put(CACHE_ID, spotifyBrowse);
                     }
-                }catch (IOException | TokenProvider.TokenException e) {
+                }catch (IOException e) {
                     throw new RuntimeException(e);
                 }
                 if(PublicValues.config.getFields().browseViewStyle == 1) {

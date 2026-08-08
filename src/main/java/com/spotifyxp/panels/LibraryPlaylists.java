@@ -15,13 +15,11 @@
  */
 package com.spotifyxp.panels;
 
-import com.google.gson.Gson;
 import com.spotify.extendedmetadata.ExtendedMetadata;
 import com.spotify.extendedmetadata.ExtensionKindOuterClass;
 import com.spotify.metadata.Metadata;
 import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.dialogs.AddPlaylistDialog;
 import com.spotifyxp.dialogs.ChangePlaylistDialog;
@@ -30,10 +28,11 @@ import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.spotapi.pojos.LibraryResponse;
 import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.ReentryGuard;
 import com.spotifyxp.utils.TrackUtils;
-import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.dealer.ApiClient;
 import xyz.gianlu.librespot.common.Utils;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.metadata.EpisodeId;
@@ -109,15 +108,16 @@ public class LibraryPlaylists extends JSplitPane {
 
         try {
             ArrayList<PlaylistRow> cacheRows = new ArrayList<>();
-            UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Playlists"}, null, 999999, 0);
+            LibraryResponse response = PublicValues.spotAPI.library().get().setFilters("Playlists").setLimit(999999).setOffset(0).execute();
 
-            Gson gson = new Gson();
-            for (UnofficialSpotifyAPI.LibraryItemEntry item : response.data.me.libraryV3.items) {
-                UnofficialSpotifyAPI.PlaylistItem playlistItem = gson.fromJson(gson.toJson(item.item.data), UnofficialSpotifyAPI.PlaylistItem.class);
+            for (LibraryResponse.LibraryRow row : response.getItems()) {
+                LibraryResponse.PlaylistData playlistItem = row.getItem().asPlaylist();
+                if (playlistItem == null) continue;
 
-                playlistsUriCache.add(playlistItem.uri);
-                cacheRows.add(new PlaylistRow(playlistItem.uri, playlistItem.name));
-                playlistsPlaylistsTable.addModifyAction(() -> ((DefaultTableModel) playlistsPlaylistsTable.getModel()).addRow(new Object[]{playlistItem.name}));
+                String uri = row.getItem().getUri();
+                cacheRows.add(new PlaylistRow(uri, playlistItem.getName()));
+                playlistsUriCache.add(uri);
+                playlistsPlaylistsTable.addModifyAction(() -> ((DefaultTableModel) playlistsPlaylistsTable.getModel()).addRow(new Object[]{playlistItem.getName()}));
             }
             PublicValues.cache.namespace("LibraryPlaylists").put(CACHE_ID, cacheRows);
         } catch (Exception e) {
@@ -179,7 +179,7 @@ public class LibraryPlaylists extends JSplitPane {
                         playlistsSongUriCache.clear();
                         playlistsSongTable.addModifyAction(() -> ((DefaultTableModel) playlistsSongTable.getModel()).setRowCount(0));
                         try {
-                            Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().playlist().get(PlaylistId.fromUri(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())));
+                            Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().getPlaylist(PlaylistId.fromUri(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())));
                             ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
                             for (Playlist4ApiProto.Item item : listContent.getContents().getItemsList()) {
                                 switch (item.getUri().split(":")[1]) {
@@ -281,14 +281,16 @@ public class LibraryPlaylists extends JSplitPane {
         playlistsPlaylistsTableContextMenu = new ContextMenu(playlistsPlaylistsTable, playlistsUriCache, getClass());
         playlistsPlaylistsTableContextMenu.addItem(PublicValues.language.translate("general.remove_playlist"), () -> {
             try {
-                PublicValues.session.api().playlist().remove(PublicValues.session.username(), new String[] {playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())});
+                PublicValues.spotAPI.playlist().unfollow()
+                        .setPlaylistsToUnfollow(new com.spotifyxp.spotapi.pojos.Playlist(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())))
+                        .execute();
 
                 SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                         playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()),
                         LibraryChange.Type.PLAYLIST,
                         LibraryChange.Action.REMOVE
                 ));
-            } catch (IOException | TokenProvider.TokenException e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -303,7 +305,7 @@ public class LibraryPlaylists extends JSplitPane {
             }
             //ToDo: Implement image change functionality
             try {
-                Playlist4ApiProto.SelectedListContent playlistRec = PublicValues.session.api().playlist().get(PlaylistId.fromUri(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())));
+                Playlist4ApiProto.SelectedListContent playlistRec = PublicValues.session.api().getPlaylist(PlaylistId.fromUri(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow())));
                 ChangePlaylistDialog dialog = new ChangePlaylistDialog();
                 dialog.show(
                         playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2],
@@ -313,17 +315,15 @@ public class LibraryPlaylists extends JSplitPane {
                             public void receive(ChangePlaylistDialog.ChangedPlaylist playlist) {
                                 new Thread(() -> {
                                     try {
-                                        PublicValues.session.api().playlist().edit(
-                                                playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()),
-                                                playlist.playlistName,
-                                                playlist.playlistDescription,
-                                                playlist.isPublic ? 1 : 0,
-                                                playlist.isCollaborative ? 1 : 0,
-                                                new byte[0]
-                                        );
+                                        PublicValues.spotAPI.playlist().modifyPlaylist()
+                                                .setPlaylistId(playlistsUriCache.get(playlistsPlaylistsTable.getSelectedRow()).split(":")[2])
+                                                .setName(playlist.playlistName)
+                                                .setDescription(playlist.playlistDescription)
+                                                .setPublic(playlist.isPublic)
+                                                .execute();
                                         invalidatePlaylistsCache();
                                         new Thread(LibraryPlaylists.this::fetchPlaylists, "Fetch playlists").start();
-                                    } catch (IOException | TokenProvider.TokenException e) {
+                                    } catch (IOException e) {
                                         ConsoleLogging.Throwable(e);
                                     }
                                 }, "Change playlist").start();
@@ -339,16 +339,19 @@ public class LibraryPlaylists extends JSplitPane {
                 dialog.show((data) -> {
                     new Thread(() -> {
                         try {
-                            PublicValues.session.api().playlist().create(
-                                    data.name,
-                                    data.description,
-                                    data.isPublic,
-                                    data.isCollaborative,
-                                    data.imageData
-                            );
+                            String playlistId = com.spotifyxp.spotapi.utils.SpotifyID.generateId(PublicValues.spotAPI.getSecureRandom());
+                            PublicValues.spotAPI.playlist().create()
+                                    .setId(playlistId)
+                                    .setName(data.name)
+                                    .setDescription(data.description)
+                                    .setCollaborative(data.isCollaborative)
+                                    .execute();
+                            PublicValues.spotAPI.playlist().follow()
+                                    .setPlaylistsToFollow(new com.spotifyxp.spotapi.pojos.Playlist(data.isPublic, "spotify:playlist:" + playlistId))
+                                    .execute();
                             invalidatePlaylistsCache();
                             new Thread(this::fetchPlaylists, "Fetch playlists").start();
-                        } catch (IOException | TokenProvider.TokenException | TimeoutException e) {
+                        } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     }, "Create playlist thread").start();
@@ -367,7 +370,7 @@ public class LibraryPlaylists extends JSplitPane {
                     @Override
                     public void run() {
                         try {
-                            Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().playlist().get(PlaylistId.fromUri(change.getUri()));
+                            Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().getPlaylist(PlaylistId.fromUri(change.getUri()));
                             playlistsUriCache.add(0, change.getUri());
                             playlistsPlaylistsTable.addModifyAction(() -> ((DefaultTableModel) playlistsPlaylistsTable.getModel()).insertRow(0, new Object[]{playlist.getAttributes().getName()}));
                         } catch (IOException | TokenProvider.TokenException e) {

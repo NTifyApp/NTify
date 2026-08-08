@@ -39,7 +39,7 @@ public class GitHubAPI {
     }
 
     public static List<Release> getReleases() throws IOException {
-        List<Release> release = new Gson().fromJson(PublicValues.defaultHttpClient.newCall(new Request.Builder()
+        List<Release> release = PublicValues.gson.fromJson(PublicValues.defaultHttpClient.newCall(new Request.Builder()
                         .url("https://api.github.com/repos/NTifyApp/NTify/releases")
                         .get()
                 .build()).execute().body().string(), new TypeToken<List<Release>>(){}.getType());

@@ -20,16 +20,16 @@ import com.spotify.extendedmetadata.ExtensionKindOuterClass;
 import com.spotify.metadata.Metadata;
 import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.spotapi.pojos.SearchResponse;
 import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.ReentryGuard;
 import com.spotifyxp.utils.TrackUtils;
-import xyz.gianlu.librespot.api.ApiClient;
 import xyz.gianlu.librespot.common.Utils;
+import xyz.gianlu.librespot.dealer.ApiClient;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.metadata.*;
 
@@ -233,14 +233,20 @@ public class Search extends JPanel implements View {
                     return;
                 }
                 try {
+                    String query = track ? searchtitle + " " + searchartist : searchtitle;
+                    SearchResponse response = PublicValues.spotAPI.feed().search()
+                            .setSearchTerm(query)
+                            .setOffset(0)
+                            .setLimit(50)
+                            .setNumberOfTopResults(1)
+                            .execute();
 
                     if (track) {
-                        UnofficialSpotifyAPI.SearchV2Response response = UnofficialSpotifyAPI.search(searchtitle + " " + searchartist, 0, 50, 1, false, false, false, false);
-                        for (UnofficialSpotifyAPI.SearchV2Response.TracksV2Item item : response.data.searchV2.tracksV2.items) {
-                            UnofficialSpotifyAPI.SearchV2Response.TrackData t = item.item.data;
+                        for (SearchResponse.TrackItem item : response.getTracks().getItems()) {
+                            SearchResponse.TrackData t = item.getItem().getData();
                             List<String> artists = new ArrayList<>();
-                            for(UnofficialSpotifyAPI.SearchV2Response.ArtistItem artistItem : t.artists.items)
-                               artists.add(artistItem.profile.name);
+                            for (SearchResponse.ArtistCredit artistItem : t.getArtists().getItems())
+                               artists.add(artistItem.getProfile().getName());
                             if (!searchartist.equalsIgnoreCase("")) {
                                 if (!TrackUtils.trackHasArtist(artists.toArray(new String[0]), searchartist, true)) {
                                     continue;
@@ -252,60 +258,57 @@ public class Search extends JPanel implements View {
                             //        InstanceManager.getSpotifyAPI().addSongToList(artists, t, searchsonglist);
                             //    }
                             //} else {
-                            searchsonglistcache.add(t.uri);
-                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{t.name + " - " + t.albumOfTrack.name + " - " + String.join(", ", artists), TrackUtils.calculateFileSizeKb(t.duration.totalMilliseconds), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(t.duration.totalMilliseconds)});
+                            searchsonglistcache.add(t.getUri());
+                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{t.getName() + " - " + t.getAlbumOfTrack().getName() + " - " + String.join(", ", artists), TrackUtils.calculateFileSizeKb(t.getDuration().getTotalMilliseconds()), TrackUtils.getBitrate(), TrackUtils.getHHMMSSOfTrack(t.getDuration().getTotalMilliseconds())});
                             //}
                         }
                     }
                     if (artist) {
-                        UnofficialSpotifyAPI.SearchV2Response response = UnofficialSpotifyAPI.search(searchtitle, 0, 50, 1, false, false, false, false);
-                        for (UnofficialSpotifyAPI.SearchV2Response.ArtistsItemData artistItem : response.data.searchV2.artists.items) {
-                            searchsonglistcache.add(artistItem.data.uri);
-                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{artistItem.data.profile.name});
+                        for (SearchResponse.ArtistWrapper artistItem : response.getArtists().getItems()) {
+                            searchsonglistcache.add(artistItem.getData().getUri());
+                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{artistItem.getData().getProfile().getName()});
                         }
                     }
                     if (album) {
-                        UnofficialSpotifyAPI.SearchV2Response response = UnofficialSpotifyAPI.search(searchtitle, 0, 50, 1, false, false, false, false);
-                        for (UnofficialSpotifyAPI.SearchV2Response.AlbumResponseWrapper albumWrapper : response.data.searchV2.albumsV2.items) {
+                        for (SearchResponse.AlbumWrapper albumWrapper : response.getAlbums().getItems()) {
                             if (!searchartist.isEmpty()) {
-                                String[] artists = new String[albumWrapper.data.artists.items.size()];
-                                for (int i = 0; i < albumWrapper.data.artists.items.size(); i++) {
-                                    artists[i] = albumWrapper.data.artists.items.get(i).profile.name;
+                                List<SearchResponse.ArtistCredit> albumArtists = albumWrapper.getData().getArtists().getItems();
+                                String[] artists = new String[albumArtists.size()];
+                                for (int i = 0; i < albumArtists.size(); i++) {
+                                    artists[i] = albumArtists.get(i).getProfile().getName();
                                 }
                                 if (!TrackUtils.trackHasArtist(artists, searchartist, true)) {
                                     continue;
                                 }
                             }
-                            searchsonglistcache.add(albumWrapper.data.uri);
-                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{albumWrapper.data.name});
+                            searchsonglistcache.add(albumWrapper.getData().getUri());
+                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{albumWrapper.getData().getName()});
                         }
                     }
                     if (show) {
-                        UnofficialSpotifyAPI.SearchV2Response response = UnofficialSpotifyAPI.search(searchtitle, 0, 50, 1, false, false, false, false);
-                        for (UnofficialSpotifyAPI.SearchV2Response.PodcastResponseWrapper podcast : response.data.searchV2.podcasts.items) {
+                        for (SearchResponse.PodcastWrapper podcast : response.getPodcasts().getItems()) {
                             if (!searchartist.isEmpty()) {
-                                if (!podcast.data.publisher.name.equalsIgnoreCase(searchartist)) {
+                                if (!podcast.getData().getPublisher().getName().equalsIgnoreCase(searchartist)) {
                                     continue;
                                 }
                             }
-                            searchsonglistcache.add(podcast.data.uri);
-                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{podcast.data.name});
+                            searchsonglistcache.add(podcast.getData().getUri());
+                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{podcast.getData().getName()});
                         }
                     }
                     if (playlist) {
-                        UnofficialSpotifyAPI.SearchV2Response response = UnofficialSpotifyAPI.search(searchtitle, 0, 50, 1, false, false, false, false);
-                        for (UnofficialSpotifyAPI.SearchV2Response.PlaylistResponseWrapper playlistWrapper : response.data.searchV2.playlists.items) {
-                            if (Objects.equals(playlistWrapper.data.typename, "NotFound")) continue;
+                        for (SearchResponse.PlaylistWrapper playlistWrapper : response.getPlaylists().getItems()) {
+                            if (Objects.equals(playlistWrapper.getTypename(), "NotFound")) continue;
                             if (!searchartist.isEmpty()) {
-                                if (!playlistWrapper.data.getOwnerV2().get().data.username.equalsIgnoreCase(searchartist)) {
+                                if (!playlistWrapper.getData().getOwnerV2().getData().getUsername().equalsIgnoreCase(searchartist)) {
                                     continue;
                                 }
                             }
-                            searchsonglistcache.add(playlistWrapper.data.getUri().get());
-                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{playlistWrapper.data.getName().get() + " - " + playlistWrapper.data.getOwnerV2().get().data.username});
+                            searchsonglistcache.add(playlistWrapper.getData().getUri());
+                            ((DefaultTableModel) searchsonglist.getModel()).addRow(new Object[]{playlistWrapper.getData().getName() + " - " + playlistWrapper.getData().getOwnerV2().getData().getUsername()});
                         }
                     }
-                } catch (IOException | TokenProvider.TokenException ex) {
+                } catch (IOException ex) {
                     ConsoleLogging.Throwable(ex);
                 }
                 //ToDo: Re-implement load more
@@ -349,7 +352,7 @@ public class Search extends JPanel implements View {
                                 searchplaylistsongscache.clear();
                                 ((DefaultTableModel) searchplaylisttable.getModel()).setRowCount(0);
                                 try {
-                                    Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().playlist().get(PlaylistId.fromUri(searchsonglistcache.get(searchsonglist.getSelectedRow())));
+                                    Playlist4ApiProto.SelectedListContent playlist = PublicValues.session.api().getPlaylist(PlaylistId.fromUri(searchsonglistcache.get(searchsonglist.getSelectedRow())));
                                     ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
                                     playlistDescription.setText(playlist.getAttributes().getDescription());
                                     playlistDescriptionScrollPane.setVisible(!playlistDescription.getText().isEmpty());
@@ -380,7 +383,7 @@ public class Search extends JPanel implements View {
                                 break;
                             case "show":
                                 try {
-                                    Metadata.Show show = PublicValues.session.api().show().getMetadata(ShowId.fromUri(searchsonglistcache.get(searchsonglist.getSelectedRow())));
+                                    Metadata.Show show = PublicValues.session.api().getMetadata4Show(ShowId.fromUri(searchsonglistcache.get(searchsonglist.getSelectedRow())));
                                     ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
                                     for (Metadata.Episode episodeItem : show.getEpisodeList()) {
                                         String episodeUri = EpisodeId.fromHex(Utils.bytesToHex(episodeItem.getGid())).toSpotifyUri();
@@ -402,7 +405,7 @@ public class Search extends JPanel implements View {
                                 break;
                             case "album":
                                 try {
-                                    Metadata.Album album = PublicValues.session.api().album().getMetadata(AlbumId.fromUri(searchsonglistcache.get(searchsonglist.getSelectedRow())));
+                                    Metadata.Album album = PublicValues.session.api().getMetadata4Album(AlbumId.fromUri(searchsonglistcache.get(searchsonglist.getSelectedRow())));
                                     ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
                                     for (Metadata.Disc disc : album.getDiscList())
                                         for (Metadata.Track trackItem : disc.getTrackList()) {

@@ -15,10 +15,10 @@
  */
 package com.spotifyxp.guielements;
 
-import com.spotify.api.ConcertOuterClass;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.panels.ContentPanel;
+import com.spotifyxp.spotapi.pojos.ConcertDetailsResponse;
 import com.spotifyxp.swingextension.JImagePanel;
 import com.spotifyxp.utils.Utils;
 
@@ -45,24 +45,24 @@ public class ArtistEventView extends JPanel {
     private final JButton viewOnAMaps;
     private final JButton viewOnGMaps;
 
-    private ConcertOuterClass.ConcertResponse.TicketInfo ticketInfo = null;
-    private ConcertOuterClass.ConcertResponse.VenueInfo venueInfo = null;
+    private ConcertDetailsResponse.Offer ticketInfo = null;
+    private ConcertDetailsResponse.Venue venueInfo = null;
     private String googleMaps = null;
     private String appleMaps = null;
     public static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
 
-    public ArtistEventView(ConcertOuterClass.ConcertResponse concert) throws IllegalArgumentException {
+    public ArtistEventView(ConcertDetailsResponse concertResponse) throws IllegalArgumentException {
         setLayout(null);
         setSize(770, 290);
 
-        for(ConcertOuterClass.ConcertResponse.Section section : concert.getSectionsList()) {
-            if(section.hasTicketInfo()) {
-                ticketInfo = section.getTicketInfo();
-            }
-            if(section.hasVenueInfo()) {
-                venueInfo = section.getVenueInfo();
-            }
+        ConcertDetailsResponse.Concert concert = concertResponse.getConcert();
+
+        if(concert.getOffers() != null
+                && concert.getOffers().getItems() != null
+                && !concert.getOffers().getItems().isEmpty()) {
+            ticketInfo = concert.getOffers().getItems().get(0);
         }
+        venueInfo = concert.getVenue();
 
         if(ticketInfo == null) {
             JOptionPane.showMessageDialog(ContentPanel.frame,
@@ -91,8 +91,10 @@ public class ArtistEventView extends JPanel {
         add(genres);
 
         ArrayList<String> genresList = new ArrayList<>();
-        for(ConcertOuterClass.ConcertResponse.Genre genre : concert.getConcertInfo().getGenresList()) {
-            genresList.add(genre.getName());
+        if(concert.getConcepts() != null && concert.getConcepts().getItems() != null) {
+            for(ConcertDetailsResponse.ConceptItem concept : concert.getConcepts().getItems()) {
+                genresList.add(concept.getData().getName());
+            }
         }
         genres.setText(String.join(", ", genresList));
 
@@ -101,7 +103,9 @@ public class ArtistEventView extends JPanel {
         add(companyImage);
 
         try {
-            companyImage.setImage(new URL(ticketInfo.getTicketServiceInfo().getCompanyBranding()));
+            if(ticketInfo.getProviderImageUrl() != null) {
+                companyImage.setImage(new URL(ticketInfo.getProviderImageUrl()));
+            }
         } catch (MalformedURLException e) {
             ConsoleLogging.Throwable(e);
         }
@@ -110,7 +114,7 @@ public class ArtistEventView extends JPanel {
         companyName.setBounds(58, 91, 186, 17);
         add(companyName);
 
-        companyName.setText(ticketInfo.getTicketServiceInfo().getCompanyName());
+        companyName.setText(ticketInfo.getProviderName());
         companyName.setForeground(PublicValues.globalFontColor);
 
         viewEvent = new JButton(PublicValues.language.translate("artist_event_view.view_event"));
@@ -120,7 +124,7 @@ public class ArtistEventView extends JPanel {
         viewEvent.setForeground(PublicValues.globalFontColor);
         viewEvent.addActionListener(e -> {
             try {
-                Utils.openBrowser(ticketInfo.getTicketServiceInfo().getBookUrl());
+                Utils.openBrowser(ticketInfo.getUrl());
             } catch (URISyntaxException | IOException ex) {
                 ConsoleLogging.Throwable(ex);
             }
@@ -131,14 +135,14 @@ public class ArtistEventView extends JPanel {
         add(disclaimer);
 
         disclaimer.setEditable(false);
-        disclaimer.setText(ticketInfo.getDisclaimer());
+        disclaimer.setText(concert.getAgeRestriction());
 
         time = new JLabel("");
         time.setBounds(12, 183, 686, 33);
         add(time);
 
         time.setForeground(PublicValues.globalFontColor);
-        if(venueInfo != null) time.setText(PublicValues.language.translate("general.date") + ": " + parseDate(venueInfo.getDateInfo().getDate().getTime()).format(formatter));
+        if(concert.getStartDateIsoString() != null) time.setText(PublicValues.language.translate("general.date") + ": " + parseDate(concert.getStartDateIsoString()).format(formatter));
 
         location = new JLabel("");
         location.setBounds(500, 91, 209, 17);
@@ -146,17 +150,13 @@ public class ArtistEventView extends JPanel {
 
         location.setHorizontalAlignment(SwingConstants.CENTER);
         location.setForeground(PublicValues.globalFontColor);
-        if(venueInfo != null) location.setText(PublicValues.language.translate("general.location") + ": " + venueInfo.getVenue().getVenueName());
+        if(venueInfo != null) location.setText(PublicValues.language.translate("general.location") + ": " + venueInfo.getName());
 
-        if(venueInfo != null) {
-            for(ConcertOuterClass.ConcertResponse.VenueMapService service : venueInfo.getVenue().getMapServicesList()) {
-                if(service.getUrl().toLowerCase().contains("https://www.google.com/maps")) {
-                    googleMaps = service.getUrl();
-                }
-                if(service.getUrl().toLowerCase().contains("https://maps.apple.com")) {
-                    appleMaps = service.getUrl();
-                }
-            }
+        if(concert.getLocation() != null && concert.getLocation().getCoordinates() != null) {
+            double lat = concert.getLocation().getCoordinates().getLatitude();
+            double lon = concert.getLocation().getCoordinates().getLongitude();
+            googleMaps = "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lon;
+            appleMaps = "https://maps.apple.com/?q=" + lat + "," + lon;
         }
 
         viewOnAMaps = new JButton(PublicValues.language.translate("artist_event_view.view_on_apple_maps"));
@@ -193,7 +193,6 @@ public class ArtistEventView extends JPanel {
     }
 
     private OffsetDateTime parseDate(String date) throws DateTimeParseException {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-        return OffsetDateTime.parse(date, formatter);
+        return OffsetDateTime.parse(date);
     }
 }

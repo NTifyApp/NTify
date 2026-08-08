@@ -15,22 +15,21 @@
  */
 package com.spotifyxp.panels;
 
-import com.google.gson.Gson;
 import com.spotify.extendedmetadata.ExtendedMetadata;
 import com.spotify.extendedmetadata.ExtensionKindOuterClass;
 import com.spotify.metadata.Metadata;
 import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.spotapi.pojos.LibraryResponse;
 import com.spotifyxp.swingextension.JDialog;
 import com.spotifyxp.utils.TrackUtils;
-import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.dealer.ApiClient;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.metadata.EpisodeId;
 import xyz.gianlu.librespot.metadata.PlaylistId;
@@ -131,7 +130,7 @@ public class LibraryEpisodes extends JScrollPane {
             public void run() {
                 new Thread(() -> {
                     try {
-                        Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(episodesUris.get(episodesTable.getSelectedRow())));
+                        Metadata.Episode episode = PublicValues.session.api().getMetadata4Episode(EpisodeId.fromUri(episodesUris.get(episodesTable.getSelectedRow())));
                         openDialog(
                                 String.format(PublicValues.language.translate("dialogs.library.episode_description.title"), episode.getName()),
                                 episode.getDescription()
@@ -147,7 +146,7 @@ public class LibraryEpisodes extends JScrollPane {
             public void run() {
                 new Thread(() -> {
                     try {
-                        Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(episodesUris.get(episodesTable.getSelectedRow())));
+                        Metadata.Episode episode = PublicValues.session.api().getMetadata4Episode(EpisodeId.fromUri(episodesUris.get(episodesTable.getSelectedRow())));
                         openDialog(
                                 String.format(PublicValues.language.translate("dialogs.library.show_description.title"), episode.getShow().getName()),
                                 episode.getShow().getDescription()
@@ -167,7 +166,7 @@ public class LibraryEpisodes extends JScrollPane {
                     @Override
                     public void run() {
                         try {
-                            Metadata.Episode episode = PublicValues.session.api().episode().getMetadata(EpisodeId.fromUri(change.getUri()));
+                            Metadata.Episode episode = PublicValues.session.api().getMetadata4Episode(EpisodeId.fromUri(change.getUri()));
                             episodesUris.add(0, change.getUri());
                             episodesTable.addModifyAction(new Runnable() {
                                 @Override
@@ -216,12 +215,12 @@ public class LibraryEpisodes extends JScrollPane {
 
         try {
             ArrayList<EpisodeRow> cacheRows = new ArrayList<>();
-            UnofficialSpotifyAPI.LibraryResponse userLibraryResponse = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Playlists"}, new String[] {"YOUR_EPISODES_V2"}, 10, 0);
+            LibraryResponse userLibraryResponse = PublicValues.spotAPI.library().get().setFilters("Playlists").setFeatures("YOUR_EPISODES_V2").setLimit(10).setOffset(0).execute();
             String episodePlaylistUri = null;
-            for(UnofficialSpotifyAPI.LibraryItemEntry item : userLibraryResponse.data.me.libraryV3.items) {
-                UnofficialSpotifyAPI.PlaylistItem playlistItem = new Gson().fromJson(item.item.data.toString(), UnofficialSpotifyAPI.PlaylistItem.class);
-                if(playlistItem.format != null && playlistItem.format.equals("listen-later")) {
-                    episodePlaylistUri = item.item.uri;
+            for(LibraryResponse.LibraryRow item : userLibraryResponse.getItems()) {
+                LibraryResponse.PlaylistData playlistItem = item.getItem().asPlaylist();
+                if(playlistItem != null && "listen-later".equals(playlistItem.getFormat())) {
+                    episodePlaylistUri = item.getItem().getUri();
                     break;
                 }
             }
@@ -231,7 +230,7 @@ public class LibraryEpisodes extends JScrollPane {
                 return;
             }
 
-            Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().playlist().get(PlaylistId.fromUri(episodePlaylistUri));
+            Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().getPlaylist(PlaylistId.fromUri(episodePlaylistUri));
             ApiClient.BatchedRequestHelper requestHelper = new ApiClient.BatchedRequestHelper();
             for (Playlist4ApiProto.Item episodeItem : listContent.getContents().getItemsList()) {
                 requestHelper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()

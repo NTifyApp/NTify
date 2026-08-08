@@ -218,20 +218,20 @@ public class InjectorAPI {
     }
 
     public static Repository getRepository(InjectorAPI.InjectorRepository repository) throws IOException {
-        return new Gson().fromJson(get(repository.getUrl() + "/repo.json"), Repository.class);
+        return PublicValues.gson.fromJson(get(repository.getUrl() + "/repo.json"), Repository.class);
     }
 
     public static List<Extension> getExtensions(InjectorAPI.InjectorRepository repository, Repository repo) throws IOException {
         ArrayList<Extension> extensions = new ArrayList<>();
         for(RepositoryExtensionLocation location : repo.getExtensions()) {
-            extensions.add(new Gson().fromJson(get(repository.getUrl() + location.getLocation()), Extension.class));
+            extensions.add(PublicValues.gson.fromJson(get(repository.getUrl() + location.getLocation()), Extension.class));
         }
         return extensions;
     }
 
     public static Optional<Extension> getExtension(InjectorAPI.InjectorRepository repository, String name, String author) throws IOException {
         try {
-            return Optional.of(new Gson().fromJson(get(repository.getUrl() + "/" + name + "-" + author + ".json"), Extension.class));
+            return Optional.of(PublicValues.gson.fromJson(get(repository.getUrl() + "/" + name + "-" + author + ".json"), Extension.class));
         }catch (JsonSyntaxException e) {
             return Optional.empty();
         }
@@ -274,7 +274,7 @@ public class InjectorAPI {
 
     public static JarExtension getPluginJson(File file) throws IOException {
         URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{file.toURI().toURL()});
-        JarExtension extension = new Gson().fromJson(IOUtils.toString(classLoader.getResourceAsStream("plugin.json"), StandardCharsets.UTF_8), JarExtension.class);
+        JarExtension extension = PublicValues.gson.fromJson(IOUtils.toString(classLoader.getResourceAsStream("plugin.json"), StandardCharsets.UTF_8), JarExtension.class);
         classLoader.close();
         return extension;
     }

@@ -19,14 +19,15 @@ import com.spotify.extendedmetadata.ExtendedMetadata;
 import com.spotify.extendedmetadata.ExtensionKindOuterClass;
 import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
+import com.spotifyxp.spotapi.pojos.ArtistDiscoveredOnResponse;
+import com.spotifyxp.spotapi.pojos.ArtistRelatedArtistsResponse;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.swingextension.JImagePanel;
 import com.spotifyxp.utils.*;
-import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.dealer.ApiClient;
 import xyz.gianlu.librespot.common.Utils;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.mercury.MercuryClient;
@@ -352,22 +353,26 @@ public class ArtistPanel extends JScrollPane implements View {
 
         String artistUri = ArtistId.fromHex(Utils.bytesToHex(artist.getGid())).toSpotifyUri();
 
-        UnofficialSpotifyAPI.ArtistUnionRelatedArtists relatedArtists = UnofficialSpotifyAPI.getArtistRelatedArtists(artistUri);
-        for(UnofficialSpotifyAPI.ArtistUnionRelatedArtistsArtist relatedArtist : relatedArtists.items) {
-            relatedArtistsUriCache.add(relatedArtist.uri);
-            ((DefaultTableModel) relatedArtistsTable.getModel()).addRow(new Object[]{
-                    relatedArtist.profile.name
-            });
+        ArtistRelatedArtistsResponse relatedArtistsResponse = PublicValues.spotAPI.artist().relatedArtists().setUri(artistUri).execute();
+        if (relatedArtistsResponse.getRelatedContent() != null && relatedArtistsResponse.getRelatedContent().getRelatedArtists() != null) {
+            for(ArtistRelatedArtistsResponse.RelatedArtist relatedArtist : relatedArtistsResponse.getRelatedContent().getRelatedArtists().getItems()) {
+                relatedArtistsUriCache.add(relatedArtist.getUri());
+                ((DefaultTableModel) relatedArtistsTable.getModel()).addRow(new Object[]{
+                        relatedArtist.getProfile().getName()
+                });
+            }
         }
 
-        UnofficialSpotifyAPI.ArtistUnionDiscoveredOn discoveredOn = UnofficialSpotifyAPI.getArtistDiscoveredOn(artistUri);
-        for(UnofficialSpotifyAPI.ArtistUnionDiscoveredOnItem discoveredOnItem : discoveredOn.items) {
-            if(discoveredOnItem.data.__typename.toLowerCase(Locale.ENGLISH).contains("error")) continue;
-            discoveredOnUriCache.add(discoveredOnItem.data.uri);
-            ((DefaultTableModel) discoveredOnTable.getModel()).addRow(new Object[]{
-                    discoveredOnItem.data.name,
-                    discoveredOnItem.data.description
-            });
+        ArtistDiscoveredOnResponse discoveredOnResponse = PublicValues.spotAPI.artist().discoveredOn().setUri(artistUri).execute();
+        if (discoveredOnResponse.getRelatedContent() != null && discoveredOnResponse.getRelatedContent().getDiscoveredOnV2() != null) {
+            for(ArtistDiscoveredOnResponse.DiscoveredOnItem discoveredOnItem : discoveredOnResponse.getRelatedContent().getDiscoveredOnV2().getItems()) {
+                if(discoveredOnItem.getData().getTypename().toLowerCase(Locale.ENGLISH).contains("error")) continue;
+                discoveredOnUriCache.add(discoveredOnItem.getData().getUri());
+                ((DefaultTableModel) discoveredOnTable.getModel()).addRow(new Object[]{
+                        discoveredOnItem.getData().getName(),
+                        discoveredOnItem.getData().getDescription()
+                });
+            }
         }
 
         ApiClient.BatchedRequestHelper batchedRequestHelper = new ApiClient.BatchedRequestHelper();

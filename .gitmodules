@@ -13,3 +13,6 @@
 [submodule "deps/mslinks"]
 	path = deps/mslinks
 	url = https://github.com/NTifyApp/mslinks
+[submodule "deps/NTify-SpotAPI"]
+	path = deps/NTify-SpotAPI
+	url = https://github.com/NTifyApp/NTify-SpotAPI

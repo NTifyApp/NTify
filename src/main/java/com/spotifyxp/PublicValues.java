@@ -16,6 +16,7 @@
 package com.spotifyxp;
 
 
+import com.google.gson.Gson;
 import com.neovisionaries.i18n.CountryCode;
 import com.spotifyxp.args.ArgParser;
 import com.spotifyxp.audio.Quality;
@@ -30,6 +31,7 @@ import com.spotifyxp.lib.libDetect;
 import com.spotifyxp.lib.libLanguage;
 import com.spotifyxp.logging.LogPrintStream;
 import com.spotifyxp.panels.ContentPanel;
+import com.spotifyxp.spotapi.SpotAPI;
 import com.spotifyxp.theming.Theme;
 import com.spotifyxp.theming.ThemeLoader;
 import com.spotifyxp.utils.ArchitectureDetection;
@@ -101,6 +103,8 @@ public class PublicValues {
     public static LogPrintStream logPrintStream;
     public static boolean userFocusedInputField = false;
     public static Cache cache;
+    public static Gson gson = new Gson();
+    public static SpotAPI spotAPI;
     //Devstuff
     public static boolean locationFinderActive = false;
     //----

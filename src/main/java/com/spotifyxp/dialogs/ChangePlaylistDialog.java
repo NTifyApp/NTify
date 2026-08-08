@@ -18,6 +18,8 @@ package com.spotifyxp.dialogs;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.spotify.playlist.proto.Permission;
+import com.spotify.playlist.proto.PermissionLevel;
 import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.swingextension.JDialog;
@@ -155,10 +157,10 @@ public class ChangePlaylistDialog extends JDialog {
     }
 
     public void show(String id, Playlist4ApiProto.SelectedListContent playlist, ChangedPlaylistRunnable runnable) throws IOException, TokenProvider.TokenException {
-        Playlist4ApiProto.Permission permission = PublicValues.session.api().playlist().getPermission(id);
+        Permission permission = PublicValues.spotAPI.playlist().getPermission().setPlaylistId(id).execute();
         playlistName.setText(playlist.getAttributes().getName());
         playlistDescription.setText(playlist.getAttributes().getDescription());
-        visibility.setSelected(permission.getPermissionLevel().equals(Playlist4ApiProto.PermissionLevel.VIEWER));
+        visibility.setSelected(permission.getPermissionLevel().equals(PermissionLevel.VIEWER));
         collaborative.setSelected(playlist.getAttributes().getCollaborative());
         okButton.addActionListener(new ActionListener() {
             @Override

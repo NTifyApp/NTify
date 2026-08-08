@@ -16,15 +16,14 @@
 package com.spotifyxp.panels;
 
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.spotapi.pojos.HomeResponse;
 import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.StringUtils;
-import xyz.gianlu.librespot.core.TokenProvider;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -35,6 +34,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CancellationException;
@@ -44,7 +44,7 @@ public class HomePanel extends JScrollPane implements View {
     private static final String CACHE_ID = "homeTab";
 
     public static JPanel content;
-    public static UnofficialSpotifyAPI.HomeTab tab;
+    public static HomeResponse tab;
     public static ContextMenu menu;
     public static Timer reloadTimer;
     public static TimerTask nextReload;
@@ -128,15 +128,15 @@ public class HomePanel extends JScrollPane implements View {
         Thread requestTabThread = new Thread(() -> {
             try {
                 if (PublicValues.cache.namespace("HomePanel").has(CACHE_ID)) {
-                    tab = PublicValues.cache.namespace("HomePanel").get(CACHE_ID, UnofficialSpotifyAPI.HomeTab.class);
+                    tab = PublicValues.cache.namespace("HomePanel").get(CACHE_ID, HomeResponse.class);
                 } else {
-                    tab = InstanceManager.getUnofficialSpotifyApi().getHomeTab().orElse(null);
+                    tab = PublicValues.spotAPI.feed().home().execute();
                     if (tab != null) {
                         PublicValues.cache.namespace("HomePanel").put(CACHE_ID, tab);
                     }
                 }
                 future.complete(null);
-            } catch (IOException | TokenProvider.TokenException e) {
+            } catch (IOException e) {
                 future.cancel(false);
                 throw new RuntimeException(e);
             }
@@ -155,9 +155,11 @@ public class HomePanel extends JScrollPane implements View {
         playlist
     }
 
-    public void addModule(UnofficialSpotifyAPI.HomeTabSection section, int titleHeight, int x, int y, int titleY, int width, int height) {
+    public void addModule(HomeResponse.Section section, int titleHeight, int x, int y, int titleY, int width, int height) {
         ArrayList<String> uricache = new ArrayList<>();
-        JLabel homepanelmoduletext = new JLabel(section.getName().orElse(""));
+        String sectionName = (section.getData() != null && section.getData().getTitle() != null)
+                ? section.getData().getTitle().getText() : "";
+        JLabel homepanelmoduletext = new JLabel(sectionName);
         homepanelmoduletext.setFont(new Font("Tahoma", Font.PLAIN, 16));
         homepanelmoduletext.setBounds(x, titleY, width, titleHeight);
         content.add(homepanelmoduletext);
@@ -183,32 +185,29 @@ public class HomePanel extends JScrollPane implements View {
 
         new ContextMenu(homepanelmodulecontenttable, uricache, getClass());
 
-        for(UnofficialSpotifyAPI.HomeTabSectionItem item : section.getItems()) {
-            switch (item.getType()) {
-                case AlbumResponseWrapper:
-                    if(!item.getAlbum().isPresent()) break;
-                    UnofficialSpotifyAPI.HomeTabAlbum album = item.getAlbum().get();
+        if (section.getSectionItems() != null && section.getSectionItems().getItems() != null) {
+            for(HomeResponse.SectionItem sectionItem : section.getSectionItems().getItems()) {
+                HomeResponse.ContentItem item = sectionItem.getContent();
+                if (item == null) continue;
+
+                HomeResponse.AlbumData album = item.asAlbum();
+                HomeResponse.EpisodeData episodeOrChapter = item.asEpisodeOrChapter();
+                HomeResponse.PlaylistData playlist = item.asPlaylist();
+
+                if (album != null) {
                     uricache.add(album.getUri());
                     homepanelmodulecontenttable.addModifyAction(() -> ((DefaultTableModel) homepanelmodulecontenttable.getModel()).addRow(new Object[]{album.getName(), artistParser(album.getArtists())}));
-                    break;
-                case ArtistResponseWrapper:
-                    if(!item.getArtist().isPresent()) break;
-                    UnofficialSpotifyAPI.HomeTabArtist artist = item.getArtist().get();
-                    uricache.add(artist.getUri());
-                    homepanelmodulecontenttable.addModifyAction(() -> ((DefaultTableModel) homepanelmodulecontenttable.getModel()).addRow(new Object[]{artist.getName(), ""}));
-                    break;
-                case EpisodeOrChapterResponseWrapper:
-                    if(!item.getEpisodeOrChapter().isPresent()) break;
-                    UnofficialSpotifyAPI.HomeTabEpisodeOrChapter episodeOrChapter = item.getEpisodeOrChapter().get();
+                } else if (episodeOrChapter != null) {
                     uricache.add(episodeOrChapter.getUri());
-                    homepanelmodulecontenttable.addModifyAction(() -> ((DefaultTableModel) homepanelmodulecontenttable.getModel()).addRow(new Object[]{episodeOrChapter.getEpisodeOrChapterName(), episodeOrChapter.getName() + " - " + episodeOrChapter.getPublisherName()}));
-                    break;
-                case PlaylistResponseWrapper:
-                    if(!item.getPlaylist().isPresent()) break;
-                    UnofficialSpotifyAPI.HomeTabPlaylist playlist = item.getPlaylist().get();
+                    String showName = episodeOrChapter.getPodcastV2() != null && episodeOrChapter.getPodcastV2().getData() != null
+                            ? episodeOrChapter.getPodcastV2().getData().getName() : "";
+                    homepanelmodulecontenttable.addModifyAction(() -> ((DefaultTableModel) homepanelmodulecontenttable.getModel()).addRow(new Object[]{episodeOrChapter.getName(), showName}));
+                } else if (playlist != null) {
                     uricache.add(playlist.getUri());
-                    homepanelmodulecontenttable.addModifyAction(() -> ((DefaultTableModel) homepanelmodulecontenttable.getModel()).addRow(new Object[]{playlist.getName(), playlist.getOwnerName()}));
-                    break;
+                    String ownerName = playlist.getOwnerV2() != null && playlist.getOwnerV2().getData() != null
+                            ? playlist.getOwnerV2().getData().getName() : "";
+                    homepanelmodulecontenttable.addModifyAction(() -> ((DefaultTableModel) homepanelmodulecontenttable.getModel()).addRow(new Object[]{playlist.getName(), ownerName}));
+                }
             }
         }
 
@@ -249,14 +248,16 @@ public class HomePanel extends JScrollPane implements View {
         });
     }
 
-    String artistParser(ArrayList<UnofficialSpotifyAPI.HomeTabArtist> cache) {
+    String artistParser(HomeResponse.Artists artists) {
         StringBuilder builder = new StringBuilder();
+        if (artists == null || artists.getItems() == null) return "";
+        List<HomeResponse.Artist> cache = artists.getItems();
         int read = 0;
-        for (UnofficialSpotifyAPI.HomeTabArtist s : cache) {
+        for (HomeResponse.Artist s : cache) {
             if (read == cache.size()) {
-                builder.append(s.getName());
+                builder.append(s.getProfile().getName());
             } else {
-                builder.append(s.getName()).append(",");
+                builder.append(s.getProfile().getName()).append(",");
             }
             read++;
         }
@@ -278,14 +279,14 @@ public class HomePanel extends JScrollPane implements View {
         JPanel homepanelgreetings = new JPanel();
         homepanelgreetings.setBounds(0, 11, getWidth(), getFontMetrics(new Font("Tahoma", Font.PLAIN, 20)).getHeight());
         homepanelgreetings.setLayout(new BorderLayout());
-        JLabel homepanelgreetingstext = new JLabel(tab.getGreeting());
+        JLabel homepanelgreetingstext = new JLabel(tab.getGreeting() != null ? tab.getGreeting().getText() : "");
         homepanelgreetingstext.setFont(new Font("Tahoma", Font.PLAIN, 20));
         homepanelgreetingstext.setHorizontalAlignment(SwingConstants.CENTER);
         homepanelgreetingstext.setForeground(PublicValues.globalFontColor);
         homepanelgreetings.add(homepanelgreetingstext);
         content.add(homepanelgreetings);
 
-        for (UnofficialSpotifyAPI.HomeTabSection section : tab.getSections()) {
+        for (HomeResponse.Section section : tab.getSectionContainer().getSections().getItems()) {
             addModule(section, titleHeight, xCache, yCache, yCache - titleHeight - titleSpacing, width, height);
             yCache += height + spacing;
         }
@@ -295,7 +296,7 @@ public class HomePanel extends JScrollPane implements View {
 
     void fill() {
         if(tab == null) return;
-        int sectionCount = tab.getSections().size();
+        int sectionCount = tab.getSectionContainer().getSections().getItems().size();
 
         Thread t = new Thread(() -> {
             initializeContent();

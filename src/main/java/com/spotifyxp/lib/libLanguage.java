@@ -18,6 +18,7 @@ package com.spotifyxp.lib;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
 import org.apache.commons.io.IOUtils;
 import org.yaml.snakeyaml.Yaml;
@@ -265,7 +266,7 @@ public class libLanguage {
 
         @Override
         public void init() throws IOException {
-            jsonCache = new Gson().fromJson(IOUtils.toString(clazz.getResourceAsStream("/" + languageFolder + "/" + languageCode + ".json"), StandardCharsets.UTF_8), JsonObject.class);
+            jsonCache = PublicValues.gson.fromJson(IOUtils.toString(clazz.getResourceAsStream("/" + languageFolder + "/" + languageCode + ".json"), StandardCharsets.UTF_8), JsonObject.class);
         }
 
         @Override

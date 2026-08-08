@@ -15,13 +15,12 @@
  */
 package com.spotifyxp.dialogs;
 
-import com.google.gson.Gson;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.spotapi.pojos.LibraryResponse;
 import com.spotifyxp.swingextension.JDialog;
 import xyz.gianlu.librespot.core.TokenProvider;
 
@@ -131,18 +130,19 @@ public class SelectPlaylist extends JDialog {
 
         new Thread(() -> {
             try {
-                UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[]{"Playlists"}, null, 999999, 0);
+                LibraryResponse response = PublicValues.spotAPI.library().get().setFilters("Playlists").setLimit(999999).setOffset(0).execute();
 
-                Gson gson = new Gson();
-                for (UnofficialSpotifyAPI.LibraryItemEntry item : response.data.me.libraryV3.items) {
-                    UnofficialSpotifyAPI.PlaylistItem playlistItem = gson.fromJson(gson.toJson(item.item.data), UnofficialSpotifyAPI.PlaylistItem.class);
-                    if (playlistItem.ownerV2.data.username.equals(PublicValues.session.username())) {
-                        uris.add(playlistItem.uri);
-                        playlistsModel.addElement(playlistItem.name);
+                for (LibraryResponse.LibraryRow item : response.getItems()) {
+                    LibraryResponse.PlaylistData playlistItem = item.getItem().asPlaylist();
+                    if (playlistItem == null) continue;
+                    if (playlistItem.getOwnerV2() != null && playlistItem.getOwnerV2().getData() != null
+                            && playlistItem.getOwnerV2().getData().getUsername().equals(PublicValues.session.username())) {
+                        uris.add(item.getItem().getUri());
+                        playlistsModel.addElement(playlistItem.getName());
                     }
                 }
                 okButton.setEnabled(true);
-            } catch (IOException | TokenProvider.TokenException e) {
+            } catch (IOException e) {
                 ConsoleLogging.Throwable(e);
                 dispose();
             }

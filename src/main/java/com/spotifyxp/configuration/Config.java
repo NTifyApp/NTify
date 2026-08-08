@@ -382,6 +382,6 @@ public class Config {
     }
 
     public static <Type> RuntimeConfig<Type> newInstance(String configPath, Class<Type> configValues, @Nullable Gson gson) throws IOException, IllegalAccessException, InstantiationException, NoSuchFieldException {
-        return new RuntimeConfig<>(configPath, configValues, gson == null ? new Gson() : gson);
+        return new RuntimeConfig<>(configPath, configValues, gson == null ? PublicValues.gson : gson);
     }
 }

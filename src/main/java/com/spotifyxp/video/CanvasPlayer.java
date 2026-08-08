@@ -106,7 +106,7 @@ public class CanvasPlayer extends JFrame {
         try {
             if (!PublicValues.config.getFields().cacheDisabled) {
                 clearCache();
-                String cvnsUrl = PublicValues.session.api().track().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
+                String cvnsUrl = PublicValues.session.api().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
                         .addEntities(CanvazOuterClass.EntityCanvazRequest.Entity.newBuilder()
                                 .setEntityUri(uri)
                                 .buildPartial())
@@ -125,7 +125,7 @@ public class CanvasPlayer extends JFrame {
                 PublicValues.vlcPlayer.play(new File(cachePath, convertUrlToName(cvnsUrl)).getAbsolutePath());
                 videoLoaded = true;
             } else {
-                String cvnsUrl = PublicValues.session.api().track().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
+                String cvnsUrl = PublicValues.session.api().getCanvases(CanvazOuterClass.EntityCanvazRequest.newBuilder()
                         .addEntities(CanvazOuterClass.EntityCanvazRequest.Entity.newBuilder()
                                 .setEntityUri(uri)
                                 .buildPartial())

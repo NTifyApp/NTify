@@ -17,6 +17,7 @@ package com.spotifyxp;
 
 
 import com.google.gson.Gson;
+import com.spotify.clienttoken.http.v0.ClientToken;
 import com.spotifyxp.audio.Quality;
 import com.spotifyxp.background.BackgroundService;
 import com.spotifyxp.cache.Cache;
@@ -35,6 +36,8 @@ import com.spotifyxp.panels.ContentPanel;
 import com.spotifyxp.panels.PlayerArea;
 import com.spotifyxp.panels.SplashPanel;
 import com.spotifyxp.setup.Setup;
+import com.spotifyxp.spotapi.SpotAPI;
+import com.spotifyxp.spotapi.pojos.UserInfo;
 import com.spotifyxp.stabilizer.GlobalExceptionHandler;
 import com.spotifyxp.support.SupportModuleLoader;
 import com.spotifyxp.theming.ThemeLoader;
@@ -48,6 +51,7 @@ import okhttp3.*;
 import okhttp3.Authenticator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.gianlu.librespot.core.TokenProvider;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -59,6 +63,7 @@ import java.io.PrintStream;
 import java.net.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -300,7 +305,7 @@ public class Initiator {
     static void initConfig() {
         SplashPanel.linfo.setText("Initializing config...");
         try {
-            PublicValues.config = Config.newInstance(PublicValues.configfilepath, ConfigValues.class, new Gson());
+            PublicValues.config = Config.newInstance(PublicValues.configfilepath, ConfigValues.class, PublicValues.gson);
         } catch (IOException | IllegalAccessException | InstantiationException | NoSuchFieldException e) {
             ConsoleLogging.Throwable(e);
             GraphicalMessage.sorryErrorExit("Failed to initialize config! Exception: " + e.getMessage());
@@ -394,10 +399,47 @@ public class Initiator {
         new KeyListener().start();
     }
 
-    static void initAPI() {
+    static void initAPI() throws IOException, TokenProvider.TokenException {
         SplashPanel.linfo.setText("Connecting to spotify...");
         InstanceManager.getPlayer();
-        InstanceManager.getUnofficialSpotifyApi();
+
+        String appPlatform = "Linux";
+        switch (PublicValues.osType) {
+            case Windows:
+                appPlatform = "Win32";
+                break;
+            case MacOS:
+                appPlatform = "MacOS";
+                break;
+            case Other:
+                appPlatform = "Unknown";
+        }
+
+        PublicValues.spotAPI = new SpotAPI.Builder()
+                .setAcceptLanguage(Locale.getDefault().toString().replace("_", "-"))
+                .setAppPlatform(appPlatform)
+                .setClientToken(PublicValues.session.api().getClientToken())
+                .setGson(PublicValues.gson)
+                .setHttpClient(PublicValues.defaultHttpClient)
+                .setSpotifyClientHost(PublicValues.session.apResolver().getRandomSpclient())
+                .setUserAgent(ApplicationUtils.getUserAgent())
+                .setToken(PublicValues.session.tokens().get())
+                .setTokenProvider(new com.spotifyxp.spotapi.TokenProvider() {
+                    @Override
+                    public String requestFreshToken() {
+                        try {
+                            return PublicValues.session.tokens().get();
+                        }catch (TokenProvider.TokenException | IOException exception) {
+                            throw new RuntimeException(exception);
+                        }
+                    }
+                })
+                .setUserInfo(new UserInfo(
+                        PublicValues.session.username(),
+                        PublicValues.session.countryCode(),
+                        PublicValues.session.getUserAttribute("type", "PREMIUM").toUpperCase(Locale.ENGLISH)
+                ))
+                .build();
     }
 
     static void initGUI() throws IOException {

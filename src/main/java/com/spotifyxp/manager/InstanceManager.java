@@ -15,19 +15,15 @@
  */
 package com.spotifyxp.manager;
 
+
 import com.spotifyxp.api.Player;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.utils.PlayerUtils;
 
 /**
  * This class is a manager
- *
- * <br> Get Example: getUnofficialSpotifyApi()
- * <br> Set Example: setUnofficialSpotifyApi( [instance of UnofficialSpotifyAPI] )
  */
 public class InstanceManager {
     static Player player;
-    static UnofficialSpotifyAPI unofficialSpotifyAPI;
     static PlayerUtils playerUtils;
 
     public static Player getPlayer() {
@@ -48,17 +44,6 @@ public class InstanceManager {
         player = p;
     }
 
-    public static UnofficialSpotifyAPI getUnofficialSpotifyApi() {
-        if (unofficialSpotifyAPI == null) {
-            unofficialSpotifyAPI = new UnofficialSpotifyAPI();
-        }
-        return unofficialSpotifyAPI;
-    }
-
-    public static void setUnofficialSpotifyAPI(UnofficialSpotifyAPI api) {
-        unofficialSpotifyAPI = api;
-    }
-
     public static PlayerUtils getPlayerUtils() {
         if (playerUtils == null) {
             playerUtils = new PlayerUtils();
@@ -72,7 +57,6 @@ public class InstanceManager {
 
     public static void destroy() {
         player = null;
-        unofficialSpotifyAPI = null;
         playerUtils = null;
     }
 }

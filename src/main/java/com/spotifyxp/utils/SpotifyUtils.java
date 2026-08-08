@@ -21,7 +21,7 @@ import com.spotify.metadata.Metadata;
 import com.spotify.playlist4.Playlist4ApiProto;
 import com.spotifyxp.PublicValues;
 import com.spotifyxp.logging.ConsoleLogging;
-import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.dealer.ApiClient;
 import xyz.gianlu.librespot.common.Utils;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.metadata.*;
@@ -46,7 +46,7 @@ public class SpotifyUtils {
     }
 
     public static ArrayList<Metadata.Track> getAllTracksAlbum(String uri) throws IOException, TokenProvider.TokenException {
-        Metadata.Album album = PublicValues.session.api().album().getMetadata(AlbumId.fromUri(uri));
+        Metadata.Album album = PublicValues.session.api().getMetadata4Album(AlbumId.fromUri(uri));
         ApiClient.BatchedRequestHelper batchedRequestHelper = new ApiClient.BatchedRequestHelper();
         ArrayList<Metadata.Track> tracks = new ArrayList<>();
 
@@ -69,7 +69,7 @@ public class SpotifyUtils {
     }
 
     public static ArrayList<Metadata.Episode> getAllEpisodesShow(String uri) throws IOException, TokenProvider.TokenException {
-        Metadata.Show show = PublicValues.session.api().show().getMetadata(ShowId.fromUri(uri));
+        Metadata.Show show = PublicValues.session.api().getMetadata4Show(ShowId.fromUri(uri));
         ApiClient.BatchedRequestHelper batchedRequestHelper = new ApiClient.BatchedRequestHelper();
         ArrayList<Metadata.Episode> episodes = new ArrayList<>();
 
@@ -90,7 +90,7 @@ public class SpotifyUtils {
     }
 
     public static ArrayList<TrackOrEpisode> getAllTracksPlaylist(String uri) throws IOException, TokenProvider.TokenException {
-        Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().playlist().get(PlaylistId.fromUri(uri));
+        Playlist4ApiProto.SelectedListContent listContent = PublicValues.session.api().getPlaylist(PlaylistId.fromUri(uri));
         ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
         ArrayList<TrackOrEpisode> tracks = new ArrayList<>();
         for (Playlist4ApiProto.Item item : listContent.getContents().getItemsList()) {

@@ -19,7 +19,6 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.spotifyxp.Initiator;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.events.EventSubscriber;
 import com.spotifyxp.events.SpotifyXPEvents;
@@ -32,6 +31,7 @@ import com.spotifyxp.swingextension.RAWTextArea;
 import com.spotifyxp.utils.ApplicationUtils;
 import com.spotifyxp.utils.ClipboardUtil;
 import com.spotifyxp.utils.GraphicalMessage;
+import com.spotifyxp.spotapi.pojos.ColorLyricsResponse;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -54,8 +54,19 @@ public class LyricsDialog extends JDialog {
         setContentPane(contentPanel);
     }
 
-    UnofficialSpotifyAPI.Lyrics lyrics = null;
+    ColorLyricsResponse.Lyrics lyrics = null;
     String uri;
+
+    private static ColorLyricsResponse.Lyrics fetchLyrics(String uri) {
+        try {
+            return PublicValues.spotAPI.track().lyrics()
+                    .setTrackId(uri.split(":")[2])
+                    .execute()
+                    .getLyrics();
+        } catch (IOException e) {
+            return null;
+        }
+    }
 
     private static class ColoredLyricsLine extends RAWTextArea.ColoredLine {
         private final long startTimeMS;
@@ -73,11 +84,11 @@ public class LyricsDialog extends JDialog {
     public boolean open(String uri) {
         try {
             if (isVisible()) {
-                lyrics = InstanceManager.getUnofficialSpotifyApi().getLyrics(uri);
+                lyrics = fetchLyrics(uri);
                 if (lyrics == null) throw new NullPointerException();
                 //New lyrics
             } else {
-                lyrics = InstanceManager.getUnofficialSpotifyApi().getLyrics(uri);
+                lyrics = fetchLyrics(uri);
                 if (lyrics == null) throw new NullPointerException();
                 addWindowListener(new WindowAdapter() {
                     @Override
@@ -118,8 +129,8 @@ public class LyricsDialog extends JDialog {
             }
             displayedLines.clear();
             coloredLines.clear();
-            for (UnofficialSpotifyAPI.LyricsLine line : lyrics.lines) {
-                append(line.words, PublicValues.globalFontColor, line.startTimeMs);
+            for (ColorLyricsResponse.Line line : lyrics.getLines()) {
+                append(line.getWords(), PublicValues.globalFontColor, Long.parseLong(line.getStartTimeMs()));
             }
             triggerRefresh();
             SpotifyXPEvents.playerSeekedBackwards.subscribe(seekedBackwards);
@@ -137,10 +148,10 @@ public class LyricsDialog extends JDialog {
     };
 
     EventSubscriber<Object> seekedBackwards = (data) -> {
-        lyrics = InstanceManager.getUnofficialSpotifyApi().getLyrics(uri);
+        lyrics = fetchLyrics(uri);
         coloredLines.clear();
-        for (UnofficialSpotifyAPI.LyricsLine line : lyrics.lines) {
-            coloredLines.add(new LyricsDialog.ColoredLyricsLine(PublicValues.globalFontColor, line.words, line.startTimeMs));
+        for (ColorLyricsResponse.Line line : lyrics.getLines()) {
+            coloredLines.add(new LyricsDialog.ColoredLyricsLine(PublicValues.globalFontColor, line.getWords(), Long.parseLong(line.getStartTimeMs())));
         }
         int activeLine = 0;
         for (LyricsDialog.ColoredLyricsLine line : new ArrayList<>(coloredLines)) {

@@ -15,15 +15,15 @@
  */
 package com.spotifyxp.panels;
 
-import com.google.gson.Gson;
 import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.spotapi.pojos.LibraryResponse;
+import com.spotifyxp.spotapi.requests.collection.CollectionSet;
 import com.spotifyxp.swingextension.JDialog;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.metadata.ShowId;
@@ -98,15 +98,16 @@ public class LibraryShows extends JScrollPane {
                 if(showsTable.getSelectedRow() == -1) return;
                 new Thread(() -> {
                     try {
-                        PublicValues.session.api().show().follow(ShowId.fromUri(
-                                showsUris.get(showsTable.getSelectedRow())
-                        ));
+                        PublicValues.spotAPI.collection().write()
+                                .setSet(CollectionSet.SHOW)
+                                .removeUris(showsUris.get(showsTable.getSelectedRow()))
+                                .execute();
                         SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                                 showsUris.get(showsTable.getSelectedRow()),
                                 LibraryChange.Type.SHOW,
                                 LibraryChange.Action.REMOVE
                         ));
-                    }catch (IOException | TokenProvider.TokenException e) {
+                    }catch (IOException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -118,7 +119,7 @@ public class LibraryShows extends JScrollPane {
                 if(showsTable.getSelectedRow() == -1) return;
                 new Thread(() -> {
                     try {
-                        Metadata.Show show = PublicValues.session.api().show().getMetadata(ShowId.fromUri(showsUris.get(showsTable.getSelectedRow())));
+                        Metadata.Show show = PublicValues.session.api().getMetadata4Show(ShowId.fromUri(showsUris.get(showsTable.getSelectedRow())));
                         openDialog(
                                 String.format(PublicValues.language.translate("dialogs.library.show_description.title"), show.getName()),
                                 show.getDescription()
@@ -138,7 +139,7 @@ public class LibraryShows extends JScrollPane {
                     @Override
                     public void run() {
                         try {
-                            Metadata.Show show = PublicValues.session.api().show().getMetadata(ShowId.fromUri(showsUris.get(showsTable.getSelectedRow())));
+                            Metadata.Show show = PublicValues.session.api().getMetadata4Show(ShowId.fromUri(showsUris.get(showsTable.getSelectedRow())));
                             showsUris.add(0, showsUris.get(showsTable.getSelectedRow()));
                             showsTable.addModifyAction(new Runnable() {
                                 @Override
@@ -204,24 +205,24 @@ public class LibraryShows extends JScrollPane {
 
         try {
             ArrayList<ShowRow> cacheRows = new ArrayList<>();
-            UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Podcasts & Shows"}, null, 999999, 0);
+            LibraryResponse response = PublicValues.spotAPI.library().get().setFilters("Podcasts & Shows").setLimit(999999).setOffset(0).execute();
 
-            Gson gson = new Gson();
-            for (UnofficialSpotifyAPI.LibraryItemEntry item : response.data.me.libraryV3.items) {
-                UnofficialSpotifyAPI.ShowItem show = gson.fromJson(item.item.data, UnofficialSpotifyAPI.ShowItem.class);
+            for (LibraryResponse.LibraryRow item : response.getItems()) {
+                LibraryResponse.ShowData show = item.getItem().asShow();
+                if (show == null) continue;
 
-                showsUris.add(show.uri);
-                String publisherName = show.publisher != null ? show.publisher.name : "";
-                cacheRows.add(new ShowRow(show.uri, show.name, publisherName));
+                showsUris.add(show.getUri());
+                String publisherName = show.getPublisher() != null ? show.getPublisher().getName() : "";
+                cacheRows.add(new ShowRow(show.getUri(), show.getName(), publisherName));
                 showsTable.addModifyAction(() -> {
                     ((DefaultTableModel) showsTable.getModel()).addRow(new Object[]{
-                            show.name,
+                            show.getName(),
                             publisherName
                     });
                 });
             }
             PublicValues.cache.namespace("LibraryShows").put(CACHE_ID, cacheRows);
-        }catch (IOException | TokenProvider.TokenException e) {
+        }catch (IOException e) {
             ConsoleLogging.Throwable(e);
         }
     }

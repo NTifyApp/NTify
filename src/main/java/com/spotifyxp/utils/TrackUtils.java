@@ -156,7 +156,7 @@ public class TrackUtils {
 
     public static boolean isTrackLiked(String id) {
         try {
-            return PublicValues.session.api().user().isInLibrary(new String[] {"spotify:track:" + id})[0];
+            return PublicValues.spotAPI.library().isInLibrary().addUris("spotify:track:" + id).execute().getLookup().get(0).getData().isSaved();
         } catch (Exception e) {
             ConsoleLogging.Throwable(e);
             return false;

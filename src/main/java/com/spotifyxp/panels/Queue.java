@@ -26,7 +26,7 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.swingextension.DDReorderList;
 import com.spotifyxp.utils.TrackUtils;
-import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.dealer.ApiClient;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.metadata.TrackId;
 
@@ -91,7 +91,7 @@ public class Queue extends JScrollPane implements View {
             if(!queueUriCache.isEmpty()) {
                 queueUriCache.add(data);
                 try {
-                    Metadata.Track track = PublicValues.session.api().track().getMetadata(TrackId.fromUri(data));
+                    Metadata.Track track = PublicValues.session.api().getMetadata4Track(TrackId.fromUri(data));
                     String a = TrackUtils.getArtists(track.getArtistList());
                     queueListModel.addElement(track.getName() + " - " + a);
                 } catch (ArrayIndexOutOfBoundsException e) {

@@ -31,6 +31,7 @@ import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
 import com.spotifyxp.pip.PiPPlayer;
 import com.spotifyxp.protogens.PlayerState;
+import com.spotifyxp.spotapi.requests.collection.CollectionSet;
 import com.spotifyxp.swingextension.*;
 import com.spotifyxp.swingextension.JFrame;
 import com.spotifyxp.utils.*;
@@ -346,9 +347,10 @@ public class PlayerArea extends JPanel {
                 AsyncUtils.run(() -> {
                     if (heart.isFilled) {
                         try {
-                            PublicValues.session.api().track().remove(TrackId.fromUri(
-                                    Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
-                            ));
+                            PublicValues.spotAPI.collection().write()
+                                    .setSet(CollectionSet.COLLECTION)
+                                    .removeUris(Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri())
+                                    .execute();
                             SpotifyXPEvents.libraryChange.trigger(
                                     new LibraryChange(
                                             Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
@@ -356,22 +358,23 @@ public class PlayerArea extends JPanel {
                                             LibraryChange.Action.REMOVE
                                     )
                             );
-                        } catch (IOException | TokenProvider.TokenException ex) {
+                        } catch (IOException ex) {
                             throw new RuntimeException(ex);
                         }
                         heart.setImage(Graphics.HEART.getPath());
                         heart.isFilled = false;
                     } else {
                         try {
-                            PublicValues.session.api().track().like(TrackId.fromUri(
-                                    Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri()
-                            ));
+                            PublicValues.spotAPI.collection().write()
+                                    .setSet(CollectionSet.COLLECTION)
+                                    .addUris(Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri())
+                                    .execute();
                             SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                                     Objects.requireNonNull(InstanceManager.getPlayer().getPlayer().currentPlayable()).toSpotifyUri(),
                                     LibraryChange.Type.TRACK,
                                     LibraryChange.Action.ADD
                             ));
-                        } catch (IOException | TokenProvider.TokenException ex) {
+                        } catch (IOException ex) {
                             throw new RuntimeException(ex);
                         }
                         heart.setImage(Graphics.HEARTFILLED.getPath());

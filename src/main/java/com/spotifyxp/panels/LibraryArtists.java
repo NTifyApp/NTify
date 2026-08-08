@@ -15,22 +15,21 @@
  */
 package com.spotifyxp.panels;
 
-import com.google.gson.Gson;
 import com.spotify.extendedmetadata.ExtendedMetadata;
 import com.spotify.extendedmetadata.ExtensionKindOuterClass;
 import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.events.LibraryChange;
 import com.spotifyxp.events.SpotifyXPEvents;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.logging.ConsoleLogging;
+import com.spotifyxp.spotapi.pojos.LibraryResponse;
+import com.spotifyxp.spotapi.requests.collection.CollectionSet;
 import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.SpotifyUtils;
-import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.dealer.ApiClient;
 import xyz.gianlu.librespot.core.TokenProvider;
-import xyz.gianlu.librespot.metadata.ArtistId;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -101,15 +100,16 @@ public class LibraryArtists extends JScrollPane {
             public void run() {
                 new Thread(() -> {
                     try {
-                        PublicValues.session.api().artist().unfollow(
-                                ArtistId.fromUri(artistsUris.get(artistsTable.getSelectedRow()))
-                        );
+                        PublicValues.spotAPI.collection().write()
+                                .setSet(CollectionSet.ARTIST)
+                                .removeUris(artistsUris.get(artistsTable.getSelectedRow()))
+                                .execute();
                         SpotifyXPEvents.libraryChange.trigger(new LibraryChange(
                                 artistsUris.get(artistsTable.getSelectedRow()),
                                 LibraryChange.Type.ARTIST,
                                 LibraryChange.Action.REMOVE
                         ));
-                    } catch (IOException | TokenProvider.TokenException e) {
+                    } catch (IOException e) {
                         ConsoleLogging.Throwable(e);
                     }
                 }).start();
@@ -189,25 +189,25 @@ public class LibraryArtists extends JScrollPane {
         try {
             ArrayList<ArtistRow> cacheRows = new ArrayList<>();
             int limit = 50;
-            UnofficialSpotifyAPI.LibraryResponse response = UnofficialSpotifyAPI.getLibraryPage(new String[] {"Artists"}, null, limit, 0);
-            UnofficialSpotifyAPI.LibraryPage libraryV3 = response.data.me.libraryV3;
-            int total = libraryV3.totalCount;
+            LibraryResponse response = PublicValues.spotAPI.library().get().setFilters("Artists").setLimit(limit).setOffset(0).execute();
+            int total = response.getTotalCount();
             int offset = 0;
-            Gson gson = new Gson();
             while(offset < total) {
-                int nextOffset = offset + libraryV3.items.size();
+                int nextOffset = offset + response.getItems().size();
                 //Start fetching the next page's listing while this page's metadata batch is
                 //still executing, instead of waiting for the batch to finish first - the two
                 //were previously fully serialized even though they're independent requests.
-                Future<UnofficialSpotifyAPI.LibraryResponse> nextPageFuture = nextOffset < total
-                        ? AsyncUtils.submit(() -> UnofficialSpotifyAPI.getLibraryPage(new String[] {"Artists"}, null, limit, nextOffset))
+                int finalOffset = nextOffset;
+                Future<LibraryResponse> nextPageFuture = nextOffset < total
+                        ? AsyncUtils.submit(() -> PublicValues.spotAPI.library().get().setFilters("Artists").setLimit(limit).setOffset(finalOffset).execute())
                         : null;
 
                 ApiClient.BatchedRequestHelper helper = new ApiClient.BatchedRequestHelper();
-                for(UnofficialSpotifyAPI.LibraryItemEntry artistItem : libraryV3.items) {
-                    UnofficialSpotifyAPI.ArtistItem artistItemData = gson.fromJson(artistItem.item.data, UnofficialSpotifyAPI.ArtistItem.class);
+                for(LibraryResponse.LibraryRow artistItem : response.getItems()) {
+                    LibraryResponse.ArtistData artistItemData = artistItem.getItem().asArtist();
+                    if (artistItemData == null) continue;
                     helper.addRequest(ExtendedMetadata.EntityRequest.newBuilder()
-                                    .setEntityUri(artistItem.item.uri)
+                                    .setEntityUri(artistItemData.getUri())
                                     .addQuery(ExtendedMetadata.ExtensionQuery.newBuilder()
                                             .setExtensionKind(ExtensionKindOuterClass.ExtensionKind.ARTIST_V4)
                                             .build())
@@ -217,10 +217,10 @@ public class LibraryArtists extends JScrollPane {
                             .build(), data -> {
                         Metadata.Artist artist = Metadata.Artist.parseFrom(data[0].getValue());
                         ExtendedMetadata.OnPlatformReputationTrait reputationTrait = ExtendedMetadata.OnPlatformReputationTrait.parseFrom(data[1].getValue());
-                        artistsUris.add(artistItemData.uri);
+                        artistsUris.add(artistItemData.getUri());
                         String monthlyListeners = SpotifyUtils.formatMonthlyListeners(reputationTrait.getMonthlyListeners());
                         String genres = String.join(", ", artist.getGenreList());
-                        cacheRows.add(new ArtistRow(artistItemData.uri, artist.getName(), monthlyListeners, genres));
+                        cacheRows.add(new ArtistRow(artistItemData.getUri(), artist.getName(), monthlyListeners, genres));
                         artistsTable.addModifyAction(new Runnable() {
                             @Override
                             public void run() {
@@ -239,7 +239,6 @@ public class LibraryArtists extends JScrollPane {
                 offset = nextOffset;
                 if (nextPageFuture == null) break;
                 response = nextPageFuture.get();
-                libraryV3 = response.data.me.libraryV3;
             }
             PublicValues.cache.namespace("LibraryArtists").put(CACHE_ID, cacheRows);
         }catch (IOException | TokenProvider.TokenException | InterruptedException | ExecutionException e) {

@@ -17,18 +17,18 @@ package com.spotifyxp.panels;
 
 import com.spotify.metadata.Metadata;
 import com.spotifyxp.PublicValues;
-import com.spotifyxp.api.UnofficialSpotifyAPI;
 import com.spotifyxp.ctxmenu.ContextMenu;
 import com.spotifyxp.guielements.DefTable;
 import com.spotifyxp.history.PlaybackHistory;
 import com.spotifyxp.logging.ConsoleLogging;
 import com.spotifyxp.manager.InstanceManager;
+import com.spotifyxp.spotapi.pojos.ArtistRelatedArtistsResponse;
 import com.spotifyxp.utils.AsyncUtils;
 import com.spotifyxp.utils.ReentryGuard;
 import com.spotifyxp.utils.SpotifyUtils;
 import com.spotifyxp.utils.TrackUtils;
 import org.jetbrains.annotations.Nullable;
-import xyz.gianlu.librespot.api.ApiClient;
+import xyz.gianlu.librespot.dealer.ApiClient;
 import xyz.gianlu.librespot.common.Utils;
 import xyz.gianlu.librespot.core.TokenProvider;
 import xyz.gianlu.librespot.mercury.MercuryClient;
@@ -211,7 +211,7 @@ public class HotList extends JSplitPane implements View {
             public int playCount;
             public Map<String, AlbumNode> albums = new HashMap<>();
             public double userWeight;
-            public UnofficialSpotifyAPI.ArtistUnionRelatedArtists relatedArtists;
+            public ArtistRelatedArtistsResponse.RelatedArtists relatedArtists;
             public double relatedHits;
             @Nullable
             public String name;
@@ -303,9 +303,9 @@ public class HotList extends JSplitPane implements View {
             }
 
             // Fan the related-artists lookups out in parallel instead of one-at-a-time.
-            Map<String, Future<UnofficialSpotifyAPI.ArtistUnionRelatedArtists>> relatedArtistsFutures = new HashMap<>();
+            Map<String, Future<ArtistRelatedArtistsResponse>> relatedArtistsFutures = new HashMap<>();
             for (String artistURI : artistNamesByUri.keySet()) {
-                relatedArtistsFutures.put(artistURI, AsyncUtils.submit(() -> UnofficialSpotifyAPI.getArtistRelatedArtists(artistURI)));
+                relatedArtistsFutures.put(artistURI, AsyncUtils.submit(() -> PublicValues.spotAPI.artist().relatedArtists().setUri(artistURI).execute()));
             }
 
             Map<String, ArtistNode> artists = new HashMap<>();
@@ -314,7 +314,9 @@ public class HotList extends JSplitPane implements View {
                 try {
                     ArtistNode a = new ArtistNode();
                     a.artistURI = artistURI;
-                    a.relatedArtists = relatedArtistsFutures.get(artistURI).get();
+                    ArtistRelatedArtistsResponse response = relatedArtistsFutures.get(artistURI).get();
+                    a.relatedArtists = response != null && response.getRelatedContent() != null
+                            ? response.getRelatedContent().getRelatedArtists() : null;
                     a.name = e.getValue();
                     artists.put(artistURI, a);
                 } catch (InterruptedException | ExecutionException ex) {
@@ -394,8 +396,8 @@ public class HotList extends JSplitPane implements View {
             Map<String, ArtistNode> candidateArtists = new HashMap<>();
             for (ArtistNode seed : seedArtists) {
                 candidateArtists.put(seed.artistURI, seed);
-                if (seed.relatedArtists != null) {
-                    for (UnofficialSpotifyAPI.ArtistUnionRelatedArtistsArtist related : seed.relatedArtists.items) {
+                if (seed.relatedArtists != null && seed.relatedArtists.getItems() != null) {
+                    for (ArtistRelatedArtistsResponse.RelatedArtist related : seed.relatedArtists.getItems()) {
                         ArtistNode relatedNode = convertRelatedToArtistNode(related);
                         candidateArtists.putIfAbsent(relatedNode.artistURI, relatedNode);
                         relatedNode.relatedHits += 1;
@@ -455,7 +457,7 @@ public class HotList extends JSplitPane implements View {
         }
 
         private static List<TrackNode> fetchTopTracksFromMercury(String artistURI) throws IOException, TokenProvider.TokenException {
-            Metadata.Artist artist = PublicValues.session.api().artist().getMetadata(ArtistId.fromUri(artistURI));
+            Metadata.Artist artist = PublicValues.session.api().getMetadata4Artist(ArtistId.fromUri(artistURI));
 
             List<TrackNode> tracks = new ArrayList<>();
 
@@ -470,9 +472,10 @@ public class HotList extends JSplitPane implements View {
             return tracks;
         }
 
-        private static ArtistNode convertRelatedToArtistNode(UnofficialSpotifyAPI.ArtistUnionRelatedArtistsArtist relatedArtist) {
+        private static ArtistNode convertRelatedToArtistNode(ArtistRelatedArtistsResponse.RelatedArtist relatedArtist) {
             ArtistNode artist = new ArtistNode();
-            artist.artistURI = relatedArtist.uri;
+            artist.artistURI = relatedArtist.getUri();
+            artist.name = relatedArtist.getProfile() != null ? relatedArtist.getProfile().getName() : null;
             return artist;
         }
     }
