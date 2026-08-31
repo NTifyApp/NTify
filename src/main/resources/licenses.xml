@@ -248,9 +248,9 @@
       </licenses>
     </dependency>
     <dependency>
-      <groupId>com.neovisionaries</groupId>
+      <groupId>uk.co.foundationsedge</groupId>
       <artifactId>nv-i18n</artifactId>
-      <version>1.29</version>
+      <version>1.34.1</version>
       <licenses>
         <license>
           <name>The Apache Software License, Version 2.0</name>
