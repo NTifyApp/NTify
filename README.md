@@ -17,6 +17,14 @@
 
 <h3>Info: Free accounts are not supported
 
+> [!WARNING]
+> **Spotify account compatibility**
+>
+> Spotify has changed its audio DRM/key delivery mechanism. Accounts created after an apparent cutoff date can no longer obtain the audio decryption keys required by librespot. This affects all librespot versions, and playback will fail with `audio key error 0 1`. No workaround is currently known.
+>
+> This is a Spotify-side restriction, not a librespot configuration issue. See [issue #1649](https://github.com/librespot-org/librespot/issues/1649) for details (locked).
+
+
 ## Table Of Contents
 
 * [About the Project](#about-the-project)
