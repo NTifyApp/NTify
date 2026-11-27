@@ -1,3 +1,14 @@
+<h3> The future of NTify is unknown. Read the message below </h3>
+
+> [!WARNING]
+> **Spotify account compatibility**
+>
+> Spotify has changed its audio DRM/key delivery mechanism. Accounts created after an apparent cutoff date can no longer obtain the audio decryption keys required by librespot. This affects all librespot versions, and playback will fail with `audio key error 0 1`. No workaround is currently known.
+>
+> This is a Spotify-side restriction, not a librespot configuration issue. See [issue #1649](https://github.com/librespot-org/librespot/issues/1649) for details (locked).
+
+<h4>If Spotify completely removes support for the older DRM and no workaround is available, I'll have to archive NTify</h4>
+
 <p align="center">
   <a href="https://github.com/NTifyApp/NTify">
     <img src="https://raw.githubusercontent.com/NTifyApp/NTify/refs/heads/developer/src/main/resources/ntify.png" alt="Logo" width="80" height="80">
@@ -15,15 +26,7 @@
 
 ![Contributors](https://img.shields.io/github/contributors/NTifyApp/NTify?color=dark-green) ![Issues](https://img.shields.io/github/issues/NTifyApp/NTify) ![Downloads](https://img.shields.io/github/downloads/NTifyApp/NTify/total)
 
-<h3>Info: Free accounts are not supported
-
-> [!WARNING]
-> **Spotify account compatibility**
->
-> Spotify has changed its audio DRM/key delivery mechanism. Accounts created after an apparent cutoff date can no longer obtain the audio decryption keys required by librespot. This affects all librespot versions, and playback will fail with `audio key error 0 1`. No workaround is currently known.
->
-> This is a Spotify-side restriction, not a librespot configuration issue. See [issue #1649](https://github.com/librespot-org/librespot/issues/1649) for details (locked).
-
+<h3>Info: Free accounts are not supported</h3>
 
 ## Table Of Contents
 
